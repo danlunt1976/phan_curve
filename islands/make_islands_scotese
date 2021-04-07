@@ -1,0 +1,117 @@
+#!/bin/bash
+
+restartdate='#da000003850c1+'
+stat='1'
+inte='1'
+get_files='0'
+send_files='1'
+
+###  get args
+if [ "$#" -ne 1 ]; then
+    echo "Illegal number of options: must be 1"
+    exit
+fi
+
+###  setup
+exp=${1}
+mkdir -p ${exp}
+cd ${exp}
+
+
+if [ ${get_files} -eq 1 ] ; then
+
+###  get restart dump
+archfile="/home/bridge/swsvalde/ummodel/data/${exp}/expt_archive/${exp}.taz"
+if [ -f ${archfile} ]; then
+  \cp ${archfile} .
+  tar xvf ${archfile}
+  \cp ${exp}/datam/${exp}?"${restartdate}" .
+  \rm -r ${exp}
+  \rm -r ${exp}.taz
+else
+  echo "Error: ${archfile} not found.	."
+  exit 1
+fi
+
+###  get ocean land-sea mask
+cp /home/bridge/swsvalde/ummodel/data/${exp}/inidata/${exp}.qrparm.omask.nc .
+
+### get old islands
+/home/bridge/ggdjl/ggdjl/um/scripts/bath_islands_scr_new ${exp}o${restartdate} bath_${exp}_oldislands.nc islands_${exp}_oldislands.nc ascii_${exp}_oldislands.isl umui_${exp}_oldislands.dat
+
+printf "\n"
+echo "**Now run isla [after module load isla/1.0.1] on ${exp}/${exp}.qrparm.omask.nc , consolidating/removing/adding islands as necessary"
+read -rsp $'**Then press any key to continue...\n' -n1 key
+echo "**Output ascii file to ${exp}/ascii_${exp}_newislands_isla.isl"
+read -rsp $'**Then press any key to continue...\n' -n1 key
+echo "**Edit ${exp}/ascii_${exp}_newislands_isla.nc to add one to 2nd and 4th elements [if not circular] and save to ${exp}/ascii_${exp}_newislands_corr.isl "
+read -rsp $'**Then press any key to continue...\n' -n1 key
+echo 'Done'
+
+fi
+
+
+### create and run xancil job
+suff='job'
+jobfile="xancil.${exp}.${suff}"
+\cp ../xancil.SKEL.${suff} ${jobfile}
+sed -i "s/EXP/${exp}/g" ${jobfile}
+sed -i "s/RESTARTDATE/${restartdate}/g" ${jobfile}
+xancil -j ${jobfile} -x
+\rm xancil.namelist
+
+### get new islands
+/home/bridge/ggdjl/ggdjl/um/scripts/bath_islands_scr_new ${exp}o${restartdate}_newislands bath_${exp}_newislands.nc islands_${exp}_newislands.nc ascii_${exp}_newislands_check.isl umui_${exp}_newislands.dat
+
+
+### create stationary restart file if required
+if [ ${stat} -eq 1  ] ; then
+restartfile="${exp}o${restartdate}_newislands"
+um2nc ${restartfile}
+cdo expr,'streamFn_uo=0.0;field612_uo=0.0;field613_uo=0.0;field614_uo=0.0;' ${restartfile}.nc ${restartfile}_mod1.nc 
+# to preserve land-sea mask:
+#cdo -setrtoc,-1e99,1e99,0 -selvar,ucurrBaro_dpth,vcurrBaro_dpth ${restartfile}.nc ${restartfile}_mod2.nc
+# zero everywhere:
+cdo expr,'ucurrBaro_dpth=0.0;vcurrBaro_dpth=0.0;' ${restartfile}.nc ${restartfile}_mod2.nc
+cdo -fillmiss -fillmiss ${restartfile}.nc ${restartfile}_fillmiss.nc
+suff='initcond.job'
+jobfile="xancil.${exp}.${suff}"
+\cp ../xancil.SKEL.${suff} ${jobfile}
+sed -i "s/EXP/${exp}/g" ${jobfile}
+sed -i "s/RESTARTDATE/${restartdate}/g" ${jobfile}
+xancil -j ${jobfile} -x
+\rm xancil.namelist
+\rm ${restartfile}.nc ${restartfile}_mod1.nc ${restartfile}_mod2.nc ${restartfile}_fillmiss.nc
+
+fi
+
+### create interpolated restart file if required
+if [ ${inte} -eq 1  ] ; then
+restartfile="${exp}o${restartdate}_newislands"
+um2nc ${restartfile}
+cdo -fillmiss -fillmiss ${restartfile}.nc ${restartfile}_fillmiss.nc
+suff='interp.job'
+jobfile="xancil.${exp}.${suff}"
+\cp ../xancil.SKEL.${suff} ${jobfile}
+sed -i "s/EXP/${exp}/g" ${jobfile}
+sed -i "s/RESTARTDATE/${restartdate}/g" ${jobfile}
+xancil -j ${jobfile} -x
+\rm xancil.namelist
+\rm ${restartfile}.nc ${restartfile}_fillmiss.nc
+
+fi
+
+
+
+if [ ${send_files} -eq 1 ] ; then
+scp ${restartfile} ggdjl@bc4login.acrc.bris.ac.uk:/mnt/storage/home/ggdjl/dump2hold/dumps_deeptime/teyd_newislands
+scp ${restartfile}_stat ggdjl@bc4login.acrc.bris.ac.uk:/mnt/storage/home/ggdjl/dump2hold/dumps_deeptime/teyd_newislands
+scp ${restartfile}_interp ggdjl@bc4login.acrc.bris.ac.uk:/mnt/storage/home/ggdjl/dump2hold/dumps_deeptime/teyd_newislands
+
+ssh ggdjl@bc4login.acrc.bris.ac.uk "ls; pwd; cd /mnt/storage/home/ggdjl/dump2hold/dumps_deeptime/teyd_newislands ; rm ${exp}.ocean ; ln -s ${restartfile}_interp ${exp}.ocean" 
+fi
+
+echo "***** Dont forget to copy over the new islands ascii file to puma: umui_${exp}_newislands.dat"
+
+
+exit
