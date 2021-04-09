@@ -1,10 +1,18 @@
 #!/bin/bash
 
 restartdate='#da000003850c1+'
-stat='1'
-inte='1'
+
 get_files='0'
+
+raw='0'
+stat='0'
+inte='0'
+ridge='1'
+
 send_files='1'
+
+
+
 
 ###  get args
 if [ "$#" -ne 1 ]; then
@@ -101,17 +109,39 @@ xancil -j ${jobfile} -x
 
 fi
 
+### create ridge restart file if required
+if [ ${ridge} -eq 1  ] ; then
+restartfile="${exp}o${restartdate}_newislands"
+suff='ridge.job'
+jobfile="xancil.${exp}.${suff}"
+\cp ../xancil.SKEL.${suff} ${jobfile}
+sed -i "s/EXP/${exp}/g" ${jobfile}
+sed -i "s/RESTARTDATE/${restartdate}/g" ${jobfile}
+xancil -j ${jobfile} -x
+\rm xancil.namelist
+### get new bath
+/home/bridge/ggdjl/ggdjl/um/scripts/bath_islands_scr_new ${exp}o${restartdate}_newislands_ridge bath_${exp}_newislands_ridge.nc islands_${exp}_newislands_ridge.nc ascii_${exp}_newislands_ridge_check.isl umui_${exp}_newislands_ridge.dat
+fi
+
+
 
 
 if [ ${send_files} -eq 1 ] ; then
-scp ${restartfile} ggdjl@bc4login.acrc.bris.ac.uk:/mnt/storage/home/ggdjl/dump2hold/dumps_deeptime/teyd_newislands
-scp ${restartfile}_stat ggdjl@bc4login.acrc.bris.ac.uk:/mnt/storage/home/ggdjl/dump2hold/dumps_deeptime/teyd_newislands
-scp ${restartfile}_interp ggdjl@bc4login.acrc.bris.ac.uk:/mnt/storage/home/ggdjl/dump2hold/dumps_deeptime/teyd_newislands
 
-ssh ggdjl@bc4login.acrc.bris.ac.uk "ls; pwd; cd /mnt/storage/home/ggdjl/dump2hold/dumps_deeptime/teyd_newislands ; rm ${exp}.ocean ; ln -s ${restartfile}_interp ${exp}.ocean" 
+if [ ${raw} -eq 1  ] ; then newname='' ; fi
+if [ ${stat} -eq 1  ] ; then newname='_stat' ; fi
+if [ ${inte} -eq 1  ] ; then newname='_interp' ; fi
+if [ ${ridge} -eq 1  ] ; then newname='_ridge' ; fi
+
+
+scp ${restartfile}${newname} ggdjl@bc4login.acrc.bris.ac.uk:/mnt/storage/home/ggdjl/dump2hold/dumps_deeptime/teyd_newislands
+ssh ggdjl@bc4login.acrc.bris.ac.uk "ls; pwd; cd /mnt/storage/home/ggdjl/dump2hold/dumps_deeptime/teyd_newislands ; rm ${exp}.ocean ; ln -s ${restartfile}${newname} ${exp}.ocean" 
+
 fi
 
-echo "***** Dont forget to copy over the new islands ascii file to puma: umui_${exp}_newislands.dat"
+
+
+echo "***** Dont forget to copy over the new islands ascii file to puma if necessary: umui_${exp}_newislands.dat"
 
 
 exit

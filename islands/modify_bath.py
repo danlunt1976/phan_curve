@@ -47,7 +47,7 @@ rearth=6371
 
 for j in range(ny):
     for i in range(nx):
-        print(i,j) 
+#        print(i,j) 
 
         lam1=lam1d*2*pi/360.0
         phi1=phi1d*2*pi/360.
@@ -58,17 +58,17 @@ for j in range(ny):
 
             phi1=phi2
             dist=rearth*np.arccos(np.sin(phi1)*np.sin(phi2)+np.cos(phi1)*np.cos(phi2)*np.cos(abs(lam1-lam2)))
-            ridge=20-12.0*np.exp(-1.0*dist/500.0)
-            print(dist)
+            ridge=20-(20-16)*np.exp(-1.0*dist/1000.0)
+#            print(dist)
             
-            if bath_new[j,i] > ridge:
-                bath_new[j,i]=ridge
+            if bath_new[j,i] > round(ridge):
+                bath_new[j,i]=round(ridge)
 
 
 
 # copy to last 2 columns (note python bonkers numbering).
     bath_new[j,nx:nx+2]=bath_new[j,0:2]
-
+    
 # Write new data 
 nc2 = NetCDFFile('541_0_1deg_02o_new.nc', 'r+')
 nc2.variables['depthmask_xancil'][:]=bath_new[:]

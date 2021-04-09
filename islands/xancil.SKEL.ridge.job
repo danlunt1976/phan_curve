@@ -549,7 +549,7 @@ set ostart(bathyfile) /home/bridge/ggdjl/ggdjl/bas/doc/phan_curve/islands/541_0_
 set ostart(bathyncname) depthmask_xancil
 set ostart(create) 1
 set ostart(day) 16
-set ostart(file_out) /home/bridge/ggdjl/ggdjl/bas/doc/phan_curve/islands/EXPoRESTARTDATE_newislands_ridge
+set ostart(file_out) /home/bridge/ggdjl/ggdjl/bas/doc/phan_curve/islands/EXP/EXPoRESTARTDATE_newislands_ridge
 set ostart(hour) 0
 set ostart(islandfile) ""
 set ostart(islandmod) 0
