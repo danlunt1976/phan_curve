@@ -6,25 +6,17 @@ restartdate='#da000007850c1+' # teye
 #target_dir='teyd_newislands' # teyd
 target_dir='teye_newislands' # teye
 
-
-get_files='0'
+get_files='1'
 new_islands='1'
 run_xancil='1'
-send_files_bc='1'
-send_files_puma='1'
-
-
+send_files_bc='0'
+send_files_puma='0'
 
 # options 
-raw='1'
-stat='0'
+raw='0'
+stat='1'
 inte='0'
 ridge='0'
-
-
-
-
-
 
 ###  get args
 if [ "$#" -ne 1 ]; then
@@ -99,10 +91,9 @@ if [ ${stat} -eq 1  ] ; then
 um2nc ${restartfile}
 cdo expr,'streamFn_uo=0.0;field612_uo=0.0;field613_uo=0.0;field614_uo=0.0;' ${restartfile}.nc ${restartfile}_mod1.nc 
 # to preserve land-sea mask:
-#cdo -setrtoc,-1e99,1e99,0 -selvar,ucurrBaro_dpth,vcurrBaro_dpth ${restartfile}.nc ${restartfile}_mod2.nc
+cdo -setrtoc,-1e99,1e99,0 -selvar,ucurrBaro_dpth,vcurrBaro_dpth ${restartfile}.nc ${restartfile}_mod2.nc
 # zero everywhere:
-cdo expr,'ucurrBaro_dpth=0.0;vcurrBaro_dpth=0.0;' ${restartfile}.nc ${restartfile}_mod2.nc
-cdo -fillmiss -fillmiss ${restartfile}.nc ${restartfile}_fillmiss.nc
+#cdo expr,'ucurrBaro_dpth=0.0;vcurrBaro_dpth=0.0;' ${restartfile}.nc ${restartfile}_mod2.nc
 suff='initcond.job'
 jobfile="xancil.${exp}.${suff}"
 \cp ../xancil.SKEL.${suff} ${jobfile}
@@ -110,7 +101,7 @@ sed -i "s/EXP/${exp}/g" ${jobfile}
 sed -i "s/RESTARTDATE/${restartdate}/g" ${jobfile}
 xancil -j ${jobfile} -x
 \rm xancil.namelist
-\rm ${restartfile}.nc ${restartfile}_mod1.nc ${restartfile}_mod2.nc ${restartfile}_fillmiss.nc
+\rm ${restartfile}.nc ${restartfile}_mod1.nc ${restartfile}_mod2.nc
 
 fi
 
@@ -157,7 +148,7 @@ scp ${restartfile}${newname} ggdjl@bc4login.acrc.bris.ac.uk:/mnt/storage/home/gg
 ssh ggdjl@bc4login.acrc.bris.ac.uk "ls; pwd; cd /mnt/storage/home/ggdjl/dump2hold/dumps_deeptime_djl/${target_dir} ; rm ${exp}.ocean ; ln -s ${restartfile}${newname} ${exp}.ocean" 
 
 scp ${restartfile_atmos} ggdjl@bc4login.acrc.bris.ac.uk:/mnt/storage/home/ggdjl/dump2hold/dumps_deeptime_djl/${target_dir}
-ssh ggdjl@bc4login.acrc.bris.ac.uk "ls; pwd; cd /mnt/storage/home/ggdjl/dump2hold/dumps_deeptime_djl/${target_dir} ; rm ${exp}.atmos ; ln -s ${restartfile_atmos}${newname} ${exp}.atmos" 
+ssh ggdjl@bc4login.acrc.bris.ac.uk "ls; pwd; cd /mnt/storage/home/ggdjl/dump2hold/dumps_deeptime_djl/${target_dir} ; rm ${exp}.atmos ; ln -s ${restartfile_atmos} ${exp}.atmos" 
 
 fi
 
