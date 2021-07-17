@@ -1,0 +1,68 @@
+#!/bin/bash
+#
+###  get args
+if [ "$#" -eq 0 ]; then
+    echo "Illegal number of options: must be greater than 0"
+    exit
+fi
+#
+
+if [ $USER != 'swsvalde' ] ; then
+  echo "needs to run as swsvalde"
+  exit
+fi
+
+explist=$*
+
+for exp in ${explist} ; do
+
+expid=`echo ${exp} | head -c 4`
+let=`echo ${exp:4:1}`
+
+   if [ "$expid" = "tfgw" ] ; then
+      expid_old="teye"
+      expid_oldold="teyd"
+   elif [ "$expid" = "tfgW" ] ; then
+      expid_old="teyE"
+      expid_oldold="teyD"
+   elif [ "$expid" = "tfGw" ] ; then
+      expid_old="teYe"
+      expid_oldold="teYd"
+   elif [ "$expid" = "tfGW" ] ; then
+      expid_old="teYE"
+      expid_oldold="teYD"
+   elif [ "$expid" = "tFgw" ] ; then
+      expid_old="tEye"
+      expid_oldold="tEyd"
+   fi
+
+exp_old=${expid_old}${let}
+exp_oldold=${expid_oldold}${let}1
+
+echo ${exp}
+echo ${exp_old}
+
+# make html_list/jobs files
+olddir='/home/bridge/swsvalde/ummodel/scripts/html_list/jobs'
+newdir='/home/bridge/swsvalde/ummodel/scripts/html_list/jobs'
+\cp ${olddir}/${exp_old}.dat ${newdir}/${exp}.dat
+sed -i "s/start_year=\"5850\"/start_year=\"1850\"/g" ${newdir}/${exp}.dat
+sed -i "s/${exp_oldold}/${exp_old}/g" ${newdir}/${exp}.dat
+sed -i "s/leaf CO2\./leaf CO2\.  This version has islands included.  Started from end of ${exp_old}\./g" ${newdir}/${exp}.dat
+sed -i "s/CCN etc\./CCN etc\.  This version has islands included.  Started from end of ${exp_old}\./g" ${newdir}/${exp}.dat
+sed -i "s/ggpjv/ggdjl/g" ${newdir}/${exp}.dat
+
+# make ummodel/data/inidata files
+ummodel='/home/bridge/swsvalde/ummodel/data'
+mkdir -p ${ummodel}/${exp}
+chmod u=rwx,g=rx+s,o=rx ${ummodel}/${exp}
+mkdir -p ${ummodel}/${exp}/inidata
+chmod u=rwx,g=rx+s,o=rx ${ummodel}/${exp}/inidata
+
+for file in basin.index qrclim.ozone.nc qrfrac.disturb.nc qrfrac.type.nc qrparm.mask.nc qrparm.orog.nc qrparm.soil.nc qrparm.waterfix.nc qrparm.pft.nc ; do
+\cp -d ${ummodel}/${exp_old}/inidata/${exp_old}.${file} ${ummodel}/${exp}/inidata/${exp}.${file}
+done
+
+done
+
+
