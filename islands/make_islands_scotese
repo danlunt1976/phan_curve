@@ -6,13 +6,15 @@ restartdate='#da000007850c1+' # teye
 #target_dir='teyd_newislands' # teyd
 target_dir='teye_newislands' # teye
 
-get_files='1'
+get_files='0'
 new_islands='1'
 run_xancil='1'
+make_derived='0'
 send_files_bc='0'
 send_files_puma='0'
+plot_islands='0'
 
-# options 
+# options for make_new
 raw='0'
 stat='1'
 inte='0'
@@ -86,6 +88,8 @@ fi
 restartfile="${exp}o${restartdate}_newislands"
 restartfile_atmos="${exp}a${restartdate}"
 
+if [ ${make_derived} -eq 1 ] ; then
+
 ### create stationary restart file if required
 if [ ${stat} -eq 1  ] ; then
 um2nc ${restartfile}
@@ -133,7 +137,7 @@ xancil -j ${jobfile} -x
 /home/bridge/ggdjl/ggdjl/um/scripts/bath_islands_scr_new ${exp}o${restartdate}_newislands_ridge bath_${exp}_newislands_ridge.nc islands_${exp}_newislands_ridge.nc ascii_${exp}_newislands_ridge_check.isl umui_${exp}_newislands_ridge.dat
 fi
 
-
+fi
 
 
 if [ ${send_files_bc} -eq 1 ] ; then
@@ -159,6 +163,15 @@ eval $(ssh-agent) ; ssh-add  ~/.ssh/id_rsa_puma ; scp umui_${exp}_newislands.dat
 
 fi
 
+if [ ${plot_islands} -eq 1 ] ; then
+
+jobfile="ncl.${exp}.islands.ncl"
+\cp ../ncl.SKEL.islands.ncl ${jobfile}
+sed -i "s/EXP/${exp}/g" ${jobfile}
+ncl ${jobfile}
+pdfcrop newislands_${exp}.pdf 
+
+fi
 
 
 exit
