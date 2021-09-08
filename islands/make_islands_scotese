@@ -6,6 +6,23 @@ restartdate='#da000007850c1+' # teye
 #target_dir='teyd_newislands' # teyd
 target_dir='teye_newislands' # teye
 
+# 0 = get files
+# 1 = test
+# 2 = submit
+
+mytype=2
+
+if [ ${mytype} -eq 2 ] ; then
+get_files='0'
+new_islands='1'
+run_xancil='1'
+make_derived='1'
+send_files_bc='1'
+send_files_puma='1'
+plot_islands='1'
+fi
+
+if [ ${mytype} -eq 1 ] ; then
 get_files='0'
 new_islands='1'
 run_xancil='1'
@@ -13,6 +30,18 @@ make_derived='0'
 send_files_bc='0'
 send_files_puma='0'
 plot_islands='0'
+fi
+
+if [ ${mytype} -eq 0 ] ; then
+get_files='1'
+new_islands='0'
+run_xancil='0'
+make_derived='0'
+send_files_bc='0'
+send_files_puma='0'
+plot_islands='0'
+fi
+
 
 # options for make_new
 raw='0'
@@ -38,7 +67,8 @@ if [ ${get_files} -eq 1 ] ; then
 archfile="/home/bridge/swsvalde/ummodel/data/${exp}/expt_archive/${exp}.taz"
 if [ -f ${archfile} ]; then
   \cp ${archfile} .
-  tar xvf ${archfile}
+  tar xvf ${archfile} ${exp}/datam/${exp}a"${restartdate}"
+  tar xvf ${archfile} ${exp}/datam/${exp}o"${restartdate}"
   \cp ${exp}/datam/${exp}?"${restartdate}" .
   \rm -r ${exp}
   \rm -r ${exp}.taz
@@ -160,7 +190,7 @@ fi
 if [ ${send_files_puma} -eq 1 ] ; then
 
 eval $(ssh-agent) ; ssh-add  ~/.ssh/id_rsa_puma ; scp umui_${exp}_newislands.dat ggdjl@puma.nerc.ac.uk:/home/ggdjl/scotese/islands
-
+echo "****REMEMBER TO RUN make_12_jobs_scotese_03_djl on puma****"
 fi
 
 if [ ${plot_islands} -eq 1 ] ; then
@@ -169,9 +199,10 @@ jobfile="ncl.${exp}.islands.ncl"
 \cp ../ncl.SKEL.islands.ncl ${jobfile}
 sed -i "s/EXP/${exp}/g" ${jobfile}
 ncl ${jobfile}
-pdfcrop newislands_${exp}.pdf 
+pdfcrop newislands_${exp}.pdf &
 
 fi
 
+echo "****REMEMBER TO RUN make_12_jobs_scotese_03_djl on puma****"
 
 exit
