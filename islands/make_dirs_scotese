@@ -1,5 +1,8 @@
 #!/bin/bash
 #
+
+add_ftp=0
+
 ###  get args
 if [ "$#" -eq 0 ]; then
     echo "Illegal number of options: must be greater than 0"
@@ -51,11 +54,13 @@ chmod a+rwx ${dir2}
 fi
 
 # add to ftp_control
+if [ ${add_ftp} -ne 0 ] ; then
 file=/home/bridge/ggdjl/bin/ftp_sh.bc4.params
 
 if ! grep -q ${exp} ${file} ; then
     echo 'need to add'
     sed -i " 1 s/.*/& ${exp}/" ${file}
+fi
 fi
 
 done
