@@ -1,0 +1,472 @@
+pro time
+
+; things to check with Alex/ other issues:
+  
+; (*) Bartonian and Priabonian not equal for 1x and 2x in
+;       years 50-400.  [Due to ice in Phase 1??]
+; (*) No data for years 50 - 1500 for 2x at level 16
+; (*) 2*co2 misssing years 1000-1500 for
+;       Danian, Campanian, Santonian,
+;       Maastrichtian (670m), Coniacian, Turonian, Cenomanian, ALbian
+;       Aptian, Barremian, Hauterivian, Berriasian.
+; (*) Maastrictian missing 2* data year 1500 at 5m, and missing chunks
+;       of Phase 4 2* 
+; (*) Campanian missing 4* last ~1000 years of Phase 5a. "real" .monthly file should be fine...
+; (*) Gelasian phase 1-3 missing.
+; (*) Some of final 2 years of Phase 3 are missing in SST (see code)
+
+writing=0
+
+
+; Total number of time snapshots
+ndates=32
+nexp=8
+nstart=12
+tmax=4000
+
+;;;;
+
+
+ndepth=3
+depthname2=strarr(ndepth)
+depthname2=['1','12','16']
+depth=strarr(ndepth)
+depth=['L01','L12','L16']
+depthname=['5m','670m','2700m']
+ymina=fltarr(ndepth)
+ymaxa=fltarr(ndepth)
+ymina=[17,7,-1]
+ymaxa=[27,17,16]
+
+my_missing=intarr(ndates,tmax,ndepth)
+my_missing(*,*,*)=1
+
+root=strarr(nexp)
+exproot=strarr(ndates,nexp)
+exptail=strarr(ndates,nexp)
+sim_names=strarr(ndates)
+sim_names_long=strarr(ndates)
+sim_tail=strarr(ndates)
+sim_ext=strarr(ndates,nexp)
+
+
+root(0)='/home/bridge/ggdjl/ClimateOutput/ALEX/um_timeseries'
+root(1)='/home/bridge/ggdjl/um_climates'
+root(2)='/home/bridge/ggdjl/ClimateOutput/ALEX/um_timeseries'
+root(3)='/home/bridge/ggdjl/um_climates'
+root(4)='/home/bridge/ggdjl/um_climates'
+root(5)='/home/bridge/ggdjl/um_climates'
+root(6)='/home/bridge/ggdjl/um_climates'
+root(7)='/home/bridge/ggdjl/um_climates'
+
+; Neogene: tdqp
+exproot(0:9,0)=['tdqp']
+exptail(0:9,0)=['s','r','q','p','o','n','m','l','k','j']
+sim_names(0:9)=['ple','gel','pia','zan','mes','tor','ser','lan','bur','aqu']
+sim_names_long(0:9)=['Pleistocene','Gelasian','Piacenzian','Zanclean','Messinian','Tortonian','Serravallian','Langhian','Burdigalian','Aquitanian']
+sim_tail(0:9)=''
+sim_ext(0:9,0)='_4xCO2'
+sim_ext(0:9,2)='_2xCO2'
+
+; oligocene: tdlu
+exproot(10:11,0)=['tdlu']
+exptail(10:11,0)=['q','p']
+sim_names(10:11)=['cha','rup']
+sim_names_long(10:11)=['Chattian','Rupelian']
+sim_tail(10:11)='_ice'
+sim_ext(10:11,0)='_4xCO2'
+sim_ext(10:11,2)='_2xCO2'
+
+;eoc/paleoc, tdlu
+exproot(12:18,0)=['tdlu']
+exptail(12:18,0)=['k','j','r','d','c','b','a']
+sim_names(12:18)=['pri','bar','lut','ypr','tha','sel','dan']
+sim_names_long(12:18)=['Priabonian','Bartonian','Lutetian','Ypresian','Thanetian','Selandian','Danian']
+sim_tail(12:13)='_ice'
+sim_tail(14:18)=''
+sim_ext(12:18,0)='_4xCO2'
+sim_ext(12:18,2)='_2xCO2'
+; from Alex:
+my_missing(13,342,0:2)=0
+; from Dan:
+
+exproot(12:18,1)=['teug']
+exptail(12:18,1)=['a','b','c','d','e','f','g']
+exproot(12:18,3)=['teug']
+exptail(12:18,3)=['A','B','C','D','E','F','G']
+
+exproot(12:18,4)=['teuk']
+exptail(12:18,4)=['a','b','c','d','e','f','g']
+exproot(12:18,5)=['teuk']
+exptail(12:18,5)=['A','B','C','D','E','F','G']
+
+exproot(12:18,6)=['teuy']
+exptail(12:18,6)=['a','b','c','d','e','f','g']
+exproot(12:18,7)=['teuy']
+exptail(12:18,7)=['A','B','C','D','E','F','G']
+
+;cretaceous, tdpw,tdih
+exproot(19,0)='tdih'
+exproot(20:29,0)='tdpw'
+exproot(30,0)='tdih'
+exptail(19:30,0)=['b','c','d','e','f','g','h','i','j','k','l','m']
+sim_names(19:30)=['maa','cmp','san','con','tur','cen','alb','apt','brm','hau','val','ber']
+sim_names_long(19:30)=['Maastrichtian','Campanian','Santonian','Coniacian','Turonian','Cenomanian','Albian','Aptian','Barremian','Hauterivian','Valanginian','Berriasian']
+sim_tail(19:30)=''
+sim_ext(19:30,0)='_4xCO2'
+sim_ext(19:30,2)='_2xCO2'
+; from Alex:
+my_missing(30,835,0)=0
+my_missing(30,809,1:2)=0
+my_missing(29,835,1:2)=0
+my_missing(29,836,1:2)=0
+my_missing(28,518,0)=0
+my_missing(28,519,0)=0
+my_missing(28,519,2)=0
+my_missing(28,520,0)=0
+my_missing(28,542,1:2)=0
+my_missing(28,543,0)=0
+my_missing(20,875,1:2)=0 ; OK
+my_missing(21,642,0:2)=0
+; from Dan:
+my_missing(21,640,1:2)=0
+my_missing(28,519,1)=0
+my_missing(30,810,0)=0
+my_missing(29,836,0)=0
+my_missing(29,811,0)=0
+
+exproot(19:30,1)=['teug']
+exptail(19:30,1)=['h','i','j','k','l','m','n','o','p','q','r','s']
+exproot(19:30,3)=['teug']
+exptail(19:30,3)=['H','I','J','K','L','M','N','O','P','Q','R','S']
+
+exproot(19:30,4)=['teuk']
+exptail(19:30,4)=['h','i','j','k','l','m','n','o','p','q','r','s']
+exproot(19:30,5)=['teuk']
+exptail(19:30,5)=['H','I','J','K','L','M','N','O','P','Q','R','S']
+
+exproot(19:30,6)=['teuy']
+exptail(19:30,6)=['h','i','j','k','l','m','n','o','p','q','r','s']
+exproot(19:30,7)=['teuy']
+exptail(19:30,7)=['H','I','J','K','L','M','N','O','P','Q','R','S']
+
+; Gelasian, tdqp,teug
+exproot(31,0)='tdqp'
+exptail(31,0)=['t']
+sim_names(31)=['gel']
+sim_names_long(31)=['Gelasian']
+sim_tail(31)=''
+sim_ext(31,0)='_4xCO2'
+sim_ext(31,2)='_2xCO2'
+
+exproot(31,1)=['teug']
+exptail(31,1)=['t']
+exproot(31,3)=['teug']
+exptail(31,3)=['T']
+
+exproot(31,4)=['teuk']
+exptail(31,4)=['t']
+exproot(31,5)=['teuk']
+exptail(31,5)=['T']
+
+exproot(31,6)=['teuy']
+exptail(31,6)=['t']
+exproot(31,7)=['teuy']
+exptail(31,7)=['T']
+
+
+varname=strarr(ndates,nexp)
+varname(*,0)='temp'
+varname(*,1)='temp_ym_dpth'
+varname(*,2)='temp'
+varname(*,3)='temp_ym_dpth'
+varname(*,4)='temp_ym_dpth'
+varname(*,5)='temp_ym_dpth'
+varname(*,6)='temp_ym_dpth'
+varname(*,7)='temp_ym_dpth'
+
+
+readfile=intarr(ndates,nexp)
+
+readfile(*,*)=1
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;readfile(*,*)=0
+;readfile(31,[1,3,4,5])=1
+; GELASIAN
+readfile(31,[0,2])=0
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+nx=96
+ny=73
+lats=fltarr(ny)
+latsedge=fltarr(ny+1)
+dlat=2.5
+latsedge(1:ny-1)=90.0-1.25-dlat*findgen(ny-1)
+latsedge(0)=90.0
+latsedge(ny)=-90.0
+
+weight_lat=fltarr(ny)
+for j=0,ny-1 do begin
+weight_lat(j)=-0.5*(sin(latsedge(j+1)*2*!pi/360.0)-sin(latsedge(j)*2*!pi/360.0))
+endfor
+
+weight=fltarr(nx,ny)
+newweight=fltarr(nx,ny)
+mytemp=fltarr(tmax,ndates,ndepth,nexp)
+ntimes=intarr(ndates,nexp)
+
+
+if (writing eq 1) then begin
+
+for e=0,nexp-1 do begin
+
+for d=0,ndepth-1 do begin
+
+for n=nstart,ndates-1 do begin
+
+if (readfile(n,e) eq 1) then begin
+
+if (e eq 0 or e eq 2) then begin
+data_filename=root(e)+'/'+sim_names_long(n)+sim_tail(n)+'/'+sim_names_long(n)+sim_tail(n)+'_'+depth(d)+'_timeseries'+sim_ext(n,e)+'.nc'
+endif else begin
+data_filename=root(e)+'/'+exproot(n,e)+exptail(n,e)+'/'+exproot(n,e)+exptail(n,e)+'.oceantemppg'+depthname2(d)+'.monthly.nc'
+endelse
+
+print,n,data_filename
+id1=ncdf_open(data_filename)
+ncdf_varget,id1,varname(n,e),dummy
+ncdf_close,id1
+a=size(dummy)
+ntimes(n,e)=a(4)
+
+for t=0,ntimes(n,e)-1 do begin
+
+weight=dummy(*,*,0,t) lt 1e20
+
+for j=0,ny-1 do begin
+for i=0,nx-1 do begin
+newweight(i,j)=weight_lat(j)*weight(i,j)
+endfor
+endfor
+
+mytemp(t,n,d,e)=total(dummy(*,*,0,t)*newweight(*,*)/total(newweight(*,*)))
+if (my_missing(n,t,d) eq 0) then begin
+mytemp(t,n,d,e)=!VALUES.F_NAN
+endif
+
+if (n ge nstart) then begin
+if (d eq 1) then begin
+if (mytemp(t,n,d,e) lt 6) then begin
+print,'PROBLEM',n,t,d,e,mytemp(t,n,d,e)
+endif
+endif
+endif
+
+if (n ge nstart) then begin
+if (d eq 2) then begin
+if (n lt 25) then begin
+if (mytemp(t,n,d,e) lt 6) then begin
+print,'PROBLEM',n,t,d,e,mytemp(t,n,d,e)
+endif
+endif
+endif
+endif
+
+endfor ; end t (ntimes)
+
+my_filename='my_data/temp_'+sim_names(n)+'_'+exproot(n,e)+exptail(n,e)+'_'+depth(d)+'.dat'
+openw,1,my_filename
+printf,1,ntimes(n,e)
+printf,1,mytemp(*,n,d,e)
+close,1
+
+endif ; end readfile
+
+endfor ; end n (nstart)
+
+endfor ; end d (depth)
+
+endfor ; end e (nexp)
+
+endif ; end writing
+
+
+if (writing eq 0) then begin
+
+for e=0,nexp-1 do begin
+for d=0,ndepth-1 do begin
+for n=nstart,ndates-1 do begin
+
+if (readfile(n,e) eq 1) then begin
+
+my_filename='my_data/temp_'+sim_names(n)+'_'+exproot(n,e)+exptail(n,e)+'_'+depth(d)+'.dat'
+print,my_filename
+openr,1,my_filename
+readf,1,aa
+ntimes(n,e)=aa
+aaa=fltarr(tmax)
+readf,1,aaa
+mytemp(*,n,d,e)=aaa
+close,1
+
+endif
+endfor ; end n (nstart)
+endfor ; end d (depth)
+endfor ; end e (nexp)
+
+
+endif
+
+
+
+;mytemp(ntimes(20,0)-1,20,0,0)=!VALUES.F_NAN
+;mytemp(ntimes(20,0)-2,20,0,0)=!VALUES.F_NAN
+;mytemp(ntimes(21,0)-1,21,0,0)=!VALUES.F_NAN
+;mytemp(ntimes(23,0)-1,23,0,0)=!VALUES.F_NAN
+;mytemp(ntimes(24,0)-1,24,0,0)=!VALUES.F_NAN
+;mytemp(ntimes(25,0)-1,25,0,0)=!VALUES.F_NAN
+;mytemp(ntimes(25,0)-2,25,0,0)=!VALUES.F_NAN
+;mytemp(ntimes(26,0)-1,26,0,0)=!VALUES.F_NAN
+;mytemp(ntimes(26,0)-2,26,0,0)=!VALUES.F_NAN
+;mytemp(ntimes(27,0)-1,27,0,0)=!VALUES.F_NAN
+;mytemp(ntimes(29,0)-1,29,0,0)=!VALUES.F_NAN
+
+mytemp(ntimes(*,0)-1,*,0,0)=!VALUES.F_NAN
+mytemp(ntimes(*,0)-2,*,0,0)=!VALUES.F_NAN
+mytemp(ntimes(*,2)-1,*,0,2)=!VALUES.F_NAN
+mytemp(ntimes(*,2)-2,*,0,2)=!VALUES.F_NAN
+
+
+;;;;;;
+; TRENDS
+
+; mytemp(0:ntimes(nstart:ndates-1,0:nexp-1)-1,nstart:ndates-1,0:ndepth-1,0:nexp-1)
+print,'TRENDS:'
+my_trend=fltarr(ndates,2)
+for d=nstart,ndates-1 do begin
+print,sim_names_long(d)
+for e=0,1 do begin
+my_trend(d,e)=(mean(mytemp(2000:2100,d,2,e+6))-mean(mytemp(2900:2999,d,2,e+6)))/900.0
+endfor
+endfor
+
+print,abs(my_trend(nstart:ndates-1,*))
+print,mean(abs(my_trend(nstart:ndates-1,*)))
+
+;;;;;;
+
+;stop
+
+
+for d=0,ndepth-1 do begin
+
+set_plot,'ps'
+!P.FONT=0
+
+device,filename='timeseries_'+depth(d)+'_new3.eps',/encapsulate,/color,set_font='Helvetica'
+
+
+
+xmin=0
+xmax=14000
+times=indgen(xmax)
+
+loadct,39
+
+ymin=ymina(d)
+ymax=ymaxa(d)
+
+
+plot,times(0:ntimes(0,0)-1),mytemp(0:ntimes(0,0)-1,0,0,0),yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Year of simulation',psym=2,/nodata,ytitle='Temperature [degrees C]',title='Global mean ocean temperature at '+depthname(d),ystyle=1,xtickname=['0','2000','4000','6000','8000','10000','12000'],xtickv=[0,2000,4000,6000,8000,10000,12000],xticks=6,xstyle=1
+
+;;;;;;;;;;;;;
+for n=nstart,ndates-1 do begin
+;zz=19
+;for n=nstart+zz,nstart+zz do begin
+;;;;;;;;;;;;;
+
+;myshift=1500
+myshift=1422
+;myshift2=200
+myshift2=0
+mylength=3000
+
+x=n-nstart
+xx=ndates-nstart
+
+if (readfile(n,0) eq 1) then begin
+oplot,times(0:ntimes(n,0)-1),mytemp(0:ntimes(n,0)-1,n,d,0),color=(x)*250.0/(xx-1)
+if (total(mytemp(0:ntimes(n,0)-1,n,d,0) le 0) gt 0) then begin
+print,mytemp(0:ntimes(n,0)-1,n,d,0)
+print,'problem!!!'
+print,total(mytemp(0:ntimes(n,0)-1,n,d,0) le 0)
+print,n,sim_names_long(n),d
+stop
+endif
+endif
+
+if (readfile(n,1) eq 1) then begin
+ttt=myshift
+oplot,times(ttt:ttt+ntimes(n,1)-1),mytemp(0:ntimes(n,1)-1,n,d,1),color=(x)*250.0/(xx-1)
+endif
+
+if (readfile(n,2) eq 1) then begin
+oplot,times(0:ntimes(n,2)-1),mytemp(0:ntimes(n,2)-1,n,d,2),color=(x)*250.0/(xx-1),linestyle=1
+if (total(mytemp(0:ntimes(n,2)-1,n,d,2) le 0) gt 0) then begin
+print,mytemp(0:ntimes(n,2)-1,n,d,2)
+print,'problem!!!'
+print,total(mytemp(0:ntimes(n,2)-1,n,d,2) le 0)
+print,n,sim_names_long(n),d
+stop
+endif
+endif
+
+ttt=myshift
+if (n eq nstart+18) then begin
+; Berriasian 2* offset by 240.
+ttt=myshift-240
+endif
+oplot,times(ttt:ttt+ntimes(n,3)-1),mytemp(0:ntimes(n,3)-1,n,d,3),color=(x)*250.0/(xx-1),linestyle=1
+
+if (readfile(n,4) eq 1) then begin
+ttt=myshift+mylength+myshift2
+oplot,times(ttt:ttt+ntimes(n,4)-1),mytemp(0:ntimes(n,4)-1,n,d,4),color=(x)*250.0/(xx-1)
+endif
+
+if (readfile(n,5) eq 1) then begin
+ttt=myshift+mylength+myshift2
+oplot,times(ttt:ttt+ntimes(n,5)-1),mytemp(0:ntimes(n,5)-1,n,d,5),color=(x)*250.0/(xx-1),linestyle=1
+endif
+
+if (readfile(n,6) eq 1) then begin
+ttt=myshift+2*(mylength+myshift2)
+oplot,times(ttt:ttt+ntimes(n,6)-1),mytemp(0:ntimes(n,6)-1,n,d,6),color=(x)*250.0/(xx-1)
+endif
+
+if (readfile(n,7) eq 1) then begin
+ttt=myshift+2*(mylength+myshift2)
+oplot,times(ttt:ttt+ntimes(n,7)-1),mytemp(0:ntimes(n,7)-1,n,d,7),color=(x)*250.0/(xx-1),linestyle=1
+endif
+
+
+
+z=ymin+0.9*(ymax-ymin)-0.8*(ymax-ymin)*x/(xx-1)
+
+oplot,[11000,11500],[z,z],color=(n-nstart)*250.0/(ndates-nstart-1)
+xyouts,11600,z,sim_names_long(n),charsize=0.75
+
+;xyouts,1460,mytemp(1400,n,0),sim_names(n),charsize=0.5,color=(n-nstart)*250.0/(ndates-nstart-1)
+
+endfor
+
+device,/close
+
+
+endfor
+
+
+
+stop
+
+end
