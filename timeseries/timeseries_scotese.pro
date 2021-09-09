@@ -3,7 +3,7 @@ pro time
 ;;;;
 ; Total number of time snapshots
 ndates=109
-nexp=1
+nexp=2
 tmax=3000
 nstart=0
 ;;;;
@@ -12,13 +12,15 @@ writing=intarr(nexp)
 
 ;;;;
 writing(0)=0
-;writing(1)=1
+writing(1)=0
 check=1
 ;;;;
 
 ndepth=3
 depthname2=strarr(ndepth)
 depthname2=['5','666','2731']
+depthname3=strarr(ndepth)
+depthname3=['1','12','16']
 depth=strarr(ndepth)
 depth=['L01','L12','L16']
 depthname=['5m','670m','2700m']
@@ -44,14 +46,14 @@ sim_ext=strarr(ndates,nexp)
 
 
 root(0)='/home/bridge/ggdjl/ummodel/data'
-;root(1)='/home/bridge/ggdjl/um_climates'
+root(1)='/home/bridge/ggdjl/um_climates'
 
 expname=strarr(ndates,nexp)
 dates=fltarr(ndates,nexp)
 names=strarr(ndates,nexp)
 
 
-; Paul's teye
+; Paul's teye 
 exproot(0:25,0)=['teye']
 exptail(0:25,0)=['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z']
 exproot(26:51,0)=['teyE']
@@ -63,14 +65,26 @@ exptail(78:103,0)=['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','
 exproot(104:108,0)=['tEye']
 exptail(104:108,0)=['a','b','c','d','e']
 
-
+; My tfgw
+exproot(0:25,1)=['tfgw']
+exptail(0:25,1)=['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z']
+exproot(26:51,1)=['tfgW']
+exptail(26:51,1)=['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z']
+exproot(52:77,1)=['tfGw']
+exptail(52:77,1)=['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z']
+exproot(78:103,1)=['tfGW']
+exptail(78:103,1)=['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z']
+exproot(104:108,1)=['tFgw']
+exptail(104:108,1)=['a','b','c','d','e']
 
 varname=strarr(ndates,nexp)
 varname(*,0)='temp_ym_dpth'
+varname(*,1)='temp_ym_dpth'
 
 readfile=intarr(ndates,nexp)
 
-readfile(*,*)=1
+readfile(*,0)=1
+readfile(0:25,1)=1
 
 
 nx=96
@@ -141,6 +155,8 @@ str=my_names(nexp-1)
 my_names(nexp-1)=str.Remove(-1)
 names(*,0)=my_names(*)
 
+sim_names_long(*)=reverse(my_names(*))
+
 endif
 
 
@@ -156,6 +172,10 @@ if (readfile(n,e) eq 1) then begin
 
 if (e eq 0) then begin
 data_filename=root(e)+'/'+exproot(n,e)+exptail(n,e)+'/monthly/'+exproot(n,e)+exptail(n,e)+'.temp_ym_dpth_'+depthname2(d)+'.annual.nc'
+endif
+
+if (e eq 1) then begin
+data_filename=root(e)+'/'+exproot(n,e)+exptail(n,e)+'/'+exproot(n,e)+exptail(n,e)+'.oceantemppg'+depthname3(d)+'.monthly.nc'
 endif
 
 print,n,data_filename
@@ -262,8 +282,7 @@ plot,times(0:ntimes(0,0)-1),mytemp(0:ntimes(0,0)-1,0,0,0),yrange=[ymin,ymax],xra
 ;;;;;;;;;;;;;
 for n=nstart,ndates-1 do begin
 
-myshift=0
-mylength=2000
+myshift=2100
 
 x=n-nstart
 xx=ndates-nstart
@@ -280,15 +299,15 @@ stop
 endif
 endif
 
-;if (readfile(n,1) eq 1) then begin
-;ttt=myshift
-;oplot,times(ttt:ttt+ntimes(n,1)-1),mytemp(0:ntimes(n,1)-1,n,d,1),color=(x)*250.0/(xx-1)
-;endif
+if (readfile(n,1) eq 1) then begin
+ttt=myshift
+oplot,times(ttt:ttt+ntimes(n,1)-1),mytemp(0:ntimes(n,1)-1,n,d,1),color=(x)*250.0/(xx-1)
+endif
 
 
 z=ymin+0.9*(ymax-ymin)-0.8*(ymax-ymin)*x/(xx-1)
-oplot,[11000,11500],[z,z],color=(n-nstart)*250.0/(ndates-nstart-1)
-xyouts,11600,z,sim_names_long(n),charsize=0.75
+oplot,[2500,2600],[z,z],color=(n-nstart)*250.0/(ndates-nstart-1)
+xyouts,2700,z,sim_names_long(n),charsize=0.25
 
 endfor
 
