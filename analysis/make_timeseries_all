@@ -1,0 +1,23 @@
+#!/bin/bash
+
+indir_root=/home/bridge/ggdjl/umdata
+
+for exproot in tfgw tfgW tfGw tfGW tFgw ; do
+  for id in {a..z} ; do
+
+    exp=${exproot}${id}
+    indir=${indir_root}/${exp}/pg
+
+    echo ${exp}
+
+      if find ${indir}/* -maxdepth 0 -type f 2>/dev/null | read ; then 
+
+        echo "running"
+        /home/bridge/ggdjl/ggdjl/um/scripts/make_times_scr_new ${exp}
+
+      fi
+
+  done
+done
+
+exit

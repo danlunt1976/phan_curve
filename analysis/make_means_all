@@ -1,0 +1,26 @@
+#!/bin/bash
+
+indir_root=/home/bridge/ggdjl/umdata
+
+for exproot in tfgw tfgW tfGw tfGW tFgw ; do
+  for id in {a..z} ; do
+
+    exp=${exproot}${id}
+    indir=${indir_root}/${exp}/pg
+
+    echo ${exp}
+
+      if find ${indir}/*.nc -maxdepth 0 -type f 2>/dev/null | read ; then 
+#        echo 'some netcdf files exist'
+        numfiles=`find ~/umdata/${exp}/pg/*.nc -maxdepth 0 -type f 2>/dev/null | wc | awk '{print $1}'`
+        echo ${numfiles}
+        if [ ${numfiles} == 199 ] ; then
+        echo "running as 199 pg files"
+        /home/bridge/ggdjl/ggdjl/um/scripts/make_climate -y '0000020[3-4]?' ${exp}
+        fi
+      fi
+
+  done
+done
+
+exit
