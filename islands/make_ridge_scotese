@@ -1,0 +1,56 @@
+#!/bin/ksh
+#
+###  get args
+if [ "$#" -eq 0 ]; then
+    echo "Illegal number of options: must be greater than 0"
+    exit
+fi
+#
+explist=$*
+
+temp=`cat co2_all_02.dat | awk '{print $1}'`
+set -A dates $temp
+
+ic="0"
+
+for expid in tfgw tfgW tfGw tfGW tFgw ; do
+   if [ "$expid" = "tfgw" ] ; then
+      expid_old="teye"
+   elif [ "$expid" = "tfgW" ] ; then
+      expid_old="teyE"
+   elif [ "$expid" = "tfGw" ] ; then
+      expid_old="teYe"
+   elif [ "$expid" = "tfGW" ] ; then
+      expid_old="teYE"
+   elif [ "$expid" = "tFgw" ] ; then
+      expid_old="tEye"
+   fi
+   for let in {a..z} ; do
+#
+#
+      if [ "${dates[$ic]}" != "" ] ; then
+     
+         expt=${expid}${let}
+         expt_old=${expid_old}${let}
+
+         date1="${dates[$ic]}"
+#
+         if [[ "${explist}" == 'all' || "${explist}" == *"${expid}${let}"* ]] ; then
+#
+#
+            echo "$ic $date1 ${expt} ${expt_old}" 
+#
+            python modify_bath.py ${expt_old} ${date1}
+
+         fi
+
+      fi
+
+      ic=`expr $ic + 1`
+   done
+done
+
+
+
+exit
+
