@@ -14,6 +14,13 @@ import numpy as np
 from mpl_toolkits.basemap import Basemap
 import os
 import copy
+import sys
+
+expname = sys.argv[1]
+expyear = sys.argv[2]
+
+print(expname)
+print(expyear)
 
 
 nx=96
@@ -22,10 +29,12 @@ nxp2=nx+2
 
 do_ridge=1
 
-os.system('cp 541_0_1deg_02o.nc 541_0_1deg_02o_new.nc')
+
+os.system('ncks -O -v depthmask_xancil /home/bridge/ggpjv/working/oil/scotese/output/'+expyear+'_1deg_02o.nc ./'+expname+'/'+expname+'_1deg_02o_mask.nc')
+os.system('\cp ./'+expname+'/'+expname+'_1deg_02o_mask.nc ./'+expname+'/'+expname+'_1deg_02o_mask_ridge.nc')
 
 # Read original data 
-nc1 = NetCDFFile('541_0_1deg_02o.nc', 'r')
+nc1 = NetCDFFile(expname+'/'+expname+'_1deg_02o_mask.nc', 'r')
 print(nc1)
 lat = nc1.variables['lat'][:]
 lon1 = nc1.variables['lon1'][:]
@@ -44,13 +53,16 @@ lam1d=160
 phi1d=45
 pi=np.pi
 rearth=6371
+lscal=1000.0
+mindpth=15
+maxdpth=20
 
 for j in range(ny):
     for i in range(nx):
 #        print(i,j) 
 
         lam1=lam1d*2*pi/360.0
-        phi1=phi1d*2*pi/360.
+        phi1=phi1d*2*pi/360.0
         lam2=lon1[i]*2*pi/360.0
         phi2=lat[j]*2*pi/360.0
 
@@ -58,7 +70,7 @@ for j in range(ny):
 
             phi1=phi2
             dist=rearth*np.arccos(np.sin(phi1)*np.sin(phi2)+np.cos(phi1)*np.cos(phi2)*np.cos(abs(lam1-lam2)))
-            ridge=20-(20-16)*np.exp(-1.0*dist/1000.0)
+            ridge=maxdpth-(maxdpth-mindpth)*np.exp(-1.0*dist/lscal)
 #            print(dist)
             
             if bath_new[j,i] > round(ridge):
@@ -70,7 +82,7 @@ for j in range(ny):
     bath_new[j,nx:nx+2]=bath_new[j,0:2]
     
 # Write new data 
-nc2 = NetCDFFile('541_0_1deg_02o_new.nc', 'r+')
+nc2 = NetCDFFile(expname+'/'+expname+'_1deg_02o_mask_ridge.nc', 'r+')
 nc2.variables['depthmask_xancil'][:]=bath_new[:]
 nc2.close()
 
@@ -95,7 +107,7 @@ plt.title('Original Bathymetry')
 cb.set_label('Model Level')
 map.drawparallels(np.arange(-90., 90., 30.), labels=[1,0,0,0], fontsize=5)
 map.drawmeridians(np.arange(-180., 180., 30.), labels=[0,0,0,1], fontsize=5)
-plt.savefig('bath_orig.png')
+plt.savefig(expname+'/'+expname+'_bath_orig.png')
 
 
 
@@ -106,7 +118,6 @@ plt.title('New Bathymetry')
 cb.set_label('Model Level')
 map.drawparallels(np.arange(-90., 90., 30.), labels=[1,0,0,0], fontsize=5)
 map.drawmeridians(np.arange(-180., 180., 30.), labels=[0,0,0,1], fontsize=5)
-plt.savefig('bath_new.png')
+plt.savefig(expname+'/'+expname+'_bath_new.png')
 
-
-
+quit()

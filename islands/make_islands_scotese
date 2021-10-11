@@ -9,14 +9,34 @@ target_dir='teye_newislands' # teye
 # 0 = get files
 # 1 = test and plot
 # 2 = submit and plot and crop
+# 3 = only ridge
 
-mytype=2
+# options for make_new
+raw='0'
+stat='0'
+inte='0'
+ridge='0'
+
+mytype=3
+
+if [ ${mytype} -eq 3 ] ; then
+get_files='0'
+new_islands='0'
+run_xancil='0'
+make_derived='1'
+ridge='1'
+send_files_bc='0'
+send_files_puma='0'
+plot_islands='0'
+crop_islands='0'
+fi
 
 if [ ${mytype} -eq 2 ] ; then
 get_files='0'
 new_islands='1'
 run_xancil='1'
 make_derived='1'
+stat='1'
 send_files_bc='1'
 send_files_puma='1'
 plot_islands='1'
@@ -45,12 +65,6 @@ plot_islands='0'
 crop_islands='0'
 fi
 
-
-# options for make_new
-raw='0'
-stat='1'
-inte='0'
-ridge='0'
 
 ###  get args
 if [ "$#" -ne 1 ]; then
@@ -166,8 +180,6 @@ sed -i "s/EXP/${exp}/g" ${jobfile}
 sed -i "s/RESTARTDATE/${restartdate}/g" ${jobfile}
 xancil -j ${jobfile} -x
 \rm xancil.namelist
-### get new bath
-/home/bridge/ggdjl/ggdjl/um/scripts/bath_islands_scr_new ${exp}o${restartdate}_newislands_ridge bath_${exp}_newislands_ridge.nc islands_${exp}_newislands_ridge.nc ascii_${exp}_newislands_ridge_check.isl umui_${exp}_newislands_ridge.dat
 fi
 
 fi

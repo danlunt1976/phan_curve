@@ -545,11 +545,11 @@ set astart(year) 0000
 
 set ostart(bathy) 1
 set ostart(bathydepthmask) 1
-set ostart(bathyfile) /home/bridge/ggdjl/ggdjl/bas/doc/phan_curve/islands/541_0_1deg_02o_new.nc
+set ostart(bathyfile) /home/bridge/ggdjl/ggdjl/bas/doc/phan_curve/islands/EXP/EXP_1deg_02o_mask_ridge.nc
 set ostart(bathyncname) depthmask_xancil
 set ostart(create) 1
 set ostart(day) 16
-set ostart(file_out) /home/bridge/ggdjl/ggdjl/bas/doc/phan_curve/islands/EXP/EXPoRESTARTDATE_newislands_ridge
+set ostart(file_out) /home/bridge/ggdjl/ggdjl/bas/doc/phan_curve/islands/EXP/EXPoRESTARTDATE_newislands_stat_ridge
 set ostart(hour) 0
 set ostart(islandfile) ""
 set ostart(islandmod) 0
@@ -567,7 +567,7 @@ set ostart(sctmp) ""
 set ostart(sec) 0
 set ostart(timeusage1) 3
 set ostart(timeusage2) 0
-set ostart(umfile_in) /home/bridge/ggdjl/ggdjl/bas/doc/phan_curve/islands/EXP/EXPoRESTARTDATE_newislands
+set ostart(umfile_in) /home/bridge/ggdjl/ggdjl/bas/doc/phan_curve/islands/EXP/EXPoRESTARTDATE_newislands_stat
 set ostart(useconfig) 0
 set ostart(usestdname) 0
 set ostart(year) 0000
