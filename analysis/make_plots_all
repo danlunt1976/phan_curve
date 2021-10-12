@@ -1,0 +1,35 @@
+#!/bin/bash
+
+indir_root=/home/bridge/ggdjl/um_climates
+
+for exproot in tfgw tfgW tfGw tfGW tFgw ; do
+   if [ "$exproot" = "tfgw" ] ; then
+      exproot_old="teye"
+   elif [ "$exproot" = "tfgW" ] ; then
+      exproot_old="teyE"
+   elif [ "$exproot" = "tfGw" ] ; then
+      exproot_old="teYe"
+   elif [ "$exproot" = "tfGW" ] ; then
+      exproot_old="teYE"
+   elif [ "$exproot" = "tFgw" ] ; then
+      exproot_old="tEye"
+   fi
+
+   for id in {a..z} ; do
+
+     exp=${exproot}${id}
+     exr=${exproot_old}${id}
+
+     indir=${indir_root}/${exp}
+
+     echo ${exp}
+
+       if find ${indir}/${exp}a.pdclann.nc -maxdepth 0 -type f 2>/dev/null | read ; then 
+         echo 'file exists so plotting'
+         ./plot_clim_scotese ${exp} ${exr}
+       fi
+
+   done
+done
+
+exit
