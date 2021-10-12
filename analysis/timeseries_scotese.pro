@@ -84,7 +84,7 @@ varname(*,1)='temp_ym_dpth'
 readfile=intarr(ndates,nexp)
 
 readfile(*,0)=1
-readfile(0:84,1)=1
+readfile(0:86,1)=1
 readfile(95:108,1)=1
 
 
@@ -306,14 +306,14 @@ if (readfile(n,1) eq 1) then begin
 ttt=myshift
 oplot,times(ttt:ttt+ntimes(n,1)-1),mytemp(0:ntimes(n,1)-1,n,d,1),color=(x)*250.0/(xx-1)
 
-xyouts,2400,mytemp(ntimes(n,1)-1,n,d,1),exproot(n,1)+exptail(n,1),charsize=0.25,color=mycol
+xyouts,2400,mytemp(ntimes(n,1)-1,n,d,1),exproot(n,1)+exptail(n,1)+' '+strtrim(ntimes(n,1),2),charsize=0.25,color=mycol
 
 endif
 
 
 z=ymin+0.9*(ymax-ymin)-0.8*(ymax-ymin)*x/(xx-1)
-oplot,[2500,2600],[z,z],color=(n-nstart)*250.0/(ndates-nstart-1)
-xyouts,2700,z,sim_names_long(n),charsize=0.25
+oplot,[2600,2670],[z,z],color=(n-nstart)*250.0/(ndates-nstart-1)
+xyouts,2700,z,sim_names_long(n)+' '+exproot(n,1)+exptail(n,1)+' '+strtrim(ntimes(n,1),2),charsize=0.25,color=(n-nstart)*250.0/(ndates-nstart-1)
 
 endfor
 
