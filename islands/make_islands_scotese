@@ -25,7 +25,8 @@ new_islands='0'
 run_xancil='0'
 make_derived='1'
 ridge='1'
-send_files_bc='0'
+send_files_bc='1'
+send_atmos_bc='0'
 send_files_puma='0'
 plot_islands='0'
 crop_islands='0'
@@ -38,6 +39,7 @@ run_xancil='1'
 make_derived='1'
 stat='1'
 send_files_bc='1'
+send_atmos_bc='1'
 send_files_puma='1'
 plot_islands='1'
 crop_islands='1'
@@ -190,14 +192,16 @@ if [ ${send_files_bc} -eq 1 ] ; then
 if [ ${raw} -eq 1  ] ; then newname='' ; fi
 if [ ${stat} -eq 1  ] ; then newname='_stat' ; fi
 if [ ${inte} -eq 1  ] ; then newname='_interp' ; fi
-if [ ${ridge} -eq 1  ] ; then newname='_ridge' ; fi
+if [ ${ridge} -eq 1  ] ; then newname='_stat_ridge' ; fi
 
 
 scp ${restartfile}${newname} ggdjl@bc4login.acrc.bris.ac.uk:/mnt/storage/home/ggdjl/dump2hold/dumps_deeptime_djl/${target_dir}
 ssh ggdjl@bc4login.acrc.bris.ac.uk "ls; pwd; cd /mnt/storage/home/ggdjl/dump2hold/dumps_deeptime_djl/${target_dir} ; rm ${exp}.ocean ; ln -s ${restartfile}${newname} ${exp}.ocean" 
 
+if [ ${send_atmos_bc} -eq 1 ] ; then
 scp ${restartfile_atmos} ggdjl@bc4login.acrc.bris.ac.uk:/mnt/storage/home/ggdjl/dump2hold/dumps_deeptime_djl/${target_dir}
 ssh ggdjl@bc4login.acrc.bris.ac.uk "ls; pwd; cd /mnt/storage/home/ggdjl/dump2hold/dumps_deeptime_djl/${target_dir} ; rm ${exp}.atmos ; ln -s ${restartfile_atmos} ${exp}.atmos" 
+fi
 
 fi
 
