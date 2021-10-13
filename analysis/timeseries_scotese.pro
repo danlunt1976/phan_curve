@@ -8,11 +8,21 @@ tmax=3000
 nstart=0
 ;;;;
 
-writing=intarr(nexp)
+writing=intarr(ndates,nexp)
 
 ;;;;
-writing(0)=0
-writing(1)=0
+writing(*,0)=0
+writing(*,1)=0
+
+; tfGWl
+;writing(89,1)=1
+
+readfile=intarr(ndates,nexp)
+readfile(*,0)=1
+readfile(0:86,1)=1
+readfile(95:108,1)=1
+readfile(89,1)=1
+
 check=1
 ;;;;
 
@@ -81,11 +91,7 @@ varname=strarr(ndates,nexp)
 varname(*,0)='temp_ym_dpth'
 varname(*,1)='temp_ym_dpth'
 
-readfile=intarr(ndates,nexp)
 
-readfile(*,0)=1
-readfile(0:86,1)=1
-readfile(95:108,1)=1
 
 
 nx=96
@@ -163,11 +169,11 @@ endif
 
 for e=0,nexp-1 do begin
 
-if (writing(e) eq 1) then begin
-
 for d=0,ndepth-1 do begin
 
 for n=nstart,ndates-1 do begin
+
+if (writing(n,e) eq 1) then begin
 
 if (readfile(n,e) eq 1) then begin
 
@@ -218,23 +224,22 @@ close,1
 
 endif ; end readfile
 
+endif ; end writing(e)
+
 endfor ; end n (nstart)
 
 endfor ; end d (depth)
-
-endif ; end writing(e)
 
 endfor ; end e (nexp)
 
 
 
 
+
 for e=0,nexp-1 do begin
-if (writing(e) eq 0) then begin
-
-
 for d=0,ndepth-1 do begin
 for n=nstart,ndates-1 do begin
+if (writing(n,e) eq 0) then begin
 
 if (readfile(n,e) eq 1) then begin
 
@@ -249,10 +254,9 @@ mytemp(*,n,d,e)=aaa
 close,1
 
 endif
+endif ; end writing(e)
 endfor ; end n (nstart)
 endfor ; end d (depth)
-
-endif ; end reading(e)
 endfor ; end e (nexp)
 
 
