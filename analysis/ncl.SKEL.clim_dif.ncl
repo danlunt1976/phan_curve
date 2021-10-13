@@ -15,6 +15,7 @@ g1=addfile(exp_dir+"/"+expname+"/"+expname+"a.pdclann.nc","r")
 g2=addfile(exr_dir+"/"+exrname+"/climate/"+exrname+"a.pdclann.nc","r")
 my_var_1=g1->temp_mm_1_5m(0,0,:,:)
 my_var_2=g2->temp_mm_1_5m(0,0,:,:)
+my_var=my_var_1
 my_var=my_var_1-my_var_2
 else 
 my_var=my_lsm
@@ -30,10 +31,10 @@ my_del=1.0
 wks_type="pdf"
 wks_type@wkPaperWidthF=8.2
 wks_type@wkPaperHeightF=5.5
-wks=gsn_open_wks(wks_type,"plots/temp_"+expname)
+wks=gsn_open_wks(wks_type,"plots/temp_"+expname+"-"+exrname)
 
 res=True
-res@tiMainString="1.5m air temperature "+expname
+res@tiMainString="1.5m air temperature "+expname+"-"+exrname
 res@cnFillOn=True
 res@cnLinesOn=False
 res@lbOrientation="horizontal"

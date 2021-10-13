@@ -9,16 +9,16 @@ exr_dir="/home/bridge/swsvalde/ummodel/data"
 
 g3=addfile(exr_dir+"/"+exrname+"/inidata/"+exrname+".qrparm.omask.nc","r")
 my_lsm=g3->lsm(:,:)
+g2=addfile(exr_dir+"/"+exrname+"/climate/"+exrname+"o.pfclann.nc","r")
+my_var_2=g2->streamFn_mm_uo(0,0,:,:)
+my_var_2=mask(my_var_2,my_lsm,0)
 
 if (doplot .eq. 1) then
 g1=addfile(exp_dir+"/"+expname+"/"+expname+"o.pfclann.nc","r")
-g2=addfile(exr_dir+"/"+exrname+"/climate/"+exrname+"o.pfclann.nc","r")
 my_var_1=g1->streamFn_mm_uo(0,0,:,:)
-my_var_2=g2->streamFn_mm_uo(0,0,:,:)
 my_var_1=mask(my_var_1,my_lsm,0)
-my_var_2=mask(my_var_2,my_lsm,0)
 else 
-my_var=my_lsm
+my_var_1=my_lsm
 end if
 
 
@@ -84,6 +84,7 @@ frame(wks)
 
 
 wks=gsn_open_wks(wks_type,"plots/streamfn_"+exrname)
+res@tiMainString="Streamfunction "+exrname
 map = gsn_csm_contour_map(wks,my_var_2,res)
 map2 = gsn_csm_contour(wks,my_var_2,cres) 
 overlay(map,map2)
