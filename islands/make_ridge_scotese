@@ -1,6 +1,6 @@
 #!/bin/ksh
 #
-#Need to do:
+## Need to do:
 ## module add anaconda/2.7-5.0.1
 ## python modify_bath.py
 
@@ -13,6 +13,9 @@ fi
 #
 explist=$*
 
+temp=`cat ridgelon_all.dat | awk '{print $3}'`
+set -A ridgelons $temp
+
 temp=`cat co2_all_02.dat | awk '{print $1}'`
 set -A dates $temp
 
@@ -21,7 +24,7 @@ ic="0"
 for expid in tfgw tfgW tfGw tfGW tFgw ; do
    if [ "$expid" = "tfgw" ] ; then
       expid_old="teye"
-   elif [ "$expid" = "tfgW" ] ; then
+   elif [ "$expid" = "tfgW" ] ; then       
       expid_old="teyE"
    elif [ "$expid" = "tfGw" ] ; then
       expid_old="teYe"
@@ -39,13 +42,13 @@ for expid in tfgw tfgW tfGw tfGW tFgw ; do
          expt_old=${expid_old}${let}
 
          date1="${dates[$ic]}"
+         ridgelon="${ridgelons[$ic]}"
 #
          if [[ "${explist}" == 'all' || "${explist}" == *"${expid}${let}"* ]] ; then
 #
 #
-            echo "$ic $date1 ${expt} ${expt_old}" 
-#
-            python modify_bath.py ${expt_old} ${date1}
+            echo "${ic} ${date1} ${expt} ${expt_old} ${ridgelon}" 
+            python modify_bath.py ${expt_old} ${date1} ${ridgelon}
 
          fi
 

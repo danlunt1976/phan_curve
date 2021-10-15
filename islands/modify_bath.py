@@ -16,8 +16,15 @@ import os
 import copy
 import sys
 
+numargs = len(sys.argv)-1
+print("numargs is",numargs)
+if numargs != 3:
+    print("wrong number of args")
+    quit()
+
 expname = sys.argv[1]
 expyear = sys.argv[2]
+lonridge = sys.argv[3]
 
 print(expname)
 print(expyear)
@@ -49,8 +56,8 @@ bath_new[:]=bath_new[:]*1.0
 # do loop over all gridcells
 # if in region, then put in a ridge, of lengthscale x.
 
-lam1d=160
-phi1d=45
+lam1d=lonridge
+phi1d=45 # this is not currently used
 pi=np.pi
 rearth=6371
 lscal=1000.0
