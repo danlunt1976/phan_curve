@@ -1,8 +1,9 @@
 #!/bin/bash
 
 plot_tempdiff=0
-plot_streamabs=0
-plot_uv=1
+plot_streamabs=1
+plot_uv=0
+plot_mixed=1
 
 ###  get args
 if [ "$#" -ne 3 ]; then
@@ -15,6 +16,7 @@ exp=${1}
 exr=${2}
 doplot=${3}
 
+
 if [ ${plot_tempdiff} -eq 1 ] ; then
 jobfile="ncl.${exp}.clim_dif.ncl"
 \cp ncl.SKEL.clim_dif.ncl ${jobfile}
@@ -25,11 +27,39 @@ ncl ${jobfile}
 \rm ${jobfile}
 fi
 
+
 if [ ${plot_streamabs} -eq 1 ] ; then
 jobfile="ncl.${exp}.clim_abs.ncl"
 \cp ncl.SKEL.clim_abs.ncl ${jobfile}
 sed -i "s/EXP/${exp}/g" ${jobfile}
 sed -i "s/EXR/${exr}/g" ${jobfile}
+sed -i "s/TYP/pf/g" ${jobfile}
+sed -i "s/COL/BlueDarkRed18/g" ${jobfile}
+sed -i "s/MAX/1.5e14/g" ${jobfile}
+sed -i "s/MIN/-1.5e14/g" ${jobfile}
+sed -i "s/DEL/1e13/g" ${jobfile}
+sed -i "s/VAR/streamFn_mm_uo/g" ${jobfile}
+sed -i "s/VSHORT/streamfn/g" ${jobfile}
+sed -i "s/VLONG/Streamfunction/g" ${jobfile}
+sed -i "s/DOPLOT/${doplot}/g" ${jobfile}
+ncl ${jobfile}
+\rm ${jobfile}
+fi
+
+
+if [ ${plot_mixed} -eq 1 ] ; then
+jobfile="ncl.${exp}.clim_abs.ncl"
+\cp ncl.SKEL.clim_abs.ncl ${jobfile}
+sed -i "s/EXP/${exp}/g" ${jobfile}
+sed -i "s/EXR/${exr}/g" ${jobfile}
+sed -i "s/TYP/pf/g" ${jobfile}
+sed -i "s/COL/WhBlGrYeRe/g" ${jobfile}
+sed -i "s/MAX/300/g" ${jobfile}
+sed -i "s/MIN/100/g" ${jobfile}
+sed -i "s/DEL/20/g" ${jobfile}
+sed -i "s/VAR/mixLyrDpth_mm_uo/g" ${jobfile}
+sed -i "s/VSHORT/mixed/g" ${jobfile}
+sed -i "s/VLONG/Mixed Layer Depth/g" ${jobfile}
 sed -i "s/DOPLOT/${doplot}/g" ${jobfile}
 ncl ${jobfile}
 \rm ${jobfile}

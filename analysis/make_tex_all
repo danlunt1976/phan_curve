@@ -1,5 +1,6 @@
-plot_tempdiff=1
+plot_tempdiff=0
 plot_streamabs=0
+plot_mixed=1
 plot_uv=0
 
 
@@ -29,6 +30,22 @@ jobfile=${filename}.tex
 \cp Figure_VAR_${exp}_SKEL.tex ${jobfile}
 sed -i "s/EXT//g" ${jobfile}
 sed -i "s/VAR/streamfn/g" ${jobfile}
+pdflatex ${jobfile}
+\rm ${filename}.log
+\rm ${filename}.aux
+\rm ${jobfile}
+done
+fi
+
+
+if [ ${plot_mixed} -eq 1 ] ; then
+for exp in teye tfgw ; do
+
+filename="Figure_mixed_${exp}"
+jobfile=${filename}.tex
+\cp Figure_VAR_${exp}_SKEL.tex ${jobfile}
+sed -i "s/EXT//g" ${jobfile}
+sed -i "s/VAR/mixed/g" ${jobfile}
 pdflatex ${jobfile}
 \rm ${filename}.log
 \rm ${filename}.aux

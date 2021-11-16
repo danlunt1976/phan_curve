@@ -9,13 +9,13 @@ exr_dir="/home/bridge/swsvalde/ummodel/data"
 
 g3=addfile(exr_dir+"/"+exrname+"/inidata/"+exrname+".qrparm.omask.nc","r")
 my_lsm=g3->lsm(:,:)
-g2=addfile(exr_dir+"/"+exrname+"/climate/"+exrname+"o.pfclann.nc","r")
-my_var_2=g2->streamFn_mm_uo(0,0,:,:)
+g2=addfile(exr_dir+"/"+exrname+"/climate/"+exrname+"o.TYPclann.nc","r")
+my_var_2=g2->VAR(0,0,:,:)
 my_var_2=mask(my_var_2,my_lsm,0)
 
 if (doplot .eq. 1) then
-g1=addfile(exp_dir+"/"+expname+"/"+expname+"o.pfclann.nc","r")
-my_var_1=g1->streamFn_mm_uo(0,0,:,:)
+g1=addfile(exp_dir+"/"+expname+"/"+expname+"o.TYPclann.nc","r")
+my_var_1=g1->VAR(0,0,:,:)
 my_var_1=mask(my_var_1,my_lsm,0)
 else 
 my_var_1=my_lsm
@@ -23,19 +23,15 @@ end if
 
 
 
-my_cmap="BlueDarkRed18"
-my_max=1.5e14
-my_min=-1.5e14
-my_del=1e13
-
-my_max_l=1e15
-my_min_l=-1e15
-my_del_l=2e13
+my_cmap="COL"
+my_max=MAX
+my_min=MIN
+my_del=DEL
 
 wks_type="pdf"
 wks_type@wkPaperWidthF=8.2
 wks_type@wkPaperHeightF=5.5
-wks=gsn_open_wks(wks_type,"plots/streamfn_"+expname)
+wks=gsn_open_wks(wks_type,"plots/VSHORT_"+expname)
 
 res=True
 res@tiMainString="Streamfunction "+expname
@@ -67,26 +63,23 @@ res@mpFillOn     = False
   cres@cnLineLabelsOn       = False            ; do not use line labels
   cres@gsnDraw              = False             ; do not draw the plot
   cres@gsnFrame             = False             ; do not advance the frame
-  cres@cnLevelSelectionMode = "ManualLevels"  ; use explicit levels
-  cres@cnMinLevelValF       = my_min_l
-  cres@cnMaxLevelValF       = my_max_l
-  cres@cnLevelSpacingF      = my_del_l
-  cres@cnLevels             = fspan(-5,5,10)   ; set the contour levels
+  cres@cnLevelSelectionMode = "ExplicitLevels"  ; use explicit levels
+  cres@cnLevels             = 0.5   ; set the contour levels
   cres@gsnAddCyclic         = True           ; add longitude cyclic point
 
 map = gsn_csm_contour_map(wks,my_var_1,res)
-map2 = gsn_csm_contour(wks,my_var_1,cres) 
+map2 = gsn_csm_contour(wks,my_lsm,cres) 
 overlay(map,map2)
 if (doplot .eq. 1) then
 draw(map)
 end if
+
 frame(wks)
 
-
-wks=gsn_open_wks(wks_type,"plots/streamfn_"+exrname)
-res@tiMainString="Streamfunction "+exrname
+wks=gsn_open_wks(wks_type,"plots/VSHORT_"+exrname)
+res@tiMainString="VLONG "+exrname
 map = gsn_csm_contour_map(wks,my_var_2,res)
-map2 = gsn_csm_contour(wks,my_var_2,cres) 
+map2 = gsn_csm_contour(wks,my_lsm,cres) 
 overlay(map,map2)
 draw(map)
 frame(wks)
