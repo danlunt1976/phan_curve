@@ -47,8 +47,11 @@ for expid in tfgw tfgW tfGw tfGW tFgw ; do
          if [[ "${explist}" == 'all' || "${explist}" == *"${expid}${let}"* ]] ; then
 #
 #
+         if [ ${ridgelon} != 999  ] ; then
             echo "${ic} ${date1} ${expt} ${expt_old} ${ridgelon}" 
             python modify_bath.py ${expt_old} ${date1} ${ridgelon}
+         fi
+
 
          fi
 

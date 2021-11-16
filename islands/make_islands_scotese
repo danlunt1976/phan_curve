@@ -10,23 +10,36 @@ target_dir='teye_newislands' # teye
 # 1 = test and plot
 # 2 = submit and plot and crop
 # 3 = only ridge
+# 4 = only stat
+
+mytype=3
 
 # options for make_new
 raw='0'
-stat='0'
+stat='1'
 inte='0'
-ridge='0'
 
-mytype=3
+if [ ${mytype} -eq 4 ] ; then
+get_files='0'
+new_islands='0'
+run_xancil='1'
+make_derived='1'
+ridge='0'
+send_files_bc='1'
+send_atmos_bc='1'
+send_files_puma='0'
+plot_islands='0'
+crop_islands='0'
+fi
 
 if [ ${mytype} -eq 3 ] ; then
 get_files='0'
 new_islands='0'
-run_xancil='0'
+run_xancil='1'
 make_derived='1'
 ridge='1'
 send_files_bc='1'
-send_atmos_bc='0'
+send_atmos_bc='1'
 send_files_puma='0'
 plot_islands='0'
 crop_islands='0'
@@ -38,6 +51,7 @@ new_islands='1'
 run_xancil='1'
 make_derived='1'
 stat='1'
+ridge='0'
 send_files_bc='1'
 send_atmos_bc='1'
 send_files_puma='1'
