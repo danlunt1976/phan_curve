@@ -1,0 +1,52 @@
+plot_tempdiff=1
+plot_streamabs=0
+plot_uv=0
+
+
+if [ ${plot_uv} -eq 1 ] ; then
+for exp in teye tfgw ; do
+for dpth in 00 11 15 ; do
+
+filename="Figure_uv_${dpth}_${exp}"
+jobfile=${filename}.tex
+\cp Figure_VAR_${exp}_SKEL.tex ${jobfile}
+sed -i "s/EXT/_${dpth}/g" ${jobfile}
+sed -i "s/VAR/uv/g" ${jobfile}
+pdflatex ${jobfile}
+\rm ${filename}.log
+\rm ${filename}.aux
+\rm ${jobfile}
+done
+done
+fi
+
+
+if [ ${plot_streamabs} -eq 1 ] ; then
+for exp in teye tfgw ; do
+
+filename="Figure_stream_${exp}"
+jobfile=${filename}.tex
+\cp Figure_VAR_${exp}_SKEL.tex ${jobfile}
+sed -i "s/EXT//g" ${jobfile}
+sed -i "s/VAR/streamfn/g" ${jobfile}
+pdflatex ${jobfile}
+\rm ${filename}.log
+\rm ${filename}.aux
+\rm ${jobfile}
+done
+fi
+
+
+if [ ${plot_tempdiff} -eq 1 ] ; then
+exp=tfgw-teye
+filename="Figure_temp_${exp}"
+jobfile=${filename}.tex
+\cp Figure_VAR_${exp}_SKEL.tex ${jobfile}
+sed -i "s/EXT//g" ${jobfile}
+sed -i "s/VAR/temp/g" ${jobfile}
+pdflatex ${jobfile}
+\rm ${filename}.log
+\rm ${filename}.aux
+\rm ${jobfile}
+
+fi
