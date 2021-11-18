@@ -94,6 +94,7 @@ res@vcLevelSpacingF      = vinc               ; set contour spacing
   cres@cnLevels             = 0.5   ; set the contour levels
   cres@gsnAddCyclic         = True           ; add longitude cyclic point
 
+  cres@cnLineColor = "gray80"
   cres@cnLineThicknessF = 1
 
 plot=gsn_csm_vector_scalar_map_ce(wks,my_var_1_u,my_var_1_v,my_var_1_t,res)  ; create plot

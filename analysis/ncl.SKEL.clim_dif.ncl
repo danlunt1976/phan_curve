@@ -63,8 +63,9 @@ res@gsnPaperOrientation="portrait"
   cres@gsnDraw              = False             ; do not draw the plot
   cres@gsnFrame             = False             ; do not advance the frame
   cres@cnLevelSelectionMode = "ExplicitLevels"  ; use explicit levels
-  cres@cnLevels             = fspan(-5,5,10)   ; set the contour levels
+  cres@cnLevels             = 0.5   ; set the contour levels
   cres@gsnAddCyclic         = True           ; add longitude cyclic point
+  cres@cnLineColor = "gray80"
 
 map = gsn_csm_contour_map(wks,my_var,res)
 map2 = gsn_csm_contour(wks,my_lsm,cres) 

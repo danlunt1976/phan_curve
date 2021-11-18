@@ -32,15 +32,23 @@ for exproot in tfgw tfgW tfGw tfGW tFgw ; do
      explist_uv_15=${explist_uv_15}' plots/uv_'${exp}_15'.pdf'
      explist_stream=${explist_stream}' plots/streamfn_'${exp}'.pdf'
      explist_mixed=${explist_mixed}' plots/mixed_'${exp}'.pdf'
+     explist_merid=${explist_merid}' plots/merid_'${exp}'.pdf'
+     explist_wind=${explist_wind}' plots/wind_'${exp}'.pdf'
+     explist_salin=${explist_salin}' plots/salin_'${exp}'.pdf'
+     explist_temp=${explist_temp}' plots/temp_'${exp}'.pdf'
 
    done
 done
 
-#convert -loop 0 -delay 50 ${explist_uv_00} anim_uv_00.gif
-#convert -loop 0 -delay 50 ${explist_uv_11} anim_uv_11.gif
-#convert -loop 0 -delay 50 ${explist_uv_15} anim_uv_15.gif
-#convert -loop 0 -delay 50 ${explist_stream} anim_stream.gif
-convert -loop 0 -delay 50 ${explist_mixed} anim_mixed.gif
+#convert -loop 0 -delay 20 ${explist_uv_00} anim_uv_00.gif
+#convert -loop 0 -delay 20 ${explist_uv_11} anim_uv_11.gif
+#convert -loop 0 -delay 20 ${explist_uv_15} anim_uv_15.gif
+#convert -loop 0 -delay 20 ${explist_stream} anim_stream.gif
+#convert -loop 0 -delay 20 ${explist_mixed} anim_mixed.gif
+#convert -loop 0 -delay 20 ${explist_merid} anim_merid.gif
+#convert -loop 0 -delay 20 ${explist_wind} anim_wind.gif
+convert -loop 0 -delay 20 ${explist_salin} anim_salin.gif
+convert -loop 0 -delay 20 ${explist_temp} anim_temp.gif
 
 
 exit

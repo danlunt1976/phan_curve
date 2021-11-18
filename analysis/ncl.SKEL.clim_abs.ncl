@@ -28,13 +28,17 @@ my_max=MAX
 my_min=MIN
 my_del=DEL
 
+my_max2=MX2
+my_min2=MN2
+my_del2=DL2
+
 wks_type="pdf"
 wks_type@wkPaperWidthF=8.2
 wks_type@wkPaperHeightF=5.5
 wks=gsn_open_wks(wks_type,"plots/VSHORT_"+expname)
 
 res=True
-res@tiMainString="Streamfunction "+expname
+res@tiMainString="VLONG "+expname
 res@cnFillOn=True
 res@cnLinesOn=False
 res@lbOrientation="horizontal"
@@ -66,10 +70,26 @@ res@mpFillOn     = False
   cres@cnLevelSelectionMode = "ExplicitLevels"  ; use explicit levels
   cres@cnLevels             = 0.5   ; set the contour levels
   cres@gsnAddCyclic         = True           ; add longitude cyclic point
+  cres@cnLineColor = "gray80"
+
+  cres2=True
+  cres2@cnInfoLabelOn     = False
+  cres2@gsnLeftString          = ""
+  cres2@gsnRightString          = ""
+  cres2@cnLineLabelsOn       = False            ; do not use line labels
+  cres2@gsnDraw              = False             ; do not draw the plot
+  cres2@gsnFrame             = False             ; do not advance the frame
+  cres2@cnLevelSelectionMode = "ManualLevels"
+  cres2@cnMinLevelValF       = my_min2
+  cres2@cnMaxLevelValF       = my_max2
+  cres2@cnLevelSpacingF      = my_del2
+  cres2@gsnAddCyclic         = True           ; add longitude cyclic point
 
 map = gsn_csm_contour_map(wks,my_var_1,res)
-map2 = gsn_csm_contour(wks,my_lsm,cres) 
+map2 = gsn_csm_contour(wks,my_lsm,cres)
+map3 = gsn_csm_contour(wks,my_var_1,cres2)
 overlay(map,map2)
+overlay(map,map3)
 if (doplot .eq. 1) then
 draw(map)
 end if
@@ -80,7 +100,9 @@ wks=gsn_open_wks(wks_type,"plots/VSHORT_"+exrname)
 res@tiMainString="VLONG "+exrname
 map = gsn_csm_contour_map(wks,my_var_2,res)
 map2 = gsn_csm_contour(wks,my_lsm,cres) 
+map3 = gsn_csm_contour(wks,my_var_2,cres2)
 overlay(map,map2)
+overlay(map,map3)
 draw(map)
 frame(wks)
 
