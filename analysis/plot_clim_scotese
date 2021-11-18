@@ -6,8 +6,9 @@ plot_uv=0
 plot_mixed=0
 plot_merid=0
 plot_wind=0
-plot_temp=1
-plot_salin=1
+plot_temp=0
+plot_salin=0
+plot_topo=1
 
 
 ###  get args
@@ -20,6 +21,16 @@ fi
 exp=${1}
 exr=${2}
 doplot=${3}
+
+if [ ${plot_topo} -eq 1 ] ; then
+jobfile="ncl.${exp}.topo.ncl"
+\cp ncl.SKEL.clim_topo.ncl ${jobfile}
+sed -i "s/EXR/${exr}/g" ${jobfile}
+sed -i "s/EXP/${exp}/g" ${jobfile}
+sed -i "s/DOPLOT/${doplot}/g" ${jobfile}
+ncl ${jobfile}
+\rm ${jobfile}
+fi
 
 
 if [ ${plot_tempdiff} -eq 1 ] ; then

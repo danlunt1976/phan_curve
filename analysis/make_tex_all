@@ -4,8 +4,24 @@ plot_mixed=0
 plot_uv=0
 plot_merid=0
 plot_wind=0
-plot_temp=1
-plot_salin=1
+plot_temp=0
+plot_salin=0
+plot_topo=1
+
+
+if [ ${plot_topo} -eq 1 ] ; then
+for exp in tfgw ; do
+filename="Figure_topo_${exp}"
+jobfile=${filename}.tex
+\cp Figure_VAR_${exp}_SKEL.tex ${jobfile}
+sed -i "s/EXT//g" ${jobfile}
+sed -i "s/VAR/topo/g" ${jobfile}
+pdflatex ${jobfile}
+\rm ${filename}.log
+\rm ${filename}.aux
+\rm ${jobfile}
+done
+fi
 
 
 if [ ${plot_temp} -eq 1 ] ; then

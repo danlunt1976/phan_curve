@@ -1,9 +1,16 @@
 pro time
 
+set_plot,'ps'
+!P.FONT=0
+
+
+; times
 do_timeseries_plot=0
 do_gmst_plot=0
-do_co2_plot=0
-do_lsm_plot=0
+
+;means
+do_co2_plot=1
+do_lsm_plot=1
 do_solar_plot=1
 do_forcings_plot=1
 do_clims=1
@@ -365,6 +372,12 @@ ymaxc=fltarr(nvar)
 yminc=[10,15]
 ymaxc=[26,27]
 
+yminr=fltarr(nvar)
+ymaxr=fltarr(nvar)
+yminr=[-5,-5]
+ymaxr=[5,5]
+
+
 climweight=fltarr(nxmax,nymax,ndates,nvar)
 climweight_lat=fltarr(nymax,nvar)
 climnewweight=fltarr(nxmax,nymax)
@@ -430,7 +443,7 @@ endfor
 endfor
 endfor
 
-endif
+endif ; end do_clims
 
 
 c_alb=0.27
@@ -440,7 +453,7 @@ c_dalb=0.14-0.06
 t_co2=1.0
 t_co2_lin=1.0
 
-baseline=0
+baseline=20
 
 ;;;;;;;;;;;;;;;;;;;;
 ; GOOD SET OF PARAMS:
@@ -459,14 +472,14 @@ lambda_lin=-0.9
 
 
 ; NEW SET OF PARAMS:
-t_solar=0.7
-t_area=0.7
-c_a=0.01
-lambda=-0.9
+t_solar=1.0
+t_area=0.8
+c_a=0.001
+lambda=-1.1
 
-t_solar_lin=0.7
-t_area_lin=0.7
-lambda_lin=-0.9
+t_solar_lin=1.0
+t_area_lin=0.8
+lambda_lin=-1.1
 
 ;;;;;;;;;;;;;;;;;;;;
 
@@ -500,8 +513,8 @@ f_area_lin(*)=t_area_lin*solar*(-1.0)*(masks_mean-masks_mean(baseline))*c_dalb/4
 f_all=f_co2+f_solar+f_area
 f_all_lin=f_co2_lin+f_solar_lin+f_area_lin
 
-t_all_lin=climav(0,1,0) - 1.0*f_all_lin/lambda_lin 
-t_all= climav(0,1,0) + (-1.0*lambda-sqrt(lambda*lambda-4.0*c_a*f_all))/(2.0*c_a)
+t_all_lin=climav(baseline,1,0) - 1.0*f_all_lin/lambda_lin 
+t_all= climav(baseline,1,0) + (-1.0*lambda-sqrt(lambda*lambda-4.0*c_a*f_all))/(2.0*c_a)
 
 
 if (do_timeseries_plot eq 1) then begin
@@ -509,8 +522,6 @@ if (do_timeseries_plot eq 1) then begin
 ; TIMESERIES PLOT
 for d=0,ndepth-1 do begin
 
-set_plot,'ps'
-!P.FONT=0
 
 device,filename='timeseries_'+depth(d)+'_new3.eps',/encapsulate,/color,set_font='Helvetica'
 
@@ -579,9 +590,6 @@ if (do_gmst_plot eq 1) then begin
 
 ; GMST PLOT
 for d=0,0 do begin
-
-set_plot,'ps'
-!P.FONT=0
 
 device,filename='gmst_time_'+depth(d)+'.eps',/encapsulate,/color,set_font='Helvetica'
 
@@ -710,21 +718,24 @@ loadct,39
 ymin=-15
 ymax=15
 
-plot,dates2,f_all,yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',ytitle='forcings',ystyle=1,xstyle=1
+plot,dates2,f_all,yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',ytitle='forcings',ystyle=1,xstyle=1,/nodata
 
-plots,dates2,f_all,psym=5
+plots,dates2,f_all,psym=5,symsize=0.5
 
-oplot,dates2,f_solar,color=50
-oplot,dates2,f_co2,color=100
-oplot,dates2,f_area,color=150
+oplot,dates2,f_solar,color=50,thick=3
+oplot,dates2,f_co2,color=100,thick=3
+oplot,dates2,f_area,color=150,thick=3
+oplot,dates2,f_all,color=0,thick=3
 
-oplot,dates2,f_solar_lin,color=50,linestyle=2
-oplot,dates2,f_co2_lin,color=100,linestyle=2
-oplot,dates2,f_area_lin,color=150,linestyle=2
+oplot,[-200,-170],[-8,-8],color=50,thick=3
+oplot,[-200,-170],[-9,-9],color=100,thick=3
+oplot,[-200,-170],[-10,-10],color=150,thick=3
+oplot,[-200,-170],[-11,-11],color=0,thick=3
 
-oplot,dates2,f_all_lin,linestyle=1
-
-
+xyouts,-150,-8,color=50,'Solar forcing',charsize=0.7
+xyouts,-150,-9,color=100,'CO2 forcing',charsize=0.7
+xyouts,-150,-10,color=150,'Land surface forcing',charsize=0.7
+xyouts,-150,-11,color=0,'All forcings',charsize=0.7
 
 device,/close
 
@@ -735,12 +746,13 @@ if (do_clim_plot eq 1) then begin
 
 ; GMST PLOT
 
-set_plot,'ps'
-!P.FONT=0
+ntype=2
+mytypename=['new','cmp']
 
+for t=0,ntype-1 do begin
 for v=0,nvar-1 do begin
 
-device,filename='clim_'+climnamelong(v)+'_time.eps',/encapsulate,/color,set_font='Helvetica'
+device,filename='clim_'+climnamelong(v)+'_'+mytypename(t)+'_time.eps',/encapsulate,/color,set_font='Helvetica'
 
 xmin=-550
 xmax=0
@@ -759,33 +771,88 @@ for n=nstart,ndates-1 do begin
 x=n-nstart
 xx=ndates-nstart
 mycol=(x)*250.0/(xx-1)
+mycol=0
 
-plots,dates2(n),climav(n,0,v),color=mycol,psym=5
-plots,dates2(n),climav(n,1,v),color=mycol,psym=6
+if (t eq 1) then begin
+plots,dates2(n),climav(n,0,v),color=mycol,psym=5,symsize=0.5
+endif
+plots,dates2(n),climav(n,1,v),color=mycol,psym=6,symsize=0.5
 xyouts,dates2(n)+5,climav(n,1,v)+0.1,exproot(n,1)+exptail(n,1),charsize=0.2
 
 endfor ; end n
 
-oplot,dates2(*),climav(*,0,v)
-oplot,dates2(*),climav(*,1,v)
+if (t eq 1) then begin
+oplot,dates2(*),climav(*,0,v),thick=3
+endif
+oplot,dates2(*),climav(*,1,v),thick=3
 
 if (v eq 0) then begin
 oplot,dates2(*),t_all_lin(*),color=100
 oplot,dates2(*),t_all(*),color=200
-
 endif
 
+
+if (t eq 1) then begin
 xyouts,-500,13,'Pauls runs'
 plots,-520,13,psym=5
+endif
 
 xyouts,-500,12,'My new runs'
-plots,-520,12,psym=6
+plots,-520,12,psym=6,symsize=0.5
+
 
 
 device,/close
 
 
 endfor
+endfor
+
+
+
+
+; GMST PLOT
+
+v=0
+resid=climav(*,1,v)-t_all(*)
+
+device,filename='resid_'+climnamelong(v)+'_time.eps',/encapsulate,/color,set_font='Helvetica'
+
+xmin=-550
+xmax=0
+
+loadct,39
+
+ymin=yminr(v)
+ymax=ymaxr(v)
+
+
+plot,dates2,climav(*,1,v),yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',psym=2,/nodata,ytitle='Temperature [degrees C]',title=climnamelong(v)+' residual',ystyle=1,xstyle=1
+
+;;;;;;;;;;;;;
+for n=nstart,ndates-1 do begin
+
+x=n-nstart
+xx=ndates-nstart
+mycol=(x)*250.0/(xx-1)
+mycol=0
+
+plots,dates2(n),resid(n),color=mycol,psym=6,symsize=0.5
+xyouts,dates2(n)+5,resid(n)+0.05,exproot(n,1)+exptail(n,1),charsize=0.2
+
+endfor ; end n
+
+oplot,dates2(*),resid,thick=3
+
+oplot,[dates2(0),dates2(nstart-1)],[0,0],linestyle=2
+
+xyouts,-500,-4,'My new runs'
+plots,-520,-4,psym=6,symsize=0.5
+
+
+
+device,/close
+
 
 
 endif

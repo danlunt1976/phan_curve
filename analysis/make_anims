@@ -36,6 +36,8 @@ for exproot in tfgw tfgW tfGw tfGW tFgw ; do
      explist_wind=${explist_wind}' plots/wind_'${exp}'.pdf'
      explist_salin=${explist_salin}' plots/salin_'${exp}'.pdf'
      explist_temp=${explist_temp}' plots/temp_'${exp}'.pdf'
+     explist_topo=${explist_topo}' plots/topo_'${exp}'.pdf'
+
 
    done
 done
@@ -47,8 +49,9 @@ done
 #convert -loop 0 -delay 20 ${explist_mixed} anim_mixed.gif
 #convert -loop 0 -delay 20 ${explist_merid} anim_merid.gif
 #convert -loop 0 -delay 20 ${explist_wind} anim_wind.gif
-convert -loop 0 -delay 20 ${explist_salin} anim_salin.gif
-convert -loop 0 -delay 20 ${explist_temp} anim_temp.gif
+#convert -loop 0 -delay 20 ${explist_salin} anim_salin.gif
+#convert -loop 0 -delay 20 ${explist_temp} anim_temp.gif
+convert -loop 0 -delay 20 ${explist_topo} anim_topo.gif
 
 
 exit
