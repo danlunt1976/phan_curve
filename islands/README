@@ -1,0 +1,152 @@
+In Scotese runs, modern barotropic streamfunction looks very odd -  massive values over Antarctica (teyda).
+/home/bridge/swsvalde/ummodel/data/teyda/climate/teydao.pfclann.nc
+streamfn_mm_uo
+
+draw_islands script:
+~swsvalde/ummodel/scripts/draw_islands -dump dump@da 
+
+make_bath_islands script:
+~ggdjl/ggdjl/um/scripts/make_bath_islands_new dump@da bath.nc islands.nc
+
+To run isla:
+module load isla/1.0.1
+Help -> Contents
+File -> Load land-sea mask
+e.g. omask_stand.nc
+File -> Import island comparison data
+e.g. standard.ocean.ver01
+
+Looks like islands defined by Isla are offset from those in the standard preindustrial file in the plot.  May be OK in the output data.
+
+Made a set of islands for the mdoern lsm for the same islands as in the default Met Office version.
+
+In xancil, try to create a new ocean dump with the islands from isla.
+xancil -> Confguration -> Ancillary files to create -> Ocean dump file
+          Dump Files -> Ocean Start Dump -> Use data from UM start dump
+          Dump Files -> Ocean Start Dump -> Modify islands data / Replace
+          Dump Files -> Ocean Start Dump -> Input dat file name [file from isla]
+xancil -> Creat Anc Files
+
+This produces a file that, when run back through bath_islands_scr, is offset.
+Conclusion: xancil works well with the island file.
+Conclusion: isla isn't working correctly.
+
+**Plan:**
+(1) Use bath_islands_scr to identify and modify islands, and modify bath_islands scr so that it writes out a file that is compatible with xancil (same format as output from isla).  Test with standard and simulation 1 and simulation N.
+
+(2) Carry out a continuation of two of Paul's simulations, with modified islands (simulation 1 and simulation N).
+
+
+WORKFLOW
+
+(1) mkdir EXP
+(2) cp ~swsvalde/ummodel/data/EXP/expt_archive  EXP and untaz and extract ocean restart.
+(3) cp ~swsvalde/ummodel/data/EXP/inidata/omask_EXP.nc EXP
+(3a) bath_islands_scr tEydeo#da000003850c1+ bath_tEyde.nc islands_tEyde.nc islands_tEyde_ascii
+(4) isla restart file, consolidate/remove, and output text file [islands_tEyde_isla].
+(5) add one to end points (2nd and 4th elements) [islands_tEyde_isla_corr].
+(6) xancil
+(7) bath_islands_scr tEydeo#da000003850c1+_newislands bath_tEyde_newislands.nc islands_tEyde_newislands.nc islands_tEyde_newislands_ascii
+(8) ferret/xconv  islands_tEyde_newislands.nc to check
+
+
+BUGS/FEATURES OF ISLA:
+(1) Does not always draw boxes around islands.  See e.g. tEyde.
+(2) Island segments are offset wrt Met office kosher islands in HadCM3L.
+(3) File system searches for *.* so misses files without a dot.
+(4) Treats some islands as separate, even if they are continuous on the u/v grid
+
+----
+email from PJV:
+
+It was my mistake. I accidentally deleted it and didn't remake it. One
+of the problems with using a single executable for everything is that
+the parexe files are all created in the same folder as the
+executable. I ended up with several 1000 such files and started having
+problems because the names were being repeated. I meant to delete all
+of the parexe files but unfortunately typed *exe​* and deleted the
+executable. I recreated the 03 executable but not the 02 because it
+has largely been superseded. For some ensembles, I have started using
+a symlink in $DATAW to the "standard" executable. This has to be done
+manually but has the benefit that the parexe files stay in DATAW
+
+The difference between the 02 and 03 executable is very minor. In
+preparing the new version of the model, I noticed that the two of the
+options to produce faster but not bit reproducible code (section 70
+and section 90) actually slowed it down! I assume modern compilers are
+better than hand tuning of code (typically, the latter involved
+creating vector loops but which required more calculation).
+
+teyd and teye differ because of the executbale and the changes in
+diffusion parameters which makes HadCM3L nearer to HadCM3. I also
+reduced the water fix timescale to 50 years (cf. 20 years in original
+code) and limiting the minimum salinity to 10PSU rather than 0PSU. The
+latter change is somewhat arbitrary and for relatively little reason
+but was motivated because the model is representing ocean, not lakes,
+so I don't really expect it ever to become truly fresh. I based it on
+10 PSU because that is the salinity of the Baltic today.
+
+On the whole, I see the teyd series as a stepping stone towards the
+teye series and suspect that teyd will not be used in anger (or
+published). The changes in ocean diffusion further improves the
+high-latitudes and I cannot imagine wanting to go back to the older,
+teyd, settings. So it is fine to check the islands in teyd but would
+recommend using teye for the next set of long runs.
+
+---
+
+####### QUESTIONS FOR PJV
+
+# See ISLA 'features' above.
+
+# WHY IN MAKE_JOBS SCRIPT IS ISLAND = "Y1" and not "Y"
+#   As a result, all jobs have "l_oislands=.true.", and 1 island defined.
+
+# IN BC4, teyd restarts are in /mnt/storage/home/ggdjl/dump2hold/dumps_deeptime/teyd
+#   and labelled 000005850c1+, but files from expt_archive are 000003850c1+
+
+# In Scotese runs, modern barotropic streamfunction looks very odd -  massive values over Antarctica (teyda).
+
+# Can Isla run in script mode?
+
+
+---
+
+####
+OK, now try with stationary ocean and no land-sea mask in ocean u,v.
+Seems to work OK! 
+
+OK, now try with all variables expanded (fillmiss).
+Seems to work OK! [may some gridpoint noise in v variable at poles - see pf files?]
+
+OK, now try with a modified bathymetry....
+\cp /home/bridge/ggpjv/working/oil/scotese/output/541_0_1deg_02o.nc .
+ncks -v depthmask_xancil 541_0_1deg_02o.nc 541_0_1deg_02o_mask.nc
+and for 000
+
+
+----
+To try:
+*) single row at north pole
+*) headers for "pole-is-island"
+
+2 rows at North Pole worked!!  See tfhab, tfhac
+tfhab starts with stationary ocean, and new land-sea mask.
+tfhac is the new run with islands.
+
+----
+
+OK, final (hopefully!) version with islands, starting from teye series.
+
+make_islands_scotese teyea
+module load isla/1.0.1
+isla
+File -> Load Land-sea mask -> teyea -> teyea.qrparm.omask.nc -> lsm
+File -> export island data -> teyea -> ascii_teyea_newislands_isla.isl 
+Edit ascii_teyea_newislands_isla.isl > ascii_teyea_newislands_corr.isl
+type in puma passphrase and password
+
+DONE: teye[abcdefghijlklm]
+
+
+
