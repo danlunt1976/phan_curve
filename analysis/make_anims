@@ -37,7 +37,7 @@ for exproot in tfgw tfgW tfGw tfGW tFgw ; do
      explist_salin=${explist_salin}' plots/salin_'${exp}'.pdf'
      explist_temp=${explist_temp}' plots/temp_'${exp}'.pdf'
      explist_topo=${explist_topo}' plots/topo_'${exp}'.pdf'
-
+     explist_islands=${explist_islands}' ../islands/'${exr}'/newislands_'${exr}'-crop.pdf'
 
    done
 done
@@ -52,6 +52,8 @@ done
 #convert -loop 0 -delay 20 ${explist_salin} anim_salin.gif
 #convert -loop 0 -delay 20 ${explist_temp} anim_temp.gif
 convert -loop 0 -delay 20 ${explist_topo} anim_topo.gif
+#convert -loop 0 -delay 20 ${explist_islands} anim_islands.gif
+
 
 
 exit
