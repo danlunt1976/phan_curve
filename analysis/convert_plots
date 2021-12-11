@@ -1,0 +1,15 @@
+#!/bin/ksh
+
+#convert temp_scotese_time.eps -density 100 temp_scotese.png
+#convert forcings_time.eps -density 100 forcings_time.png
+
+#for ty in temp_scotese_time forcings_time solar_time co2_time clim_temp_pro_time clim_temp_new_time resid_temp_time ; do
+
+for ty in clim_temp_pro_time ; do
+
+gs -dSAFER -dEPSCrop -r600 -sDEVICE=pngalpha -o ${ty}.png ${ty}.eps
+
+done
+
+
+exit
