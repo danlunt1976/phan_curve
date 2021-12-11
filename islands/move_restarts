@@ -1,0 +1,51 @@
+#!/bin/bash
+
+###  get args
+if [ "$#" -ne 2 ]; then
+    echo "Illegal number of options: must be equal to 2"
+    exit
+fi
+
+exp=$1
+year=$2  # e.g. 000002199
+
+expid=`echo ${exp} | head -c 4`
+let=`echo ${exp:4:1}`
+
+   if [ "$expid" = "tfgw" ] ; then
+      expid_old="teye"
+   elif [ "$expid" = "tfgW" ] ; then
+      expid_old="teyE"
+   elif [ "$expid" = "tfGw" ] ; then
+      expid_old="teYe"
+   elif [ "$expid" = "tfGW" ] ; then
+      expid_old="teYE"
+   elif [ "$expid" = "tFgw" ] ; then
+      expid_old="tEye"
+   fi
+
+exp_old=${expid_old}${let}
+
+
+
+mydir="/home/bridge/swsvalde/umdata/${exp}/da"
+target_dir="teye_newislands"
+
+myfileabasis="${exp}a#da${year}c1+"
+myfileobasis="${exp}o#da${year}c1+"
+
+myfilea="${mydir}/${myfileabasis}"
+myfileo="${mydir}/${myfileobasis}"
+
+echo ${exp}
+echo ${exp_old}
+echo ${myfilea}
+echo ${myfileo}
+
+scp ${myfilea}.gz ${myfileo}.gz ggdjl@bc4login.acrc.bris.ac.uk:/mnt/storage/home/ggdjl/dump2hold/dumps_deeptime_djl/${target_dir}
+
+ssh ggdjl@bc4login.acrc.bris.ac.uk "ls; pwd; cd /mnt/storage/home/ggdjl/dump2hold/dumps_deeptime_djl/${target_dir} ; gunzip ${myfileabasis}.gz ; rm ${exp_old}.atmos ; ln -s ${myfileabasis} ${exp_old}.atmos"
+
+ssh ggdjl@bc4login.acrc.bris.ac.uk "ls; pwd; cd /mnt/storage/home/ggdjl/dump2hold/dumps_deeptime_djl/${target_dir} ; gunzip ${myfileobasis}.gz ; rm ${exp_old}.ocean ; ln -s ${myfileobasis} ${exp_old}.ocean"
+
+exit
