@@ -1,0 +1,38 @@
+#!/bin/bash
+#
+###  get args
+if [ "$#" -ne 4 ]; then
+    echo "Illegal number of options: must be equal to 4"
+    exit
+fi
+#
+
+if [ $USER != 'swsvalde' ] ; then
+  echo "needs to run as swsvalde"
+  exit
+fi
+
+exp=$1
+newlength=$2
+newmeans=$3
+newspinup=$(( newlength - newmeans ))
+newstart=$4
+
+echo ${exp}
+echo ${newlength}
+echo ${newmeans}
+echo ${newspinup}
+echo ${newstart}
+
+
+newdir='/home/bridge/swsvalde/ummodel/scripts/html_list/jobs'
+#newdir='.'
+file=${newdir}/${exp}.dat
+
+sed -i "s/length_of_run=\".*\"/length_of_run=\"${newlength}\"/g" ${file}
+sed -i "s/length_of_means=\".*\"/length_of_means=\"${newmeans}\"/g" ${file}
+sed -i "s/length_of_spinup=\".*\"/length_of_spinup=\"${newspinup}\"/g" ${file}
+sed -i "s/start_year=\".*\"/start_year=\"${newstart}\"/g" ${file}
+
+
+exit

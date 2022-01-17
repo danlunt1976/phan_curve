@@ -1,0 +1,23 @@
+#!/bin/ksh
+#
+#
+#
+#
+for expid in tfgw tfgW tfGw tfGW tFgw ; do
+   for let in {a..z} ; do
+#for expid in tfgw ; do
+#   for let in {a..c} ; do
+
+         if [[ "$expid" != "tFgw" || ${let} == [a-e] ]] ; then
+
+           expt=${expid}${let}
+           echo ${expt}
+
+#           tidy_expt -expt ${expt} -machine bc4  
+           \cp ~swsvalde/umdata/${expt}/da/*2899c1* /home/bridge/ggdjl/ClimateOutput/scotese_restarts/
+
+         fi
+   done
+done
+
+

@@ -1,0 +1,62 @@
+#!/bin/ksh
+
+indir_root=/home/bridge/swsvalde/ummodel
+
+#for exproot in tfgw tfgW tfGw tfGW tFgw ; do
+for exproot in tfgw ; do
+   my_loop={a..z}
+#   my_loop='a'
+
+   if [ "$exproot" = "tFgw" ] ; then
+      my_loop={a..e}
+   fi
+
+   for id in ${my_loop} ; do
+
+     exp=${exproot}${id}
+     echo ${exp}
+     
+     indir=${indir_root}/data/${exp}/climate
+     for type in pc pd pf pt ; do
+     mynum=`ls ${indir}/${exp}??${type}*.nc | wc | awk {'print $1}'`
+     if [ ${mynum} != 36 ] ; then
+       echo 'DODGY '${type}' '${mynum}' 36'
+     fi
+     done
+     for type in pg ; do
+     mynum=`ls ${indir}/${exp}??${type}*.nc | wc | awk {'print $1}'`
+     if [ ${mynum} != 2 ] ; then
+       echo 'DODGY '${type}' '${mynum}' 2'
+     fi
+     done
+
+     indir=${indir_root}/data/${exp}/standard_new_plots
+     mynum=`ls ${indir}/*.gif | wc | awk {'print $1}'`
+     if [ ${mynum} == 0 ] ; then
+       echo 'DODGY gif '${mynum}' >0'
+     fi
+
+     indir=${indir_root}/data/${exp}/sed
+     mynum=`ls ${indir}/* | wc | awk {'print $1}'`
+     if [ ${mynum} != 3 ] ; then
+       echo 'DODGY sed '${mynum}' >0'
+     fi
+
+     indir=${indir_root}/data/${exp}/monthly
+     mynum=`ls ${indir}/* | wc | awk {'print $1}'`
+     if [ ${mynum} != 73 ] ; then
+       echo 'DODGY monthly '${mynum}' 73'
+     fi
+
+     indir=${indir_root}/access/ggdjl_${exp}
+     for file in `ls ${indir}/*.err` ; do
+       mynum=`ls -l ${file} | awk {'print $5}'`
+       if [ ${mynum} != 0 ] ; then
+         echo 'DODGY err '${file}' '${mynum}' 0'
+       fi
+     done
+
+   done
+done
+
+exit
