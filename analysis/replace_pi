@@ -1,0 +1,31 @@
+#!/bin/bash
+
+# to get dodgy expts
+# for id in {a..z} ; do echo ${id} ; ls -l ~/umdata/tfgW${id}/pi | grep 17888 | wc | awk '{print $1}' ; done
+
+###  get args
+if [ "$#" -ne 3 ]; then
+    echo "Illegal number of options: must be 3"
+    exit
+fi
+
+exp=$1
+mon=$2
+ye1=$3
+
+dirroot='/home/bridge/ggdjl/umdata'
+
+
+ye2=`expr ${ye1} - 1`
+
+echo ${exp} ${ye1} ${ye2}
+
+ls -l ${dirroot}/${exp}/pi/ | grep 178888
+
+cp -i ${dirroot}/${exp}/pi/${exp}a#pi00000${ye2}${mon}+.nc ${dirroot}/${exp}/pi/${exp}a#pi00000${ye1}${mon}+.nc 
+
+ls -l ${dirroot}/${exp}/pi/ | grep 178888
+
+
+
+exit
