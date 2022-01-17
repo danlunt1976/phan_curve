@@ -1,0 +1,31 @@
+#!/bin/bash
+
+###  get args
+if [ "$#" -ne 1 ]; then
+    echo "Illegal number of options: must be 1"
+    exit
+fi
+
+exp=$1
+echo ${exp}
+
+if [[ ${#exp} -ne 5 ]] ; then
+  echo 'exp has wrong number of chars: should be 5' ${#exp}
+fi 
+
+
+
+for dir in pc pd pf pg pi pl precipevap pt rd ; do 
+  echo ${dir}
+  \rm -r /home/bridge/swsvalde/umdata/${exp}/${dir}/*
+done
+
+
+
+
+
+
+
+
+
+exit
