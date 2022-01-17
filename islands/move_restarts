@@ -1,13 +1,26 @@
 #!/bin/bash
 
+##############
+
+# e.g. move_restarts tfgwd 000002545 y
+
+##############
+
 ###  get args
-if [ "$#" -ne 2 ]; then
-    echo "Illegal number of options: must be equal to 2"
+if [ "$#" -ne 3 ]; then
+    echo "Illegal number of options: must be equal to 3"
     exit
 fi
 
 exp=$1
 year=$2  # e.g. 000002199
+bc4_rest=$3
+
+if [ ${bc4_rest} != 'y' ] && [ ${bc4_rest} != 'n' ] ; then
+echo '3rd option must be y or n'
+exit
+fi
+
 
 expid=`echo ${exp} | head -c 4`
 let=`echo ${exp:4:1}`
@@ -42,10 +55,23 @@ echo ${exp_old}
 echo ${myfilea}
 echo ${myfileo}
 
+# if eocene restart 
+if [ ${bc4_rest} == 'n' ] ; then
 scp ${myfilea}.gz ${myfileo}.gz ggdjl@bc4login.acrc.bris.ac.uk:/mnt/storage/home/ggdjl/dump2hold/dumps_deeptime_djl/${target_dir}
 
-ssh ggdjl@bc4login.acrc.bris.ac.uk "ls; pwd; cd /mnt/storage/home/ggdjl/dump2hold/dumps_deeptime_djl/${target_dir} ; gunzip ${myfileabasis}.gz ; rm ${exp_old}.atmos ; ln -s ${myfileabasis} ${exp_old}.atmos"
+ssh ggdjl@bc4login.acrc.bris.ac.uk "pwd; cd /mnt/storage/home/ggdjl/dump2hold/dumps_deeptime_djl/${target_dir} ; gunzip ${myfileabasis}.gz "
+ssh ggdjl@bc4login.acrc.bris.ac.uk "pwd; cd /mnt/storage/home/ggdjl/dump2hold/dumps_deeptime_djl/${target_dir} ; gunzip ${myfileobasis}.gz "
+fi
 
-ssh ggdjl@bc4login.acrc.bris.ac.uk "ls; pwd; cd /mnt/storage/home/ggdjl/dump2hold/dumps_deeptime_djl/${target_dir} ; gunzip ${myfileobasis}.gz ; rm ${exp_old}.ocean ; ln -s ${myfileobasis} ${exp_old}.ocean"
+# if bc4 restart
+if [ ${bc4_rest} == 'y' ] ; then
+ssh ggdjl@bc4login.acrc.bris.ac.uk "pwd; cd /mnt/storage/home/ggdjl/dump2hold/${exp}/datam ; \cp ${myfileabasis} /mnt/storage/home/ggdjl/dump2hold/dumps_deeptime_djl/${target_dir}/"
+ssh ggdjl@bc4login.acrc.bris.ac.uk "pwd; cd /mnt/storage/home/ggdjl/dump2hold/${exp}/datam ; \cp ${myfileobasis} /mnt/storage/home/ggdjl/dump2hold/dumps_deeptime_djl/${target_dir}/"
+fi
+
+
+# Now link
+ssh ggdjl@bc4login.acrc.bris.ac.uk "pwd; cd /mnt/storage/home/ggdjl/dump2hold/dumps_deeptime_djl/${target_dir} ; rm ${exp_old}.atmos ; ln -s ${myfileabasis} ${exp_old}.atmos"
+ssh ggdjl@bc4login.acrc.bris.ac.uk "pwd; cd /mnt/storage/home/ggdjl/dump2hold/dumps_deeptime_djl/${target_dir} ; rm ${exp_old}.ocean ; ln -s ${myfileobasis} ${exp_old}.ocean"
 
 exit

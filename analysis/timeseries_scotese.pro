@@ -7,8 +7,8 @@ Aaa = FINDGEN(17) * (!PI*2/16.)
 USERSYM, COS(Aaa), SIN(Aaa), /FILL 
 
 ; times
-do_timeseries_plot=0
-do_gmst_plot=0
+do_timeseries_plot=1 ; plot global mean SST timeseries of each simulation
+do_gmst_plot=0 ; plot last navy years of SST through phanerozoic
 
 ;means
 do_temp_plot=0
@@ -17,9 +17,9 @@ do_lsm_plot=0
 do_solar_plot=0
 do_ice_plot=0
 do_forcings_plot=0
-do_clims=1
+do_clims=0
 do_clim_plot=0
-do_textfile=1
+do_textfile=0
 
 ;;;;
 ; Total number of time snapshots
@@ -35,10 +35,10 @@ writing(*,0)=0
 writing(*,1)=0
 
 reading=intarr(ndates,nexp)
-reading(*,0)=0
-reading(*,1)=0
+reading(*,0)=1
+reading(*,1)=1
 
-readfile=intarr(ndates,nexp)
+readfile=intarr(ndates,nexp) ; does data exist for this simulation?
 readfile(*,0)=1
 readfile(*,1)=1
 
@@ -627,8 +627,10 @@ for d=0,ndepth-1 do begin
 device,filename='timeseries_'+depth(d)+'_new3.eps',/encapsulate,/color,set_font='Helvetica'
 
 xmin=0
-xmax=3000
+xmax=4000
 times=indgen(xmax)
+
+labelx=3400
 
 loadct,39
 
@@ -636,7 +638,7 @@ ymin=ymina(d)
 ymax=ymaxa(d)
 
 
-plot,times(0:ntimes(0,0)-1),mytemp(0:ntimes(0,0)-1,0,0,0),yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Year of simulation',psym=2,/nodata,ytitle='Temperature [degrees C]',title='Global mean ocean temperature at '+depthname(d),ystyle=1,xtickname=['0','500','1000','1500','2000','2500','3000'],xtickv=[0,500,1000,1500,2000,2500,3000],xticks=6,xstyle=1
+plot,times(0:ntimes(0,0)-1),mytemp(0:ntimes(0,0)-1,0,0,0),yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Year of simulation',psym=2,/nodata,ytitle='Temperature [degrees C]',title='Global mean ocean temperature at '+depthname(d),ystyle=1,xtickname=['0','500','1000','1500','2000','2500','3000','3500','4000'],xtickv=[0,500,1000,1500,2000,2500,3000,3500,4000],xticks=8,xstyle=1
 
 ;;;;;;;;;;;;;
 for n=nstart,ndates-1 do begin
@@ -664,14 +666,14 @@ if (readfile(n,1) eq 1) then begin
 ttt=myshift
 oplot,times(ttt:ttt+ntimes(n,1)-1),mytemp(0:ntimes(n,1)-1,n,d,1),color=(x)*250.0/(xx-1)
 
-xyouts,2400,mytemp(ntimes(n,1)-1,n,d,1),exproot(n,1)+exptail(n,1)+' '+strtrim(ntimes(n,1),2),charsize=0.25,color=mycol
+xyouts,labelx,mytemp(ntimes(n,1)-1,n,d,1),exproot(n,1)+exptail(n,1)+' '+strtrim(ntimes(n,1),2),charsize=0.25,color=mycol
 
 endif
 
 
 z=ymin+0.9*(ymax-ymin)-0.8*(ymax-ymin)*x/(xx-1)
-oplot,[2600,2670],[z,z],color=(n-nstart)*250.0/(ndates-nstart-1)
-xyouts,2700,z,sim_names_long(n)+' '+exproot(n,1)+exptail(n,1)+' '+strtrim(ntimes(n,1),2),charsize=0.25,color=(n-nstart)*250.0/(ndates-nstart-1)
+oplot,[labelx+200,labelx+270],[z,z],color=(n-nstart)*250.0/(ndates-nstart-1)
+xyouts,labelx+300,z,sim_names_long(n)+' '+exproot(n,1)+exptail(n,1)+' '+strtrim(ntimes(n,1),2),charsize=0.25,color=(n-nstart)*250.0/(ndates-nstart-1)
 
 endfor
 
