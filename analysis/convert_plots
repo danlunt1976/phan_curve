@@ -5,7 +5,17 @@
 
 #for ty in temp_scotese_time forcings_time solar_time co2_time clim_temp_pro_time clim_temp_new_time resid_temp_time ; do
 
-for ty in clim_temp_pro_time ; do
+#for ty in clim_temp_pro_time ; do
+
+#for ty in clim_temp_new_time ; do
+
+#for ty in resid_temp_time ; do
+
+#for ty in polamp_temp_time polamp_sst_time ; do
+
+#for ty in polampxtemp_temp_scatter polampxtemp_sst_scatter ; do
+
+for ty in forcings_time_1 co2_time_1 ; do
 
 gs -dSAFER -dEPSCrop -r600 -sDEVICE=pngalpha -o ${ty}.png ${ty}.eps
 
