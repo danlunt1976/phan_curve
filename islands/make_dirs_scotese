@@ -22,22 +22,7 @@ for exp in ${explist} ; do
 expid=`echo ${exp} | head -c 4`
 let=`echo ${exp:4:1}`
 
-   if [ "$expid" = "tfgw" ] ; then
-      expid_old="teye"
-   elif [ "$expid" = "tfgW" ] ; then
-      expid_old="teyE"
-   elif [ "$expid" = "tfGw" ] ; then
-      expid_old="teYe"
-   elif [ "$expid" = "tfGW" ] ; then
-      expid_old="teYE"
-   elif [ "$expid" = "tFgw" ] ; then
-      expid_old="tEye"
-   fi
-
-exp_old=${expid_old}${let}
-
 echo ${exp}
-echo ${exp_old}
 
 
 # make directories
