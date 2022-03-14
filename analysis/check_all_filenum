@@ -38,6 +38,13 @@ for exproot in tfgw tfgW tfGw tfGW tFgw ; do
      fi
      done
 
+     for type in pt ; do
+     mynum=`ls ${indir}/${type}/${exp}??${type}* | wc | awk {'print $1}'`
+     if [ ${mynum} != 12600 ] ; then
+       echo 'DODGY '${type}' '${mynum}' 12600'
+     fi
+     done
+
 
    done
 done
