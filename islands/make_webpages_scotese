@@ -1,0 +1,187 @@
+#!/bin/ksh
+#
+make_html=1
+make_inidata=1
+#
+exptype1=tfja
+#exptype1=tfgw
+#
+if [ ${exptype1} == 'tfgw' ] ; then
+co2_file='co2_all_02.dat'
+exptype2='teye'
+fi
+if [ ${exptype1} == 'tfja' ] ; then
+co2_file='co2_all_03_nt.dat'
+exptype2='tfgw'
+fi
+#
+###  get args
+if [ "$#" -eq 0 ]; then
+    echo "Illegal number of options: must be greater than 0"
+    exit
+fi
+#
+# options can either be "all" or a list of experiments
+explist=$*
+#
+#if [ $USER != 'swsvalde' ] ; then
+#  echo "needs to run as swsvalde"
+#  exit
+#fi
+#
+##############
+#newdir='/home/bridge/ggdjl/ggdjl/bas/doc/phan_curve/islands/html_list_test'
+newdir='/home/bridge/swsvalde/ummodel/scripts/html_list/jobs'
+##############
+#
+#
+#
+temp=`cat ${co2_file} | awk '{print $1}'`
+set -A dates $temp # dates is an array of dates
+#
+ic="0"
+#
+#
+exp1a=${exptype1}
+exp1b=`sed 's/./\U&/4' <<< "${exp1a}"`
+exp1c=`sed 's/./\U&/3' <<< "${exp1a}"`
+exp1d=`sed 's/./\U&/3' <<< "${exp1b}"`
+exp1e=`sed 's/./\U&/2' <<< "${exp1a}"`
+
+exp2a=${exptype2}
+exp2b=`sed 's/./\U&/4' <<< "${exp2a}"`
+exp2c=`sed 's/./\U&/3' <<< "${exp2a}"`
+exp2d=`sed 's/./\U&/3' <<< "${exp2b}"`
+exp2e=`sed 's/./\U&/2' <<< "${exp2a}"`
+
+expids1="${exp1a} ${exp1b} ${exp1c} ${exp1d} ${exp1e}"
+expids2="${exp2a} ${exp2b} ${exp2c} ${exp2d} ${exp2e}"
+
+echo ${expids1}
+echo ${expids2}
+
+#
+for expid in ${expids1} ; do
+   if [ "$expid" = ${exp1a} ] ; then
+      expid_old=${exp2a}
+   elif [ "$expid" = ${exp1b} ] ; then
+      expid_old=${exp2b}
+   elif [ "$expid" = ${exp1c} ] ; then
+      expid_old=${exp2c}
+   elif [ "$expid" = ${exp1d} ] ; then
+      expid_old=${exp2d}
+   elif [ "$expid" = ${exp1e} ] ; then
+      expid_old=${exp2e}
+   fi
+
+   for let in {a..z} ; do
+
+      if [ "${dates[$ic]}" != "" ] ; then # if this index exists in co2_all.dat
+
+exp=${expid}${let}
+exp_old=${expid_old}${let}
+date1="${dates[$ic]}"
+age1=`echo $date1 | cut -d_ -f1`
+age2=`echo $date1 | cut -d_ -f2`
+age1=`expr $age1 + 0`
+
+         if [[ "${explist}" == 'all' || "${explist}" == *"${expid}${let}"* ]] ; then
+
+            age="${age1}.${age2}"
+            co2=`cat ${co2_file} | grep $date1 | grep $age | awk '{print $3}'`
+
+
+
+echo ${exp}
+echo ${exp_old}
+echo ${age}
+echo ${date1}
+
+if [ ${exptype1} == 'tfgw' ] ; then
+MY_START='1850'
+MY_LENGTH='1050'
+MY_MEANS='30'
+MY_SPINUP='1020'
+MY_LONG="This is the ${age} Ma simulation using the Scotese palaeogeographies and revised CCN etc.  This version has islands included.  Started from end of ${exp_old}."
+MY_LONGER="Scientifically as benchmark except using water age update, dark respiration, salinity conservation and revised ozone. Also using new orbital and solar update, and outputting leaf CO2.  This version has islands included.  Started from end of ${exp_old}."
+MY_OWNER='ggdjl'
+MY_ANOMALY="EXPTID-${exp_old}"
+fi
+
+if [ ${exptype1} == 'tfja' ] ; then
+MY_START='0000'
+MY_LENGTH='3000'
+MY_MEANS='100'
+MY_SPINUP='2900'
+MY_LONG="This is the ${age} Ma simulation using the Scotese palaeogeographies and revised CCN etc.  This version has islands and smoothing included.  Started from end of ${exp_old}."
+MY_LONGER="Scientifically as benchmark except using water age update, dark respiration, salinity conservation and revised ozone. Also using new orbital and solar update, and outputting leaf CO2.  This version has islands included and atmospheric smoothing.  Started from end of ${exp_old}."
+MY_OWNER='ggdjl'
+MY_ANOMALY="EXPTID-${exp_old}"
+fi
+
+
+olddir='/home/bridge/swsvalde/ummodel/scripts/html_list/jobs'
+
+
+if [ ${make_html} -eq 1 ] ; then
+
+# make html_list/jobs files
+
+
+\cp ${olddir}/${exp_old}.dat ${newdir}/${exp}.dat
+
+sed -i "s/length_of_run=.*/length_of_run=\"${MY_LENGTH}\";/g" ${newdir}/${exp}.dat
+sed -i "s/length_of_means=.*/length_of_means=\"${MY_MEANS}\";/g" ${newdir}/${exp}.dat
+sed -i "s/length_of_spinup=.*/length_of_spinup=\"${MY_SPINUP}\";/g" ${newdir}/${exp}.dat
+
+co2_old=`grep -i 'co2=' ${olddir}/${exp_old}.dat | sed 's/.*"\(.*\)".*/\1/'`
+if [ ${co2_old} != ${co2} ] ; then
+  echo 'CHANGING CO2!'
+  sed -i "s/co2=.*/co2=\"${co2}\";/g" ${newdir}/${exp}.dat
+fi
+
+date_old=`grep -i ' desc=' ${olddir}/${exp_old}.dat | sed 's/.*"\(.*\)".*/\1/'`
+if [ ${date_old} != ${date1}_MaBP ] ; then
+  echo 'CHANGING DATE!'
+  sed -i "s/ desc=.*/ desc=\"${date1}_MaBP\";/g" ${newdir}/${exp}.dat
+  sed -i "s/ short_desc=.*/ short_desc=\"${date1}_MaBP\";/g" ${newdir}/${exp}.dat
+
+fi
+
+sed -i "s/ long_desc=.*/ long_desc=\"${MY_LONG}\";/g" ${newdir}/${exp}.dat
+sed -i "s/ longer_description_para1=.*/ longer_description_para1=\"${MY_LONGER}\";/g" ${newdir}/${exp}.dat
+sed -i "s/ owner=.*/ owner=\"${MY_OWNER}\";/g" ${newdir}/${exp}.dat
+sed -i "s/ anomaly=.*/ anomaly=\"${MY_ANOMALY}\";/g" ${newdir}/${exp}.dat
+sed -i "s/ start_year=.*/ start_year=\"${MY_START}\";/g" ${newdir}/${exp}.dat
+
+fi
+
+
+if [ ${make_inidata} -eq 1 ] ; then
+
+# make ummodel/data/inidata files
+ummodel='/home/bridge/swsvalde/ummodel/data'
+mkdir -p ${ummodel}/${exp}
+chmod u=rwx,g=rx+s,o=rx ${ummodel}/${exp}
+mkdir -p ${ummodel}/${exp}/inidata
+chmod u=rwx,g=rx+s,o=rx ${ummodel}/${exp}/inidata
+
+for file in basin.index qrclim.ozone.nc qrfrac.disturb.nc qrfrac.type.nc qrparm.mask.nc qrparm.orog.nc qrparm.soil.nc qrparm.waterfix.nc qrparm.pft.nc ; do
+\cp -d ${ummodel}/${exp_old}/inidata/${exp_old}.${file} ${ummodel}/${exp}/inidata/${exp}.${file}
+done
+
+fi
+
+fi
+
+fi
+
+ic=`expr $ic + 1`
+
+done
+
+
+done
+
+
+
