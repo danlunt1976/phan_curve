@@ -26,6 +26,4 @@ cp -i ${dirroot}/${exp}/pi/${exp}a#pi00000${ye2}${mon}+.nc ${dirroot}/${exp}/pi/
 
 ls -l ${dirroot}/${exp}/pi/ | grep 178888
 
-
-
 exit
