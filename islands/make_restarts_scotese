@@ -1,0 +1,96 @@
+#!/bin/bash
+
+##############
+
+# e.g. make_restarts_scotese tfjaa 000005850 000002900
+
+##############
+
+###  get args
+if [ "$#" -ne 3 ]; then
+    echo "Illegal number of options: must be equal to 3"
+    exit
+fi
+
+exp=$1
+yeara=$2
+yearo=$3
+
+exta='3'
+exto=''
+
+target_dir='tfgw_newislands' # tfgw
+
+expid=`echo ${exp} | head -c 4`
+let=`echo ${exp:4:1}`
+
+   if [ "$expid" = "tfja" ] ; then
+      expida_old="teyf"
+      expido_old="tfgw"
+      expid_isl="teye"
+   elif [ "$expid" = "tfjA" ] ; then
+      expida_old="teyF"
+      expido_old="tfgW"
+      expid_isl="teyE"
+   elif [ "$expid" = "tfJa" ] ; then
+      expida_old="teYf"
+      expido_old="tfGw"
+      expid_isl="teYe"
+   elif [ "$expid" = "tfJA" ] ; then
+      expida_old="teYF"
+      expido_old="tfGW"
+      expid_isl="teYE"
+   elif [ "$expid" = "tFja" ] ; then
+      expida_old="tEyf"
+      expido_old="tFgw"
+      expid_isl="tEye"
+   fi
+
+
+expa_old=${expida_old}${let}
+expo_old=${expido_old}${let}
+exp_isl=${expid_isl}${let}
+exp=${expid}${let}
+
+
+myfileabasis="${expa_old}a#da${yeara}c1+"
+myfileobasis="${expo_old}o#da${yearo}c1+"
+
+###  get restart dumps
+
+archfile="/home/bridge/swsvalde/ummodel/data/${expa_old}${exta}/expt_archive/${expa_old}${exta}.taz"
+if [ -f ${archfile} ]; then
+  \cp ${archfile} .
+  tar xvf ${archfile} ${expa_old}/datam/${myfileabasis}
+  \cp ${expa_old}/datam/${myfileabasis} .
+  \rm -rf ${expa_old}
+  \rm -rf ${expa_old}${exta}.taz
+else
+  echo "Error: ${archfile} not found.	."
+  exit 1
+fi
+
+archfile="/home/bridge/swsvalde/ummodel/data/${expo_old}${exto}/expt_archive/${expo_old}${exto}.taz"
+if [ -f ${archfile} ]; then
+  \cp ${archfile} .
+  tar xvf ${archfile} ${expo_old}/datam/${myfileobasis}
+  \cp ${expo_old}/datam/${myfileobasis} .
+  \rm -rf ${expo_old}
+  \rm -rf ${expo_old}${exto}.taz
+else
+  echo "Error: ${archfile} not found.	."
+  exit 1
+fi
+
+
+scp ${myfileabasis} ggdjl@bc4login.acrc.bris.ac.uk:/mnt/storage/home/ggdjl/dump2hold/dumps_deeptime_djl/${target_dir}/
+
+scp ${myfileobasis} ggdjl@bc4login.acrc.bris.ac.uk:/mnt/storage/home/ggdjl/dump2hold/dumps_deeptime_djl/${target_dir}/
+
+#eval $(ssh-agent) ; ssh-add  ~/.ssh/id_rsa_puma ; scp ${exp_isl}/umui_${exp_isl}_newislands.dat ggdjl@puma.nerc.ac.uk:/home/ggdjl/scotese/islands/umui_${exp}_newislands.dat
+# do this bit at the end by hand so not to have multiple password requests.
+
+\rm ${myfileabasis}
+\rm ${myfileobasis}
+
+exit
