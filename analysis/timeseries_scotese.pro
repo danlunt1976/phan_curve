@@ -9,25 +9,26 @@ Aaa = FINDGEN(17) * (!PI*2/16.)
 USERSYM, COS(Aaa), SIN(Aaa), /FILL 
 
 ; times
-do_timeseries_plot=0 ; plot global mean SST timeseries of each simulation
+do_timeseries_plot=1 ; plot global mean SST timeseries of each simulation
 do_gmst_plot=0 ; plot last navy years of SST through phanerozoic
 
 ;means
+do_readbounds=0 ; read in mask and ice
 do_temp_plot=0 ; global mean from proxies
-do_co2_plot=1 ; prescribed co2
+do_co2_plot=0 ; prescribed co2
 do_lsm_plot=0 ; prescribed land area
 do_solar_plot=0 ; prescribed solar forcing
 do_ice_plot=0 ; prescribed ice sheets
-do_forcings_plot=1 ; prescribed forcings in Wm-2
-do_clims=1 ; read in and analyse model output
-do_clim_plot=1 ;  plot new vs old, EBM, MDC, and resid
+do_forcings_plot=0 ; prescribed forcings in Wm-2
+do_clims=0 ; read in and analyse model output
+do_clim_plot=0 ;  plot new vs old, EBM, MDC, and resid
 do_textfile=0 ; textfile of proxies for Emily
 
 ;;;;
 ; Total number of time snapshots
 ndates=109
-nexp=2
-tmax=3000
+nexp=3
+tmax=4000
 nstart=0
 ;;;;
 
@@ -35,62 +36,41 @@ nstart=0
 writing=intarr(ndates,nexp)
 writing(*,0)=0
 writing(*,1)=0
+writing(*,2)=0
+
 
 reading=intarr(ndates,nexp)
-reading(*,0)=1
-reading(*,1)=1
+reading(*,0)=1-writing(*,0)
+reading(*,1)=1-writing(*,1)
+reading(*,2)=1-writing(*,2)
 
 readfile=intarr(ndates,nexp) ; does data exist for this simulation?
 readfile(*,0)=1
 readfile(*,1)=1
+readfile(*,2)=1
 
-read_clims=intarr(ndates,nexp)
-read_clims(*,0)=1
-read_clims(*,1)=1
-
-check_names=1
-
-;;;;
 
 ndepth=3
-depthname2=strarr(ndepth)
-depthname2=['5','666','2731']
-depthname3=strarr(ndepth)
-depthname3=['1','12','16']
-depth=strarr(ndepth)
-depth=['L01','L12','L16']
-depthname=['5m','670m','2700m']
-ymina=fltarr(ndepth)
-ymaxa=fltarr(ndepth)
-ymina=[15,2,-2]
-ymaxa=[27,17,16]
-lim=fltarr(ndepth)
-lim(0)=10.0
-lim(1)=2.0
-lim(2)=-2
+my_missing=intarr(nexp,ndates,tmax,ndepth)
+my_missing(*,*,*,*)=1
+my_missing(2,59,[252,328,340,400,434,443,503,505,536,653,664,678,684,686,711,718,747,752,782,786],*)=0 ; tfJah
+my_missing(2,68,[834,1927,1932],*)=0 ; tfJaq
+my_missing(2,16,[323],*)=0 ; tfjaq
+my_missing(2,16,[318,320,324,327,328,329,330,333,366,367,398,399,401,405,410,412,416,447,448,451,452,500,503,507,510,514,515,516,517,519,520,521,524,747,757,758,759,760,813,884,885,888,891,892,974,976,977,979,981,982],*)=0 ; tfjaq
 
-my_missing=intarr(ndates,tmax,ndepth)
-my_missing(*,*,*)=1
+if (nexp gt 1) then begin
+myshift=intarr(nexp)
+myshift(*)=[2100,3250,5350]
+endif
 
-root=strarr(nexp)
 exproot=strarr(ndates,nexp)
 exptail=strarr(ndates,nexp)
-sim_names=strarr(ndates)
-sim_names_long=strarr(ndates)
-sim_tail=strarr(ndates)
-sim_ext=strarr(ndates,nexp)
 
-root(0)='/home/bridge/ggdjl/ummodel/data'
-root(1)='/home/bridge/ggdjl/um_climates'
+locdata=intarr(nexp)
+locdata(0)=0
+locdata(1)=0
+locdata(2)=1
 
-
-expname=strarr(ndates,nexp)
-dates=fltarr(ndates,nexp)
-names=strarr(ndates,nexp)
-dates2=fltarr(ndates)
-dates3=strarr(ndates)
-co2=fltarr(ndates)
-solar=fltarr(ndates)
 
 
 ; Paul's teye 
@@ -117,9 +97,76 @@ exptail(78:103,1)=['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','
 exproot(104:108,1)=['tFgw']
 exptail(104:108,1)=['a','b','c','d','e']
 
+; My tfjaa
+exproot(0:25,2)=['tfja']
+exptail(0:25,2)=['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z']
+exproot(26:51,2)=['tfjA']
+exptail(26:51,2)=['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z']
+exproot(52:77,2)=['tfJa']
+exptail(52:77,2)=['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z']
+exproot(78:103,2)=['tfJA']
+exptail(78:103,2)=['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z']
+exproot(104:108,2)=['tFja']
+exptail(104:108,2)=['a','b','c','d','e']
+
 varname=strarr(ndates,nexp)
 varname(*,0)='temp_ym_dpth'
 varname(*,1)='temp_ym_dpth'
+varname(*,2)='temp_ym_dpth'
+
+
+;;;;
+
+
+check_names=1
+
+;;;;
+
+root=strarr(nexp)
+for e=0,nexp-1 do begin
+if (locdata(e) eq 0) then begin
+root(e)='/home/bridge/ggdjl/ummodel/data'
+endif
+if (locdata(e) eq 1) then begin
+root(e)='/home/bridge/ggdjl/um_climates'
+endif
+endfor
+
+depthname2=strarr(ndepth)
+depthname2=['5','666','2731']
+depthname3=strarr(ndepth)
+depthname3=['1','12','16']
+depth=strarr(ndepth)
+depth=['L01','L12','L16']
+depthname=['5m','670m','2700m']
+ymina=fltarr(ndepth)
+ymaxa=fltarr(ndepth)
+ymina=[15,2,-2]
+ymaxa=[27,17,16]
+lim=fltarr(ndepth)
+lim(0)=10.0
+lim(1)=2.0
+lim(2)=-2
+
+
+
+sim_names=strarr(ndates)
+sim_names_long=strarr(ndates)
+sim_tail=strarr(ndates)
+sim_ext=strarr(ndates,nexp)
+
+
+
+
+expname=strarr(ndates,nexp)
+dates=fltarr(ndates,nexp)
+names=strarr(ndates,nexp)
+dates2=fltarr(ndates)
+dates3=strarr(ndates)
+co2=fltarr(ndates)
+solar=fltarr(ndates)
+
+
 
 
 nx=96
@@ -229,11 +276,11 @@ if (writing(n,e) eq 1) then begin
 
 if (readfile(n,e) eq 1) then begin
 
-if (e eq 0) then begin
+if (locdata(e) eq 0) then begin
 data_filename=root(e)+'/'+exproot(n,e)+exptail(n,e)+'/monthly/'+exproot(n,e)+exptail(n,e)+'.temp_ym_dpth_'+depthname2(d)+'.annual.nc'
 endif
 
-if (e eq 1) then begin
+if (locdata(e) eq 1) then begin
 data_filename=root(e)+'/'+exproot(n,e)+exptail(n,e)+'/'+exproot(n,e)+exptail(n,e)+'.oceantemppg'+depthname3(d)+'.monthly.nc'
 endif
 
@@ -255,7 +302,7 @@ endfor
 endfor
 
 mytemp(t,n,d,e)=total(dummy(*,*,0,t)*newweight(*,*)/total(newweight(*,*)))
-if (my_missing(n,t,d) eq 0) then begin
+if (my_missing(e,n,t,d) eq 0) then begin
 mytemp(t,n,d,e)=!VALUES.F_NAN
 endif
 
@@ -300,10 +347,16 @@ print,my_filename
 openr,1,my_filename
 readf,1,aa
 ntimes(n,e)=aa
-aaa=fltarr(tmax)
+aaa=fltarr(aa)
 readf,1,aaa
-mytemp(*,n,d,e)=aaa
+mytemp(0:aa-1,n,d,e)=aaa
 close,1
+
+for t=0,ntimes(n,e)-1 do begin
+if (my_missing(e,n,t,d) eq 0) then begin
+mytemp(t,n,d,e)=!VALUES.F_NAN
+endif
+endfor
 
 endif
 endif ; end reading(e)
@@ -425,18 +478,20 @@ endfor
 
 ; check for continuity
 
+for e=1,nexp-1 do begin
 for n=nstart,ndates-1 do begin
-print,'checking continuity for: '+exproot(n,1)+exptail(n,1)
-diff=mytemp(ntimes(n,0)-1,n,2,0)-mytemp(0,n,2,1)
-print,mytemp(ntimes(n,0)-1,n,2,0),mytemp(0,n,2,1),diff
+if (readfile(n,e) eq 1) then begin
+print,'checking continuity for: '+exproot(n,e)+exptail(n,e)
+diff=mytemp(ntimes(n,e-1)-1,n,2,e-1)-mytemp(0,n,2,e)
+print,mytemp(ntimes(n,0)-1,n,2,e-1),mytemp(0,n,2,e),diff
 if (abs(diff) gt 0.02) then begin
 print,'OWCH'
 stop
 endif
+endif
+endfor
 endfor
 
-
-; read in clims
 
 nreg=7
 xs=intarr(nreg)
@@ -489,6 +544,10 @@ climweight_lat(j,v)=-0.5*(sin(latsedgec(j+1,v)*2*!pi/360.0)-sin(latsedgec(j,v)*2
 endfor
 endfor
 
+; read in bounds
+
+
+if (do_readbounds eq 1) then begin
 
 masks_mean(*)=0.0
 for n=nstart,ndates-1 do begin
@@ -520,6 +579,7 @@ ice_mean(n)=ice_mean(n)+weight_lat(j)*mean(ice(*,j,n))
 endfor
 endfor
 
+endif
 
 
 if (do_clims eq 1) then begin
@@ -663,26 +723,26 @@ if (do_timeseries_plot eq 1) then begin
 for d=0,ndepth-1 do begin 
 
 
-device,filename='timeseries_'+depth(d)+'_new3.eps',/encapsulate,/color,set_font='Helvetica'
+device,filename='timeseries_'+depth(d)+'_new4.eps',/encapsulate,/color,set_font='Helvetica'
 
 xmin=0
-xmax=4000
+xmax=7000
 times=indgen(xmax)
 
-labelx=3400
-
-
+labelx=6000
 
 ymin=ymina(d)
 ymax=ymaxa(d)
 
 
-plot,times(0:ntimes(0,0)-1),mytemp(0:ntimes(0,0)-1,0,0,0),yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Year of simulation',psym=2,/nodata,ytitle='Temperature [degrees C]',title='Global mean ocean temperature at '+depthname(d),ystyle=1,xtickname=['0','500','1000','1500','2000','2500','3000','3500','4000'],xtickv=[0,500,1000,1500,2000,2500,3000,3500,4000],xticks=8,xstyle=1
+plot,times(0:ntimes(0,0)-1),mytemp(0:ntimes(0,0)-1,0,0,0),yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Year of simulation',psym=2,/nodata,ytitle='Temperature [degrees C]',title='Global mean ocean temperature at '+depthname(d),ystyle=1,xstyle=1
+
+;plot,times(0:ntimes(0,0)-1),mytemp(0:ntimes(0,0)-1,0,0,0),yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Year of simulation',psym=2,/nodata,ytitle='Temperature [degrees C]',title='Global mean ocean temperature at '+depthname(d),ystyle=1,xtickname=['0','500','1000','1500','2000','2500','3000','3500','4000'],xtickv=[0,500,1000,1500,2000,2500,3000,3500,4000],xticks=8,xstyle=1
 
 ;;;;;;;;;;;;;
 for n=nstart,ndates-1 do begin
 
-myshift=2100
+
 
 x=n-nstart
 xx=ndates-nstart
@@ -701,19 +761,31 @@ stop
 endif
 endif
 
-if (readfile(n,1) eq 1) then begin
-ttt=myshift
-oplot,times(ttt:ttt+ntimes(n,1)-1),mytemp(0:ntimes(n,1)-1,n,d,1),color=(x)*250.0/(xx-1)
+if (nexp gt 1) then begin
+for e=1,nexp-1 do begin
 
-xyouts,labelx,mytemp(ntimes(n,1)-1,n,d,1),exproot(n,1)+exptail(n,1)+' '+strtrim(ntimes(n,1),2),charsize=0.25,color=mycol
-
+if (readfile(n,e) eq 1) then begin
+ttt=myshift(e-1)
+oplot,times(ttt:ttt+ntimes(n,e)-1),mytemp(0:ntimes(n,e)-1,n,d,e),color=(x)*250.0/(xx-1)
+if (e eq nexp-1) then begin
+xyouts,labelx,mytemp(ntimes(n,e)-1,n,d,e),exproot(n,e)+exptail(n,e)+' '+strtrim(ntimes(n,e),2),charsize=0.25,color=mycol
+endif
 endif
 
+endfor
+endif
 
+ddx=300
+explab=2
 z=ymin+0.9*(ymax-ymin)-0.8*(ymax-ymin)*x/(xx-1)
-oplot,[labelx+200,labelx+270],[z,z],color=(n-nstart)*250.0/(ndates-nstart-1)
-xyouts,labelx+300,z,sim_names_long(n)+' '+exproot(n,1)+exptail(n,1)+' '+strtrim(ntimes(n,1),2),charsize=0.25,color=(n-nstart)*250.0/(ndates-nstart-1)
+oplot,[labelx+ddx,labelx+ddx+70],[z,z],color=(n-nstart)*250.0/(ndates-nstart-1)
+xyouts,labelx+ddx+100,z,sim_names_long(n)+' '+exproot(n,explab)+exptail(n,explab)+' '+strtrim(ntimes(n,explab),2),charsize=0.25,color=(n-nstart)*250.0/(ndates-nstart-1)
 
+endfor
+
+for e=0,nexp-1 do begin
+z=ymin+0.97*(ymax-ymin)
+xyouts,myshift(e)-500,z,exproot(0,e)+'*'
 endfor
 
 device,/close

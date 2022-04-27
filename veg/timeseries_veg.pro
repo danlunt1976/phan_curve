@@ -46,8 +46,6 @@ writing(*,7)=0
 
 
 
-
-
 reading=intarr(ndates,nexp)
 reading(*,0)=1-writing(*,0)
 reading(*,1)=1-writing(*,1)
