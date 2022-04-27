@@ -1,0 +1,25 @@
+#!/bin/bash
+
+exphead='tFja'
+
+for id in {a..b} ; do
+
+
+exp=${exphead}${id}
+
+mkdir -p ${exp}
+
+scp ggdjl@bc4login.acrc.bristol.ac.uk:/user/home/ggdjl/dump2hold/${exp}/datam/*#pi*[0,5]0dc+ ./${exp}/
+
+
+
+done
+
+
+
+
+
+
+
+
+exit
