@@ -10,7 +10,7 @@ USERSYM, COS(Aaa), SIN(Aaa), /FILL
 
 ; times
 do_timeseries_plot=1 ; plot global mean SST timeseries of each simulation
-do_gmst_plot=0 ; plot last navy years of SST through phanerozoic
+do_gmst_plot=1 ; plot last navy years of SST through phanerozoic
 
 ;means
 do_readbounds=0 ; read in mask and ice
@@ -21,6 +21,7 @@ do_solar_plot=0 ; prescribed solar forcing
 do_ice_plot=0 ; prescribed ice sheets
 do_forcings_plot=0 ; prescribed forcings in Wm-2
 do_clims=0 ; read in and analyse model output
+do_polamp_plot=0 ;  plot polamp
 do_clim_plot=0 ;  plot new vs old, EBM, MDC, and resid
 do_textfile=0 ; textfile of proxies for Emily
 
@@ -47,7 +48,12 @@ reading(*,2)=1-writing(*,2)
 readfile=intarr(ndates,nexp) ; does data exist for this simulation?
 readfile(*,0)=1
 readfile(*,1)=1
-readfile(*,2)=1
+readfile(*,2)=0
+
+readtype=intarr(ndates,nexp) ; umdata or ummodel
+readtype(*,0)=1
+readtype(*,1)=1
+readtype(*,2)=0
 
 
 ndepth=3
@@ -588,10 +594,12 @@ for e=0,nexp-1 do begin
 for n=nstart,ndates-1 do begin
 for v=0,nvar-1 do begin
 
-if (e eq 0) then begin
+if (readfile(n,e) eq 1) then begin
+
+if (readtype(e) eq 1) then begin
 data_filename=root(e)+'/'+exproot(n,e)+exptail(n,e)+'/climate/'+exproot(n,e)+exptail(n,e)+climtag(v)+'clann.nc'
 endif
-if (e eq 1) then begin
+if (readtype(e) eq 0) then begin
 data_filename=root(e)+'/'+exproot(n,e)+exptail(n,e)+'/'+exproot(n,e)+exptail(n,e)+climtag(v)+'clann.nc'
 endif
 
@@ -622,6 +630,7 @@ climav_r(n,e,v,r)=total(dummy(xs(r):xf(r),ys(r):yf(r),0,0)*climnewweight(xs(r):x
 endfor
 
 
+endif
 
 endfor
 endfor
@@ -993,7 +1002,25 @@ plots,dates2,solar,psym=5
 
 device,/close
 
-endif ; end if co2 plot
+endif ; end if solar plot
+
+if (do_ice_plot eq 1) then begin
+
+device,filename='ice_time.eps',/encapsulate,/color,set_font='Helvetica'
+
+xmin=-550
+xmax=0
+
+
+ymin=0
+ymax=0.07
+
+plot,dates2,ice_mean,yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',ytitle='ice fraction',ystyle=1,xstyle=1
+plots,dates2,ice_mean,psym=5
+
+device,/close
+
+endif ; end if ice plot
 
 
 if (do_forcings_plot eq 1) then begin
@@ -1238,6 +1265,10 @@ endfor
 
 device,/close
 
+endif
+
+
+if (do_polamp_plot eq 1) then begin
 
 for v=0,nvar-1 do begin
 
@@ -1325,6 +1356,40 @@ mycol=(x)*250.0/(xx-1)
 plots,climav(n,1,v),polamp(n),color=mycol,psym=8,symsize=1.5
 ;xyouts,climav(n,1,v)+5,polamp(n)+0.05,exproot(n,1)+exptail(n,1),charsize=0.2
 
+ddy=0.2
+fy=0.7
+sy=19
+
+if (n eq 0) then begin
+plots,16,sy,color=mycol,psym=8,symsize=1.5
+xyouts,16.5,sy-ddy,color=0,'0 Ma'
+endif
+if (n eq 20) then begin
+plots,16,sy-1*fy,color=mycol,psym=8,symsize=1.5
+xyouts,16.5,sy-1*fy-ddy,color=0,'100 Ma'
+endif
+if (n eq 40) then begin
+plots,16,sy-2*fy,color=mycol,psym=8,symsize=1.5
+xyouts,16.5,sy-2*fy-ddy,color=0,'200 Ma'
+endif
+if (n eq 60) then begin
+plots,16,sy-3*fy,color=mycol,psym=8,symsize=1.5
+xyouts,16.5,sy-3*fy-ddy,color=0,'300 Ma'
+endif
+if (n eq 80) then begin
+plots,16,sy-4*fy,color=mycol,psym=8,symsize=1.5
+xyouts,16.5,sy-4*fy-ddy,color=0,'400 Ma'
+endif
+if (n eq 100) then begin
+plots,16,sy-5*fy,color=mycol,psym=8,symsize=1.5
+xyouts,16.5,sy-5*fy-ddy,color=0,'500 Ma'
+endif
+
+
+
+
+
+
 endfor ; end n
 
 ;oplot,climav(*,1,v),polamp,thick=3
@@ -1332,7 +1397,11 @@ endfor ; end n
 ;oplot,[dates2(0),dates2(nstart-1)],[0,0],linestyle=2
 
 ;xyouts,-500,17,'My new runs'
-;plots,-520,17,psym=6,symsize=0.5
+
+
+plots,-520,17,psym=6,symsize=0.5
+
+
 
 
 
