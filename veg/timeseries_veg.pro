@@ -19,13 +19,13 @@ do_cont_check=1
 ; Total number of time snapshots
 ndates=109
 nexp=8
-tmax=3000
+tmax=3500
 nstart=0
 ;;;;
 
 if (nexp gt 1) then begin
 myshift=intarr(nexp)
-myshift(*)=[2100,4200,6300,7400,8500,9600,10700,11300]
+myshift(*)=[2100,4200,6300,7400,8500,9600,10700,13800]
 endif
 
 
@@ -43,8 +43,6 @@ writing(*,4)=0
 writing(*,5)=0
 writing(*,6)=0
 writing(*,7)=0
-
-
 
 reading=intarr(ndates,nexp)
 reading(*,0)=1-writing(*,0)
@@ -66,10 +64,7 @@ readfile(*,3)=1
 readfile(*,4)=1
 readfile(*,5)=1
 readfile(*,6)=1
-
-readfile(*,7)=0
-readfile(0,7)=1
-readfile(108,7)=1
+readfile(*,7)=1
 
 readtype=intarr(ndates,nexp)
 readtype(*,0)=1
@@ -314,19 +309,26 @@ ntimes(n,e)=t
 
 endif else begin ; readtype=2
 
-ntimes(n,e)=500
+tstopfirst=0
 
-for t=0,ntimes(n,e)-1 do begin
+for t=0,tmax-1 do begin
 
-if (t eq 0) then thisvarname='fracPFTs_snp_srf'
-if (t gt 0) then thisvarname='fracPFTs_srf'
+;if (t eq 0) then thisvarname='fracPFTs_snp_srf'
+;if (t gt 0) then thisvarname='fracPFTs_srf'
+thisvarname='fracPFTs_srf'
 
-tt=t
+tt=t+1
 noughts,tt,ee,9
+
 
 data_filename='/home/bridge/ggdjl/umdata/'+exproot(n,e)+exptail(n,e)+exptail2(n,e)+'/pt/'+exproot(n,e)+exptail(n,e)+exptail2(n,e)+'a#pt'+ee+'dec+.nc'
 
 print,n,data_filename
+
+fileexist=FILE_TEST(data_filename)
+
+if (fileexist eq 1 and tstopfirst eq 0) then begin
+
 id1=ncdf_open(data_filename)
 ncdf_varget,id1,thisvarname,dummy
 ncdf_close,id1
@@ -340,6 +342,17 @@ endfor
 endfor
 
 mytemp(t,n,e)=total(dummy(*,*,0)*newweight(*,*)/total(newweight(*,*)))
+
+endif else begin
+
+if (tstopfirst eq 0) then begin
+ntimes(n,e)=t
+tstopfirst=1
+
+
+endif
+
+endelse
 
 
 endfor ; end t (ntimes)
@@ -379,9 +392,9 @@ print,my_filename
 openr,1,my_filename
 readf,1,aa
 ntimes(n,e)=aa
-aaa=fltarr(tmax)
+aaa=fltarr(aa)
 readf,1,aaa
-mytemp(*,n,e)=aaa
+mytemp(0:aa-1,n,e)=aaa
 close,1
 
 for t=0,ntimes(n,e)-1 do begin
@@ -472,11 +485,11 @@ if (do_timeseries_plot eq 1) then begin
 device,filename='timeseries_veg_new3.eps',/encapsulate,/color,set_font='Helvetica',xsize=40,ysize=15
 
 xmin=0
-xmax=12500
+xmax=15000
 times=indgen(xmax)
 
 
-labelx=11300
+labelx=13800
 
 plot,times(0:ntimes(0,0)-1),mytemp(0:ntimes(0,0)-1,0,0),yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Year of simulation',psym=2,/nodata,ytitle='Veg fraction',title='VEG',ystyle=1,xstyle=1
 

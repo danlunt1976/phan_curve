@@ -1,9 +1,24 @@
-#!/bin/bash
+#!/bin/ksh
 
 indir_root=/home/bridge/ggdjl/umdata
 
-for exproot in tfgw tfgW tfGw tfGW tFgw ; do
-  for id in {a..z} ; do
+#for exproot in tfgw tfgW tfGw tfGW tFgw ; do
+#for exproot in tFke ; do
+#  my_loop={a..z}
+
+#for exproot in tfKE ; do
+#    my_loop={a..h}
+
+for exproot in tfke ; do
+    my_loop={f..z}
+
+#  if [ "$exproot" = "tFgw" ] ; then
+  if [ "$exproot" = "tFke" ] ; then
+    my_loop={a..e}
+  fi
+
+
+  for id in ${my_loop} ; do
 
     exp=${exproot}${id}
     indir=${indir_root}/${exp}/pg

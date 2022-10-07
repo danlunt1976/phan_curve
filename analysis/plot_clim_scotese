@@ -1,14 +1,17 @@
 #!/bin/bash
 
-plot_tempdiff=0
+
+plot_tempdiff=1
 plot_streamabs=0
 plot_uv=0
 plot_mixed=0
-plot_merid=1
+plot_merid=0
 plot_wind=0
 plot_temp=0
 plot_salin=0
 plot_topo=0
+plot_albdiff=1
+plot_smdiff=1
 
 
 ###  get args
@@ -43,6 +46,25 @@ ncl ${jobfile}
 \rm ${jobfile}
 fi
 
+if [ ${plot_albdiff} -eq 1 ] ; then
+jobfile="ncl.${exp}.clim_alb_dif.ncl"
+\cp ncl.SKEL.clim_alb_dif.ncl ${jobfile}
+sed -i "s/EXP/${exp}/g" ${jobfile}
+sed -i "s/EXR/${exr}/g" ${jobfile}
+sed -i "s/DOPLOT/${doplot}/g" ${jobfile}
+ncl ${jobfile}
+\rm ${jobfile}
+fi
+
+if [ ${plot_smdiff} -eq 1 ] ; then
+jobfile="ncl.${exp}.clim_sm_dif.ncl"
+\cp ncl.SKEL.clim_sm_dif.ncl ${jobfile}
+sed -i "s/EXP/${exp}/g" ${jobfile}
+sed -i "s/EXR/${exr}/g" ${jobfile}
+sed -i "s/DOPLOT/${doplot}/g" ${jobfile}
+ncl ${jobfile}
+\rm ${jobfile}
+fi
 
 if [ ${plot_streamabs} -eq 1 ] ; then
 jobfile="ncl.${exp}.clim_abs.ncl"

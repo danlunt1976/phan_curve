@@ -15,7 +15,11 @@
 
 #for ty in polampxtemp_temp_scatter polampxtemp_sst_scatter ; do
 
-for ty in forcings_time_1 co2_time_1 ; do
+#for ty in forcings_time_1 co2_time_1 ; do
+
+#for ty in polampxtemp_sst_scatter ; do
+
+for ty in ice_time ; do
 
 gs -dSAFER -dEPSCrop -r600 -sDEVICE=pngalpha -o ${ty}.png ${ty}.eps
 

@@ -1,12 +1,14 @@
-plot_tempdiff=1
-plot_streamabs=1
-plot_mixed=1
-plot_uv=1
-plot_merid=1
-plot_wind=1
-plot_temp=1
-plot_salin=1
+plot_tempdiff=0
+plot_albedosdiff=1
+plot_streamabs=0
+plot_mixed=0
+plot_uv=0
+plot_merid=0
+plot_wind=0
+plot_temp=0
+plot_salin=0
 plot_topo=0
+
 
 
 if [ ${plot_topo} -eq 1 ] ; then
@@ -133,7 +135,8 @@ fi
 
 
 if [ ${plot_tempdiff} -eq 1 ] ; then
-exp=tfgw-teye
+#exp=tfgw-teye
+exp=tfja-tfgw
 filename="Figure_temp_${exp}"
 jobfile=${filename}.tex
 \cp Figure_VAR_${exp}_SKEL.tex ${jobfile}
@@ -143,5 +146,23 @@ pdflatex ${jobfile}
 \rm ${filename}.log
 \rm ${filename}.aux
 \rm ${jobfile}
-
 fi
+
+
+if [ ${plot_albedosdiff} -eq 1 ] ; then
+#exp=tfgw-teye
+exp=tfja-tfgw
+filename="Figure_albedos_${exp}"
+jobfile=${filename}.tex
+\cp Figure_VAR_${exp}_SKEL.tex ${jobfile}
+sed -i "s/EXT//g" ${jobfile}
+sed -i "s/VAR/albedos/g" ${jobfile}
+pdflatex ${jobfile}
+\rm ${filename}.log
+\rm ${filename}.aux
+\rm ${jobfile}
+fi
+
+
+exit
+

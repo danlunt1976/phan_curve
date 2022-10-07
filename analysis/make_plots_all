@@ -2,7 +2,9 @@
 
 indir_root=/home/bridge/ggdjl/um_climates
 
-for exproot in tfgw tfgW tfGw tfGW tFgw ; do
+#for exproot in tfgw tfgW tfGw tfGW tFgw ; do
+for exproot in tfja tfjA tfJa tfJA tFja ; do
+
    if [ "$exproot" = "tfgw" ] ; then
       exproot_old="teye"      
       my_loop={a..z}
@@ -19,6 +21,24 @@ for exproot in tfgw tfgW tfGw tfGW tFgw ; do
       exproot_old="tEye"
       my_loop={a..e}
    fi
+
+   if [ "$exproot" = "tfja" ] ; then
+      exproot_old="tfgw"      
+      my_loop={a..z}
+   elif [ "$exproot" = "tfjA" ] ; then
+      exproot_old="tfgW"
+      my_loop={a..z}
+   elif [ "$exproot" = "tfJa" ] ; then
+      exproot_old="tfGw"
+      my_loop={a..z}
+   elif [ "$exproot" = "tfJA" ] ; then
+      exproot_old="tfGW"
+      my_loop={a..z}
+   elif [ "$exproot" = "tFja" ] ; then
+      exproot_old="tFgw"
+      my_loop={a..e}
+   fi
+
 
    for id in ${my_loop} ; do
 

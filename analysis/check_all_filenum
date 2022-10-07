@@ -2,11 +2,35 @@
 
 indir_root=/home/bridge/ggdjl/umdata
 
-for exproot in tfgw tfgW tfGw tfGW tFgw ; do
+#for exproot in tfgw tfgW tfGw tfGW tFgw ; do
+#ptnum=12600
+#panum=600
+#pgnum=1050
+#pcnum=12601
+#pinum=12601
 
-   my_loop={a..z}
+#for exproot in tfja tfjA tfJa tfJA tFja ; do
+#for exproot in tfJA tFja ; do
+#for exproot in tFke ; do
 
-   if [ "$exproot" = "tFgw" ] ; then
+#for exproot in tfke ; do
+for exproot in tfke ; do
+
+ptnum=36001
+panum=0
+pgnum=3000
+pcnum=36001
+pinum=0
+plnum=3000
+penum=0
+rdnum=0
+
+#   my_loop={a..z}
+#   my_loop={a..e}
+#   my_loop={a..h}
+   my_loop={f..z}
+
+   if [[ "$exproot" = "tFgw" || "$exproot" = "tFja" || "$exproot" = "tFke" ]] ; then
       my_loop={a..e}
    fi
 
@@ -17,34 +41,85 @@ for exproot in tfgw tfgW tfGw tfGW tFgw ; do
      echo ${exp}
 
 
-     for type in pc pd pf pi ; do
+     for type in pc pd pf ; do
+     if [ ${pcnum} != 0 ] ; then
+     echo ${type}
      mynum=`ls ${indir}/${type}/${exp}??${type}*.nc | wc | awk {'print $1}'`
-     if [ ${mynum} != 12601 ] ; then
-       echo 'DODGY '${type}' '${mynum}' 12601'
+     if [ ${mynum} != ${pcnum} ] ; then
+       echo 'DODGY '${type}' '${mynum}' '${pcnum}
+     fi
+     fi
+     done
+
+     for type in pi ; do
+     if [ ${pinum} != 0 ] ; then
+     echo ${type}
+     mynum=`ls ${indir}/${type}/${exp}??${type}*.nc | wc | awk {'print $1}'`
+     if [ ${mynum} != ${pinum} ] ; then
+       echo 'DODGY '${type}' '${mynum}' '${pinum}
+     fi
      fi
      done
 
      for type in pg ; do
+     if [ ${pgnum} != 0 ] ; then
+     echo ${type}
      mynum=`ls ${indir}/${type}/${exp}??${type}*.nc | wc | awk {'print $1}'`
-     if [ ${mynum} != 1050 ] ; then
-       echo 'DODGY '${type}' '${mynum}' 1050'
+     if [ ${mynum} != ${pgnum} ] ; then
+       echo 'DODGY '${type}' '${mynum}' '${pgnum}
+     fi
      fi
      done
 
      for type in pa pb ; do
+     if [ ${panum} != 0 ] ; then
+     echo ${type}
      mynum=`ls ${indir}/${type}/${exp}??${type}*.nc | wc | awk {'print $1}'`
-     if [ ${mynum} != 600 ] ; then
-       echo 'DODGY '${type}' '${mynum}' 600'
+     if [ ${mynum} != ${panum} ] ; then
+       echo 'DODGY '${type}' '${mynum}' '${panum}
+     fi
      fi
      done
 
      for type in pt ; do
+     if [ ${ptnum} != 0 ] ; then
+     echo ${type}
      mynum=`ls ${indir}/${type}/${exp}??${type}* | wc | awk {'print $1}'`
-     if [ ${mynum} != 12600 ] ; then
-       echo 'DODGY '${type}' '${mynum}' 12600'
+     if [ ${mynum} != ${ptnum} ] ; then
+       echo 'DODGY '${type}' '${mynum}' '${ptnum}
+     fi
      fi
      done
 
+     for type in pl ; do
+     if [ ${plnum} != 0 ] ; then
+     echo ${type}
+     mynum=`ls ${indir}/${type}/${exp}??${type}*.nc | wc | awk {'print $1}'`
+     if [ ${mynum} != ${plnum} ] ; then
+       echo 'DODGY '${type}' '${mynum}' '${plnum}
+     fi
+     fi
+     done
+
+     for type in pe ; do
+     if [ ${penum} != 0 ] ; then
+     echo ${type}
+     mynum=`ls ${indir}/${type}/${exp}??${type}*.nc | wc | awk {'print $1}'`
+     if [ ${mynum} != ${penum} ] ; then
+       echo 'DODGY '${type}' '${mynum}' '${penum}
+     fi
+     fi
+     done
+
+     for type in rd ; do
+     if [ ${rdnum} != 0 ] ; then
+     echo ${type}
+     mynum=`ls ${indir}/${type}/${exp}??${type}*.nc | wc | awk {'print $1}'`
+     if [ ${mynum} != ${rdnum} ] ; then
+       echo 'DODGY '${type}' '${mynum}' '${rdnum}
+     fi
+     fi
+     done
 
    done
 done
