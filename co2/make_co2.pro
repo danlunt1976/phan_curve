@@ -8,11 +8,12 @@ nco2=2
 ; 0 = foster
 ; 1 = rae
 
-nco2f=4
+nco2f=5
 ; 0 = foster
 ; 1 = foster | rae
 ; 2 = foster blended rae
 ; 3 = foster rae rae
+; 4 = inferred
 
 ntim=2
 ; 0 = orig
@@ -166,9 +167,22 @@ co2m(i,3,t)=co2s(i,3,t)*44.01/28970000.0
 
 endfor
 
+; Inferred
+if (t eq 1) then begin
+dates2=fltarr(ns)
+co2_inf_1m=fltarr(ns)
 
+openr,1,'../analysis/co2_inferred.dat'
+readf,1,dates2
+readf,1,co2_inf_1m
+close,1
 
+for i=0,ns-1 do begin
+co2s(i,4,t)=co2_inf_1m(i)
+co2m(i,4,t)=co2s(i,4,t)*44.01/28970000.0
+endfor
 
+endif
 
 ; write the files
 openw,1,'co2_all_02_djl'+extname(t)+'.dat'
@@ -182,6 +196,14 @@ for i=0,ns-1 do begin
 PRINTf,1,cage(i,t),ages(i,t),co2s(i,3,t),co2m(i,3,t), FORMAT = '(1x,a,1x,2f10.2,1x,E12.5)'
 endfor
 close,1
+
+if (t eq 1) then begin
+openw,1,'co2_all_04'+extname(t)+'.dat'
+for i=0,ns-1 do begin
+PRINTf,1,cage(i,t),ages(i,t),co2s(i,4,t),co2m(i,4,t), FORMAT = '(1x,a,1x,2f10.2,1x,E12.5)'
+endfor
+close,1
+endif
 
 
 endfor ; end t/ntim

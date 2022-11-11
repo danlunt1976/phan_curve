@@ -9,21 +9,23 @@ Aaa = FINDGEN(17) * (!PI*2/16.)
 USERSYM, COS(Aaa), SIN(Aaa), /FILL 
 
 ; times
-do_times=0
+do_times=0 ; if 0 then only read in most recent simulations, for speed
 do_timeseries_plot=0 ; plot global mean SST timeseries of each simulation
 do_gmst_plot=0 ; plot last navy years of SST through phanerozoic
 
 ;means
 do_clims=1 ; read in and analyse model output
 do_readbounds=1 ; read in mask and ice
+do_ff_model=1 ; forcing/feedback model
 do_temp_plot=1 ; global mean from proxies
 do_co2_plot=1 ; prescribed co2
-do_lsm_plot=1 ; prescribed land area
-do_solar_plot=1 ; prescribed solar forcing
-do_ice_plot=1 ; prescribed ice sheets
-do_forcings_plot=1 ; prescribed forcings in Wm-2
-do_polamp_plot=1 ;  plot polamp
-do_clim_plot=1 ;  plot new vs old, EBM, MDC, and resid
+do_lsm_plot=0 ; prescribed land area
+do_solar_plot=0 ; prescribed solar forcing
+do_ice_plot=0 ; prescribed ice sheets
+do_forcings_plot=0 ; prescribed forcings in Wm-2
+do_forctemps_plot=0 ; prescribed forcings in oC
+do_polamp_plot=0 ;  plot polamp
+do_clim_plot=0 ;  plot new vs old, EBM, MDC, and resid
 do_textfile=0 ; textfile of proxies for Emily
 
 ;;;;
@@ -50,12 +52,19 @@ reading(*,3)=1-writing(*,3)
 reading(*,4)=1-writing(*,4)
 
 readfile=intarr(ndates,nexp) ; does data exist for this simulation?
+if (do_times eq 1) then begin
 readfile(*,0)=1
 readfile(*,1)=1
 readfile(*,2)=1
 readfile(*,3)=1
 readfile(*,4)=1
-
+endif else begin
+readfile(*,0)=0
+readfile(*,1)=0
+readfile(*,2)=0
+readfile(*,3)=0
+readfile(*,4)=1
+endelse
 
 readtype=intarr(ndates,nexp) ; umdata [0] or ummodel [1] for clims
 readtype(*,0)=1
@@ -79,6 +88,14 @@ co2file(1)='co2_all_02'
 co2file(2)='co2_all_03_nt'
 co2file(3)='co2_all_02'
 co2file(4)='co2_all_03_nt'
+
+colexp=intarr(nexp)
+colexp(0)=50
+colexp(1)=100
+colexp(2)=150
+colexp(3)=200
+colexp(4)=0
+
 
 
 ndepth=3
@@ -501,6 +518,43 @@ endfor
 close,1
 dates_scot=dates_scot*(-1.0)
 
+line=''
+dum=''
+nrows_scot1m=541
+dates_scot1m=fltarr(nrows_scot1m)
+temp_scot1m=fltarr(nrows_scot1m)
+temp_scot1morig=fltarr(nrows_scot1m)
+close,1
+openr,1,'pal_data/Phanerozoic_Paleotemperature_Summaryv4_1myr.csv'
+readf,1,dum
+for n=0,nrows_scot1m-1 do begin
+;print,n
+readf,1,line
+;print,line
+my_line=strsplit(line,',',/EXTRACT,/PRESERVE_NULL)
+dates_scot1m(n)=my_line(0)
+temp_scot1morig(n)=my_line(1)
+print,my_line(0)+' '+my_line(1)+' '+my_line(2)+' '+my_line(3)+' '+my_line(4)
+endfor
+close,1
+dates_scot1m=dates_scot1m*(-1.0)
+
+
+print,'editing scot_1m orig'
+temp_scot1m=temp_scot1morig
+; remove K-Pg
+temp_scot1m(66)=mean([temp_scot1m(65),temp_scot1m(67)])
+templim=28.0
+; remove max temps > 28.0 in P-T
+for t=1,nrows_scot1m-1 do begin
+if (temp_scot1m(t) gt templim) then begin
+  temp_scot1m(t)=templim
+endif
+endfor
+; 5-point running mean
+temp_scot1m=smooth(temp_scot1m,5,/EDGE_TRUNCATE)
+
+
 
 
 line=''
@@ -623,8 +677,8 @@ ymaxc=[26,27]
 
 yminr=fltarr(nvar)
 ymaxr=fltarr(nvar)
-yminr=[-2,-5]
-ymaxr=[2,5]
+yminr=[-4,-5]
+ymaxr=[4,5]
 
 yminp=fltarr(nvar)
 ymaxp=fltarr(nvar)
@@ -731,6 +785,11 @@ endfor
 endif ; end do_clims
 
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Forcing/feedback model
+
+if (do_ff_model eq 1) then begin 
+
 c_alb=0.27
 c_co2=3.7
 c_dalb=0.14-0.06
@@ -739,37 +798,35 @@ c_dice=0.9-0.14
 t_co2=1.0
 t_co2_lin=1.0
 
-baseline=20
+baseline=0
 
-;;;;;;;;;;;;;;;;;;;;
-; GOOD SET OF PARAMS:
-t_solar=0.7
-t_area=1.25
-c_a=0.04
-lambda=-1.0
+;;;;;;
+; ORIG SET OF PARAMS:
+;t_solar=1.0
+;t_area=0.8
+;t_ice=0.2
+;c_a=0.001
+;lambda=-1.1
 
-t_solar_lin=0.7
-t_area_lin=1.0
-lambda_lin=-0.9
-
-; OVERWRIIE WITH ZERO SET OF PARAMS:
-;t_solar=0.0
-;t_area=0.0
-
+;t_solar_lin=1.0
+;t_area_lin=0.8
+;t_ice_lin=0.2
+;lambda_lin=-1.1
 
 ; NEW SET OF PARAMS:
 t_solar=1.0
 t_area=0.8
 t_ice=0.2
 c_a=0.001
-lambda=-1.1
+lambda=-0.9
 
-t_solar_lin=1.0
-t_area_lin=0.8
-t_ice_lin=0.2
-lambda_lin=-1.1
+t_solar_lin=t_solar
+t_area_lin=t_area
+t_ice_lin=t_ice
+lambda_lin=lambda
 
-;;;;;;;;;;;;;;;;;;;;
+
+;;;;;;
 
 
 
@@ -788,8 +845,8 @@ f_co2_lin=fltarr(ndates)
 f_all=fltarr(ndates)
 f_all_lin=fltarr(ndates)
 
-t_all=fltarr(ndates)
-t_all_lin=fltarr(ndates)
+temp_all=fltarr(ndates)
+temp_all_lin=fltarr(ndates)
 
 
 ; units of f_co2 and f_solar are w/m2
@@ -807,14 +864,120 @@ f_ice_lin(*)=t_ice*solar*(-1.0)*(ice_mean-ice_mean(baseline))*c_dice/4.0
 f_all=f_co2+f_solar+f_area+f_ice
 f_all_lin=f_co2_lin+f_solar_lin+f_area_lin+f_ice_lin
 
-t_all_lin=climav(baseline,1,0) - 1.0*f_all_lin/lambda_lin 
-t_all= climav(baseline,1,0) + (-1.0*lambda-sqrt(lambda*lambda-4.0*c_a*f_all))/(2.0*c_a)
+temp_all_lin=climav(baseline,pe,0) - 1.0*f_all_lin/lambda_lin 
+temp_all= climav(baseline,pe,0) + (-1.0*lambda-sqrt(lambda*lambda-4.0*c_a*f_all))/(2.0*c_a)
 
 temp_scot_interp=interpol(temp_scot,dates_scot,dates2)
+temp_scot1m_interp=interpol(temp_scot1m,dates_scot1m,dates2)
 
-f_co2_inf = lambda_lin*(climav(baseline,1,0)-temp_scot_interp)-(f_solar_lin+f_area_lin+f_ice_lin)
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;
+r_co2=c_co2*alog(co2/co2(baseline))/alog(2.0)
+r_solar=(1.0-c_alb)*(solar-solar(baseline))/4.0
+r_area=solar*(-1.0)*(masks_mean-masks_mean(baseline))*c_dalb/4.0
+r_ice=solar*(-1.0)*(ice_mean-ice_mean(baseline))*c_dice/4.0
+
+rr = [TRANSPOSE(r_co2), TRANSPOSE(r_solar), TRANSPOSE(r_area), TRANSPOSE(r_ice)]
+
+myresult = REGRESS(rr, climav(*,pe,0), SIGMA=mysigma, CONST=myconst)
+PRINT, 'Constant: ', myconst
+PRINT, 'Coefficients: ', myresult[*]
+PRINT, 'Standard errors: ', mysigma
+
+t_co2_tun=1.0
+t_solar_tun=myresult(1)/myresult(0)
+t_area_tun=myresult(2)/myresult(0)
+t_ice_tun=myresult(3)/myresult(0)
+lambda_tun=-1.0/myresult(0)
+
+f_co2_tun=t_co2_tun*r_co2
+f_solar_tun=t_solar_tun*r_solar
+f_area_tun=t_area_tun*r_area
+f_ice_tun=t_ice_tun*r_ice
+
+f_all_tun=f_co2_tun+f_solar_tun+f_area_tun+f_ice_tun
+
+temp_all_tun=myconst - 1.0*f_all_tun/lambda_tun 
+temp_co2=myconst - 1.0*f_co2_tun/lambda_tun 
+temp_solar=myconst - 1.0*f_solar_tun/lambda_tun 
+temp_area=myconst - 1.0*f_area_tun/lambda_tun 
+temp_ice=myconst - 1.0*f_ice_tun/lambda_tun 
+
+resid=climav(*,pe,0)-temp_all_tun(*)
+temp_resid=myconst + resid
+
+temp_all_tun2=myconst+myresult(0)*r_co2 + myresult(1)*r_solar + myresult(2)*r_area +myresult(3)*r_ice
+
+testing=temp_all_tun-temp_all_tun2
+myerr=sqrt(total(testing*testing)/(ndates*1.0))
+if (myerr gt 1e-5) then begin
+print,'Problem!!  temp_all_tun and temp_all_tun2'
+stop
+endif
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+; INFERRED CO2:
+
+; old method
+;f_co2_inf = lambda_lin*(climav(baseline,pe,0)-temp_scot_interp)-(f_solar_lin+f_area_lin+f_ice_lin)
+
+; new method 1: 
+f_co2_inf = lambda_tun*(resid+myconst-temp_scot_interp)-(f_solar_tun+f_area_tun+f_ice_tun)
+
+; new method 2
+f_co2_inf2 = f_co2_tun + lambda_tun * (climav(*,pe,0) - temp_scot_interp)
+f_co2_inf2_1m = f_co2_tun + lambda_tun * (climav(*,pe,0) - temp_scot1m_interp)
+
+
+; methods 1 and 2 should be the same
+testing=f_co2_inf-f_co2_inf2
+myerr=sqrt(total(testing*testing)/(ndates*1.0))
+if (myerr gt 1e-5) then begin
+print,'Problem!!  f_co2_inf and f_co2_inf2'
+stop
+endif
+
+; raw co2
 co2_inf=co2(baseline)*exp(f_co2_inf*alog(2)/(t_co2*c_co2))
+co2_inf_1m=co2(baseline)*exp(f_co2_inf2_1m*alog(2)/(t_co2*c_co2))
+
+
+; totally different method....
+
+co2_inf_1m2=co2*exp(-1.0*alog(2.0)*lambda_tun*(temp_scot1m_interp-climav(*,pe,0))/(c_co2))
+; methods should be the same
+testing=co2_inf_1m2-co2_inf_1m
+myerr=sqrt(total(testing*testing)/(ndates*1.0))
+if (myerr gt 1e-2) then begin
+print,'Problem!!  co2_inf_1m2 and co2_inf_1m'
+stop
+endif
+
+
+; final check that inferred inferred temp is OK!
+
+temp_all_tun3=resid+myconst+myresult(0)*c_co2*alog(co2_inf_1m/co2(baseline))/alog(2.0) + myresult(1)*r_solar + myresult(2)*r_area +myresult(3)*r_ice
+
+testing=temp_all_tun3-temp_scot1m_interp
+myerr=sqrt(total(testing*testing)/(ndates*1.0))
+if (myerr gt 1e-5) then begin
+print,'Problem!! temp_all_tun3 and temp_scot1m_interp'
+stop
+endif
+
+; now print out inferred co2 
+
+openw,1,'co2_inferred.dat'
+printf,1,dates2
+printf,1,co2_inf_1m
+close,1
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;
+endif
 
 
 
@@ -993,9 +1156,12 @@ endif ; end gmst plot
 
 if (do_temp_plot eq 1) then begin
 
-device,filename='temp_scotese_time.eps',/encapsulate,/color,set_font='Helvetica'
+npp=3
+ppname=strarr(npp)
+ppname(*)=['01','02','03']
+for p=0,npp-1 do begin
 
-
+device,filename='temp_scotese_time_'+ppname(p)+'.eps',/encapsulate,/color,set_font='Helvetica'
 
 xmin=-550
 xmax=0
@@ -1010,11 +1176,28 @@ dtopbar=(ymax-ymin)*0.6/35.0
 
 plot,dates2,co2,yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',ytitle='Global Mean Temperature [oC]',ystyle=1,xstyle=1,/nodata
 
-;plots,dates_scot,temp_scot,psym=8,symsize=0.5,color=250
-oplot,dates_scot,temp_scot,color=250,thick=3
-
+; Plot Wing and Huber
 ;plots,dates_wing,temp_wing,psym=8,symsize=0.5,color=80
 oplot,dates_wing,temp_wing,color=80,thick=3
+
+
+if (p eq 0 or p eq 1 or p eq 2) then begin
+; Plot raw Scotese Master in red
+;plots,dates_scot,temp_scot,psym=8,symsize=0.5,color=250
+oplot,dates_scot,temp_scot,color=250,thick=3
+endif
+
+if (p eq 1 or p eq 2) then begin
+; Plot raw Scotese 1m in green
+oplot,dates_scot1m,temp_scot1morig,color=150,thick=3
+endif
+
+if (p eq 2) then begin
+; Plot final Scotese 1m in black, with interpolated points
+oplot,dates_scot1m,temp_scot1m,color=0,thick=3
+plots,dates2,temp_scot1m_interp,psym=6,symsize=0.5,color=0
+endif
+
 
 oplot,[xmin,xmax],[topbar,topbar]
 for n=1,nstage-1 do begin
@@ -1041,6 +1224,8 @@ xyouts,x1+dx2,y1-dy1-dy2,'Wing and Huber (2020)',color=80
 
 device,/close
 
+endfor
+
 endif ; end if temp plot
 
 
@@ -1055,16 +1240,19 @@ xmax=0
 
 
 ymin=0
-ymax=5000
+ymax=12000
 
 topbar=ymin+(ymax-ymin)*33.0/35.0
 dtopbar=(ymax-ymin)*0.6/35.0
 
-plot,dates2,co2,yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',ytitle='co2',ystyle=1,xstyle=1
-plots,dates2,co2,psym=5
+plot,dates2,co2,yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',ytitle='co2',ystyle=1,xstyle=1,color=0,/nodata
+oplot,dates2,co2,color=50
+plots,dates2,co2,psym=5,symsize=0.5,color=50
 
 if (t eq 1) then begin
-oplot,dates2,co2_inf,linestyle=1
+oplot,dates2,co2_inf,color=250
+oplot,dates2,co2_inf_1m,color=0,thick=5
+plots,dates2,co2_inf_1m,color=0,psym=6,symsize=0.5
 endif
 
 oplot,[xmin,xmax],[topbar,topbar]
@@ -1076,10 +1264,10 @@ for n=0,nstage-1 do begin
 xyouts,(stageb(n)+stageb(n+1))/2.0,topbar+dtopbar,alignment=0.5,stagen(n),charsize=0.7
 endfor
 
-oplot,[-150,-120],[4000,4000]
+oplot,[-150,-120],[4000,4000],color=50
 xyouts,-100,3950,'prescribed CO2', charsize=0.7
 if (t eq 1) then begin
-oplot,[-150,-120],[3700,3700], linestyle=1
+oplot,[-150,-120],[3700,3700], color=0,thick=5
 xyouts,-100,3650,'inferred CO2', charsize=0.7
 endif
 
@@ -1157,8 +1345,8 @@ xmin=-550
 xmax=0
 
 
-ymin=-12
-ymax=12
+ymin=-15
+ymax=15
 
 topbar=ymin+(ymax-ymin)*33.0/35.0
 dtopbar=(ymax-ymin)*0.6/35.0
@@ -1179,7 +1367,7 @@ endif
 
 
 
-y1=9.5
+y1=-8
 dy1=1.2
 x1=-220
 dx1=30
@@ -1214,6 +1402,84 @@ device,/close
 endfor
 
 endif ; end if forcings plot
+
+
+
+
+if (do_forctemps_plot eq 1) then begin
+print,'forctemp plot'
+
+for t=0,1 do begin
+
+device,filename='forctemps_time_'+strtrim(t,2)+'.eps',/encapsulate,/color,set_font='Helvetica'
+
+xmin=-550
+xmax=0
+
+ymin=5
+ymax=40
+
+topbar=ymin+(ymax-ymin)*33.0/35.0
+dtopbar=(ymax-ymin)*0.6/35.0
+
+plot,dates2,f_all,yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',ytitle='Global Mean Te,peratures [oC]',ystyle=1,xstyle=1,/nodata
+
+plots,dates2,climav(*,pe,0),psym=5,symsize=0.5
+
+oplot,dates2,temp_solar,color=50,thick=3
+oplot,dates2,temp_co2,color=100,thick=3
+oplot,dates2,temp_area,color=150,thick=3
+oplot,dates2,temp_ice,color=200,thick=3
+oplot,dates2,temp_resid,color=250,thick=3
+
+oplot,dates2,temp_all_tun,color=0,thick=3
+
+if (t eq 1) then begin
+oplot,dates2,f_co2_inf,color=100,thick=3,linestyle=1
+endif
+
+
+
+y1=12
+dy1=1.2
+x1=-220
+dx1=30
+dx2=50
+cs=1.0
+
+plots,x1+dx1/2.0,y1+(1*dy1),psym=5,symsize=0.5
+oplot,[x1,x1+dx1],[y1,y1],color=50,thick=3
+oplot,[x1,x1+dx1],[y1-(1*dy1),y1-(1*dy1)],color=100,thick=3
+oplot,[x1,x1+dx1],[y1-(2*dy1),y1-(2*dy1)],color=150,thick=3
+oplot,[x1,x1+dx1],[y1-(3*dy1),y1-(3*dy1)],color=200,thick=3
+oplot,[x1,x1+dx1],[y1-(4*dy1),y1-(4*dy1)],color=250,thick=3
+oplot,[x1,x1+dx1],[y1-(5*dy1),y1-(5*dy1)],color=0,thick=3
+
+
+xyouts,x1+dx2,y1+(1*dy1),'HadCM3L ['+exproot(pe,0)+']',charsize=cs
+xyouts,x1+dx2,y1,color=50,'Solar temp',charsize=cs
+xyouts,x1+dx2,y1-(1*dy1),color=100,'CO2 temp',charsize=cs
+xyouts,x1+dx2,y1-(2*dy1),color=150,'Land surface temp',charsize=cs
+xyouts,x1+dx2,y1-(3*dy1),color=200,'Ice sheet temp',charsize=cs
+xyouts,x1+dx2,y1-(4*dy1),color=250,'Residual temp',charsize=cs
+xyouts,x1+dx2,y1-(5*dy1),color=0,'All temps',charsize=cs
+
+
+
+oplot,[xmin,xmax],[topbar,topbar]
+for n=1,nstage-1 do begin
+oplot,[stageb(n),stageb(n)],[topbar,ymax]
+endfor
+
+for n=0,nstage-1 do begin
+xyouts,(stageb(n)+stageb(n+1))/2.0,topbar+dtopbar,alignment=0.5,stagen(n),charsize=0.7
+endfor
+
+device,/close
+
+endfor
+
+endif ; end if forctemp plot
 
 
 if (do_clim_plot eq 1) then begin
@@ -1257,35 +1523,47 @@ mycol=(x)*250.0/(xx-1)
 mycol=0
 
 if (t eq 1) then begin
-plots,dates2(n),climav(n,0,v),color=mycol,psym=5,symsize=0.5
-plots,dates2(n),climav(n,2,v),color=mycol,psym=7,symsize=0.5
-plots,dates2(n),climav(n,3,v),color=mycol,psym=4,symsize=0.5
 
+; plot non-pe points
+for e=0,nexp-1 do begin
+if (e ne pe) then begin
+plots,dates2(n),climav(n,e,v),color=colexp(e),psym=5,symsize=0.5
 endif
+endfor
+endif
+; plot hadcm3l (pe) points
 plots,dates2(n),climav(n,pe,v),color=mycol,psym=6,symsize=0.5
 
+
 if (t eq 1 or t eq 0) then begin
-;xyouts,dates2(n)+5,climav(n,1,v)+0.1,exproot(n,1)+exptail(n,1),charsize=0.2
+;xyouts,dates2(n)+5,climav(n,pe,v)+0.1,exproot(n,e)+exptail(n,e),charsize=0.2
 endif
 
 endfor ; end n
 
+; plot non-pe curve
 if (t eq 1) then begin
-oplot,dates2(*),climav(*,0,v),thick=3,color=50
-oplot,dates2(*),climav(*,2,v),thick=3,color=150
-oplot,dates2(*),climav(*,3,v),thick=3,color=250
-
+for e=0,nexp-1 do begin
+if (e ne pe) then begin
+oplot,dates2(*),climav(*,e,v),thick=3,color=colexp(e)
+endif
+endfor
 endif
 
-; plot hadcm3l simulaitons
+
+; plot hadcm3l (pe) curves
 oplot,dates2(*),climav(*,pe,v),thick=3
 
 if (v eq 0 and t eq 0) then begin
-oplot,dates2(*),t_all_lin(*),color=200,thick=3
-;oplot,dates2(*),t_all(*),color=100
+oplot,dates2(*),temp_all_lin(*),color=200,thick=3
+;oplot,dates2(*),temp_all(*),color=100
+oplot,dates2(*),temp_all_tun(*),color=100,thick=3
 
-xyouts,-500,11,'Forcing/feedback model'
-oplot,[-510,-530],[11,11],color=200,thick=3
+xyouts,-500,13,'Forcing/feedback model'
+oplot,[-510,-530],[13,13],color=200,thick=3
+
+xyouts,-500,14,'Forcing/feedback model [tuned]'
+oplot,[-510,-530],[14,14],color=100,thick=3
 
 endif
 
@@ -1299,12 +1577,12 @@ endif
 
 
 if (t eq 1) then begin
-xyouts,-500,13,'teye'
-plots,-520,13,psym=5,color=50
-xyouts,-500,14,'tfja'
-plots,-520,14,psym=5,color=150
-xyouts,-500,15,'teyf'
-plots,-520,15,psym=5,color=250
+for e=0,nexp-1 do begin
+if (e ne pe) then begin
+xyouts,-500,13+e*1.0,exproot(0,e)
+plots,-520,13+e*1.0,psym=5,color=colexp(e)
+endif
+endfor
 endif
 
 if (t eq 1 or t eq 0) then begin
@@ -1323,7 +1601,7 @@ dy2=0.5
 
 oplot,[x1,x1+dx1],[y1+dy1,y1+dy1],color=0,thick=3
 ;plots,x1+dx1/2.0,y1,psym=8,symsize=0.5,color=250
-xyouts,x1+dx2,y1+dy1-dy2,'HadCM3L simulations '+exproot(0,pe),color=0
+xyouts,x1+dx2,y1+dy1-dy2,'HadCM3L ['+exproot(0,pe)+']',color=0
 plots,x1+dx1/2.0,y1+dy1,color=mycol,psym=6,symsize=0.5
 ;plots,-520,12,psym=6,symsize=0.5
 oplot,[x1,x1+dx1],[y1,y1],color=250,thick=3
@@ -1351,18 +1629,16 @@ endfor
 endfor
 
 
+; plot the residual
+
 v=0
-resid=climav(*,1,v)-t_all(*)
 
 device,filename='resid_'+climnamelong(v)+'_time.eps',/encapsulate,/color,set_font='Helvetica'
 
 xmin=-550
 xmax=0
-
-
 ymin=yminr(v)
 ymax=ymaxr(v)
-
 
 topbar=ymin+(ymax-ymin)*33.0/35.0
 dtopbar=(ymax-ymin)*0.6/35.0
@@ -1386,7 +1662,7 @@ oplot,dates2(*),resid,thick=3
 
 oplot,[dates2(0),dates2(nstart-1)],[0,0],linestyle=2
 
-xyouts,-500,-1.5,'HadCM3L'
+xyouts,-500,-1.5,'HadCM3L ['+exproot(0,pe)+']'
 plots,-520,-1.5,psym=6,symsize=0.5
 
 oplot,[xmin,xmax],[topbar,topbar]

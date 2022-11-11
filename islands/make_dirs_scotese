@@ -2,11 +2,11 @@
 #
 
 add_ftp=1
-mk_dirs=0
+mk_dirs=1
 
 ###  get args
-if [ "$#" -eq 0 ]; then
-    echo "Illegal number of options: must be greater than 0"
+if [ "$#" -ne 2 ]; then
+    echo "Illegal number of options: must be equal to 2"
     exit
 fi
 #
@@ -16,7 +16,8 @@ if [ $USER != 'ggdjl' ] ; then
   exit
 fi
 
-explist=$*
+explist=$1
+mymachine=$2
 
 for exp in ${explist} ; do
 
@@ -24,11 +25,16 @@ expid=`echo ${exp} | head -c 4`
 let=`echo ${exp:4:1}`
 
 echo ${exp}
+echo ${mymachine}
 
+if [ ${mymachine} != 'triassic' ] && [ ${mymachine} != 'silurian' ] ; then
+echo 'machine not valid...stop'
+exit
+fi
 
 # make directories
 if [ ${mk_dirs} -ne 0 ] ; then
-dir1=/export/silurian/array-01/ggdjl/${exp} 
+dir1=/export/${mymachine}/array-01/ggdjl/${exp} 
 if [ ! -d ${dir1} ]; then
 mkdir -p ${dir1}
 chmod a+rwx ${dir1}
@@ -43,12 +49,12 @@ fi
 fi
 
 
-# add to ftp_control
+# add to ftp_control [only works if file has some text in already]
 if [ ${add_ftp} -ne 0 ] ; then
 file=/home/bridge/ggdjl/bin/ftp_sh.bc4.params
 
 if ! grep -q ${exp} ${file} ; then
-    echo 'need to add'
+    echo 'need to add to ftp list'
     sed -i " 1 s/.*/& ${exp}/" ${file}
 fi
 fi
