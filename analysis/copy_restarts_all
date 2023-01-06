@@ -25,7 +25,7 @@ for exproot in tfks tfkS tfKs tfKS tFks ; do
 
     echo ${exp}
 
-      for year in 000000999c1+ 000001999c1+ 000002999c1+ ; do
+      for year in 000000999c1+ 000001999c1+ 000002999c1+ 000003000c1+ ; do
 
     echo ${year}
 
