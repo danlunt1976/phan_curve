@@ -1,0 +1,69 @@
+#!/bin/ksh
+
+indir_root=/home/bridge/ggdjl/ummodel
+
+#for exproot in tfja tfjA tfJa tfJA tFja ; do
+#for exproot in tfja ; do
+#for exproot in tFke ; do
+for exproot in tfke ; do
+#for exproot in tfkE tfKe ; do
+
+biomenum=6
+climatenum=146
+monthlynum=72
+sednum=2
+merid_atmnum=18
+merid_ocnnum=1
+ocean_datanum=24
+standard_new_plotsnum=986
+stormsnum=0
+wetlandnum=13
+
+
+#my_loop={a..z}
+my_loop={f..z}
+#   my_loop={a..e}
+#   my_loop={a..z}
+#   my_loop={a..b}
+
+   if [[ "$exproot" = "tFgw" || "$exproot" = "tFja" || "$exproot" = "tFke" ]] ; then
+      my_loop={a..e}
+   fi
+
+   for id in ${my_loop} ; do
+
+     exp=${exproot}${id}
+     indir=${indir_root}/data/${exp}
+
+     echo ${exp}
+
+     for type in biome climate monthly sed merid_atm merid_ocn ocean_data standard_new_plots storms wetland ; do
+
+     eval itnum=\$${type}num
+
+     if [ ${itnum} != 0 ] ; then
+     echo ${exp} ${type}
+     mynum=`ls ${indir}/${type}/* | wc | awk {'print $1}'`
+     if [ ${mynum} != ${itnum} ] ; then
+       echo 'DODGY '${type}' '${mynum}' '${itnum}' '${exp}
+     fi
+     fi
+
+     done
+
+     dir=ggdjl_${exp}
+     indir=${indir_root}/access/${dir}
+     crnum=0
+     echo ${exp} err
+     for file in `ls ${indir}/*.err` ; do
+       mynum=`ls -l ${file} | awk {'print $5}'`
+       if [[ ${mynum} != 0 && ${mynum} != 45 ]] ; then
+       echo 'DODGY '${dir}' '${file}' '${mynum}' != '${crnum}
+       fi
+     done
+
+
+   done
+done
+
+exit

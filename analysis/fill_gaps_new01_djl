@@ -1,0 +1,460 @@
+#!/bin/bash
+#
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NC='\033[0m' # No Color
+#
+if [ -d ~swsvalde ] ; then
+   . ~swsvalde/bin/add_paths
+elif [ -d ~ggpjv/swsvalde ] ; then
+   . ~ggpjv/swsvalde/bin/add_paths
+else
+   echo "Error from $0: standard locations of files do not exist"
+   exit 1
+fi
+#
+. ${swsvalde_root}/ummodel/scripts/script_startup
+. ${swsvalde_root}/ummodel/scripts/useful_functions
+#
+if [ ! -d $HOME/logs ] ; then
+   \mkdir -p $HOME/logs
+fi
+logfile="$HOME/logs/fill_gaps_new01.out"
+if [ ! -f $logfile ] ; then
+   touch $logfile
+fi
+#
+default_types="pa,pb,pc,pd,pe,pf,ph,pg,pi,pj,pt"
+selected_types=""
+#
+expts=""
+delete="n"
+fill="y"
+while [ "$1" != "" ] ; do
+   case $1 in
+      -e|-expts|-expt ) expts="$expts $2"; shift; shift; next1="$1" ; text1a=`echo $next1 | cut -c1`; while [ "$text1a" != "-" -a "$text1a" != "" ] ; do expts="$expts $next1"; shift; next1="$1" ; text1a=`echo $next1 | cut -c1`; done;;
+      -type|-types ) selected_types="$2" ; shift; shift;;
+      -fill ) fill="$2" ; shift; shift;;
+      -delete ) delete="$2" ; shift; shift;;
+      *) echo "Error in $0: incorrect arguments 1= $1 2= $2 " 1>&2; exit 1;
+   esac;
+done
+#
+#  Remove , from list of types/experiments
+#
+expts=`echo $expts | sed -e "s/,/ /g"`
+default_types=`echo $default_types | sed -e "s/,/ /g"`
+selected_types=`echo $selected_types | sed -e "s/,/ /g"`
+#
+for expt in $expts ; do
+#
+   grep -v "$expt: " $logfile > $HOME/logs/tmp1.dat
+   \mv $HOME/logs/tmp1.dat $logfile
+#
+   if [ -f ${umdata_home}/${expt}/downloading ] ; then
+      echo "Error in fill_gaps_new01: ${umdata_home}/${expt}/downloading exists. do not run script"
+   else
+   . ${script_home}/list_runs $expt 1>/dev/null 2>/dev/null
+   if [ "$remove_papb" = "yes" ] ; then
+      length_papb="30"
+   elif [ "$remove_papb" = "no" ] ; then
+      length_papb="0"
+   else
+      length_papb="$remove_papb"
+   fi
+   if [ "$remove_phpj" = "yes" ] ; then
+      length_phpj="2"
+   elif [ "$remove_phpj" = "no" ] ; then
+      length_phpj="0"
+   else
+      length_phpj="$remove_phpj"
+   fi
+   echo "$expt: Expected run_length= $length_of_run yrs : spinup= $length_of_spinup yrs : means= $length_of_means yrs : pa/pb files= $remove_papb yrs : ph/pj files= $remove_phpj yrs"
+#
+   if [ "${selected_types}" != "" ] ; then
+      actual_types="${selected_types}"
+   else
+      actual_types="${default_types}"
+   fi
+#
+#  Loop over types, only process
+#
+   list=""
+   for type in ${actual_types} ; do
+      test1=`echo $list | grep $type`
+      if [ "$test1" = "" ] ; then
+         dir="$type" 
+         files=`ls ${umdata_home}/${expt}/${dir}/ 2>/dev/null | grep "[@#\.]${type}"`
+         if [ "$files" != "" ] ; then 
+            list="$list $type"
+         fi
+      fi
+   done
+   actual_types="${list}"
+#
+   for type in ${actual_types} ; do
+      dir="$type" 
+      if [ -d ${umdata_home}/${expt}/${dir} ] ; then
+#         
+#        Now find out filesize modes
+#       
+         if [ "$delete" = "y" ] ; then
+            ${script_home}/average_filesize_new -expt $expt -dir ${umdata_home}/${expt}/${dir} -type ${type} -mode -spread_percent 10 -noise 500 -delete -silent
+         fi
+#
+         if [ "$type" = "pa" -o "$type" = "pb" -o "$type" = "pj" ] ; then
+            . ${script_home}/produce_sorted_list -dir ${umdata_home}/${expt}/${dir} -expt $expt -type $type -whole_years yes
+            file_list_whole="$file_list"
+         fi
+         . ${script_home}/produce_sorted_list -dir ${umdata_home}/${expt}/${dir} -expt $expt -type $type
+         file_list_all="$file_list"
+#
+#        Delete incomplete years at the start of the records for high frequency output.
+#
+         if [ "$delete" = "y" ] ; then
+            if [ "$type" = "pa" -o "$type" = "pb" -o "$type" = "pj" ] ; then
+               deleted_files="n"
+               ic=0
+               for file in $file_list_all ; do
+                  ic=`expr $ic + 1`
+                  if [ $ic -lt 12 ] ; then
+                     test1=`echo $file_list_whole | grep $file`
+                     if [ "$test1" = "" ] ; then
+                        echo "Delete $file"
+                        \rm ${umdata_home}/${expt}/${dir}/$file
+                        deleted_files="y"
+                     fi
+                  fi
+               done
+            fi
+            if [ "$deleted_files" = "y" ] ; then
+#
+               ${script_home}/average_filesize_new -expt $expt -dir ${umdata_home}/${expt}/${dir} -type ${type} -mode -spread_percent 10 -noise 500 -delete -silent
+#
+               . ${script_home}/produce_sorted_list -dir ${umdata_home}/${expt}/${dir} -expt $expt -type $type -whole_years yes
+               file_list_whole="$file_list"
+#
+               . ${script_home}/produce_sorted_list -dir ${umdata_home}/${expt}/${dir} -expt $expt -type $type
+               file_list_all="$file_list"
+            fi
+         fi
+#
+         curr_dir=`pwd`
+         \cd ${umdata_home}/${expt}/${dir}
+         smallest_file=`ls -LS  | tail -1`
+         next_smallest_file=`ls -LS | tail -2 | head -1`
+         smallest_file_size=`stat -Lc %s $smallest_file`
+         next_smallest_file_size=`stat -Lc %s $next_smallest_file`
+         largest_file=`ls -LSr | tail -1`
+         next_largest_file=`ls -LSr | tail -2 | head -1`
+         largest_file_size=`stat -Lc %s $largest_file`
+         next_largest_file_size=`stat -Lc %s $next_largest_file`
+         total_size=`du -sb | awk '{print $1}'`
+         \cd $curr_dir
+#
+         num_files=`echo $file_list | wc -w`
+         if [ "$type" = "pg" -o "$type" = "pl" ] ; then
+            num_years="$num_files"
+         else
+            num_years=`expr $num_files / 12`
+         fi
+#
+         approx="n"
+         compress="$(eval echo \${compress_${type}})"
+         if [ "$compress" = "1" -o "$compress" = "2" ] ; then
+            approx="y"
+         fi
+#
+         if [ "$type" = "pa" -o "$type" = "pb" ] ; then
+            if [ "$num_years" = "$length_papb" ] ; then
+               num_yearsc="${GREEN}${num_years}${NC}"
+            else
+               num_yearsc="${RED}${num_years}${NC}"
+            fi
+         elif [ "$type" = "ph" -o "$type" = "pj" ] ; then
+            if [ "$num_years" = "$length_phpj" ] ; then
+               num_yearsc="${GREEN}${num_years}${NC}"
+            else
+               num_yearsc="${RED}${num_years}${NC}"
+            fi
+         else
+            if [ "$num_years" = "$length_of_run" ] ; then
+               num_yearsc="${GREEN}${num_years}${NC}"
+            else
+               num_yearsc="${RED}${num_years}${NC}"
+            fi
+         fi
+#
+         if [ $smallest_file_size -eq $largest_file_size ] ; then
+            echo -e "$expt: firstfile= $first_file last= $last_file type= $long_filenames : files/yrs= $num_files/$num_yearsc : All files same size" | tee -a $logfile
+         elif [ "$approx" = "n" ] ; then
+            echo -e "$expt: firstfile= $first_file last= $last_file type= $long_filenames : files/yrs = $num_files/$num_yearsc" | tee -a $logfile 
+            if [ "${smallest_file}" = "${first_file}" ] ; then
+         if [ "$delete" = "y" ] ; then
+               echo "\rm ${umdata_home}/$expt/$type/${smallest_file}"
+               \rm ${umdata_home}/$expt/$type/${smallest_file}
+               echo -e "$expt: ${RED}WARNING:${NC} Smallest file is first file ($smallest_file) deleted"
+         fi
+               smallest_file="$next_smallest_file"
+               smallest_file_size="$next_smallest_file_size"
+            elif [ "${largest_file}" = "${first_file}" ] ; then
+         if [ "$delete" = "y" ] ; then
+               echo "\rm ${umdata_home}/$expt/$type/${largest_file}"
+               \rm ${umdata_home}/$expt/$type/${largest_file}
+               echo -e "$expt: ${RED}WARNING:${NC} Largest file is first file ($largest_file) deleted"
+         fi
+               largest_file="$next_largest_file"
+               largest_file_size="$next_largest_file_size"
+            fi
+            if [ $smallest_file_size -ne $largest_file_size ] ; then
+               echo -e "$expt: ${RED}WARNING:${NC} Smallest file ($smallest_file) = $smallest_file_size, Largest file ($largest_file) = $largest_file_size" | tee -a $logfile
+            fi
+         else
+            mean_size=`expr $total_size / $num_files`
+            if [ "$type" = "pa" ] ; then
+               range_min=`${bin_home}/mycalc 0.96 i\* $mean_size | awk '{print $1}'`
+               range_max=`${bin_home}/mycalc 1.04 i\* $mean_size | awk '{print $1}'`
+            else
+               range_min=`${bin_home}/mycalc 0.95 i\* $mean_size | awk '{print $1}'`
+               range_max=`${bin_home}/mycalc 1.05 i\* $mean_size | awk '{print $1}'`
+            fi  
+            if [ $smallest_file_size -gt $range_min -a $smallest_file_size -lt $range_max -a $largest_file_size -gt $range_min -a $largest_file_size -lt $range_max ] ; then
+               echo -e "$expt: firstfile = $first_file last = $last_file type = $long_filenames : files/yrs = $num_files/$num_yearsc : All files approx same size" | tee -a $logfile
+            else
+               echo -e "$expt: firstfile = $first_file last = $last_file type = $long_filenames : files/yrs = $num_files/$num_yearsc" | tee -a $logfile
+               echo -e "$expt: ${RED}WARNING1${NC}: Smallest file ($smallest_file) = $smallest_file_size, Largest file ($largest_file) = $largest_file_size   range = $range_min to $range_max" | tee -a $logfile
+            fi
+         fi
+#  
+         if [ "$long_filenames" = "yes" -a "$fill" = "y" ] ; then
+            start_century=`echo $first_file | cut -c10`
+            start_decade=`echo $first_file | cut -c11`
+            start_year=`echo $first_file | cut -c12`
+            start_prefix=`echo $first_file | cut -c1-9`
+            if [ "$type" = "pg" -o "$type" = "pl" ] ; then
+               start_postfix=`echo $first_file | cut -c13-`
+            else
+               start_postfix=`echo $first_file | cut -c16-`
+            fi
+#
+            last_century=`echo $last_file | cut -c10`
+            last_decade=`echo $last_file | cut -c11`
+            last_year=`echo $last_file | cut -c12`
+            last_prefix=`echo $last_file | cut -c1-9`
+            if [ "$type" = "pg" -o "$type" = "pl" ] ; then
+               last_postfix=`echo $last_file | cut -c13-`
+            else
+               last_postfix=`echo $last_file | cut -c16-`
+            fi
+#
+            if [ "$start_prefix" != "$last_prefix" -o "$start_postfix" != "$last_postfix" ] ; then
+               echo "Error in $0: start prefix != last_prefix or postfix"
+               echo "$first_file $start_prefix $start_postfix $last_file $last_prefix $last_postfix"
+               exit 1
+            fi
+#
+            century="$start_century"
+            decade="$start_decade"
+            year="$start_year"
+            started="n"
+            ended="n"
+            until [ "$century$decade$year" = "$last_century$last_decade$last_year" ] ; do
+               if [ "$type" = "pg" -o "$type" = "pl" ] ; then
+                  oldfile="${start_prefix}${century}${decade}${year}${start_postfix}"
+                  forward_year
+                  save_century="${century}"    
+                  save_decade="${decade}"    
+                  save_year="${year}"    
+                  forward_year
+                  newfile_next="${start_prefix}${century}${decade}${year}${start_postfix}"
+                  century=${save_century}
+                  decade=${save_decade}
+                  year=${save_year}
+                  newfile="${start_prefix}${century}${decade}${year}${start_postfix}"
+                  if [ ! -f ${umdata_home}/${expt}/${dir}/$newfile ] ; then
+                     echo "Alternates are: $oldfile $newfile_next "
+                     if [ -f ${umdata_home}/${expt}/${dir}/$oldfile ] ; then
+                        echo "missing_file : cp $oldfile $newfile"
+                        cp ${umdata_home}/${expt}/${dir}/$oldfile ${umdata_home}/${expt}/${dir}/$newfile
+                     elif [ -f ${umdata_home}/${expt}/${dir}/$newfile_next ] ; then
+                        echo "missing_file : cp $newfile_next $newfile"
+                        cp ${umdata_home}/${expt}/${dir}/$newfile_next ${umdata_home}/${expt}/${dir}/$newfile
+                     else
+                        echo "missing_file : No obvious replacement $newfile"
+                     fi
+                  fi
+               else
+                  oldfile="${start_prefix}${century}${decade}${year}"
+                  if [ "$started" = "n" ] ; then
+                     for month in jan feb mar apr may jun jul aug sep oct nov dec ; do
+                        newfile="${start_prefix}${century}${decade}${year}${month}${start_postfix}"
+                        if [ -f ${umdata_home}/${expt}/${dir}/$newfile ] ; then
+                           started="y"
+                        elif [ "$started" = "y" -a ! -f ${umdata_home}/${expt}/${dir}/$newfile ] ; then
+                           echo "Missing file at start = $newfile"
+                        fi
+                     done
+                  fi           
+                  forward_year    
+                  save_century="${century}"    
+                  save_decade="${decade}"    
+                  save_year="${year}"    
+                  forward_year
+                  newfile_next="${start_prefix}${century}${decade}${year}"
+                  century=${save_century}
+                  decade=${save_decade}
+                  year=${save_year}
+                  last_month="dec"
+                  for month in jan feb mar apr may jun jul aug sep oct nov dec ; do
+                     oldfile1="${oldfile}${month}${start_postfix}"
+                     newfile="${start_prefix}${century}${decade}${year}${month}${start_postfix}"
+                     if [ "$century$decade$year" = "$last_century$last_decade$last_year" ] ; then
+                        if [ "$ended" = "n" -a ! -f ${umdata_home}/${expt}/${dir}/$newfile ] ; then
+                           ended="y"
+                        elif [ "$ended" = "y" -a -f ${umdata_home}/${expt}/${dir}/$newfile ] ; then
+                           oldfile2="${oldfile}${last_month}${start_postfix}"
+                           newfile2="${start_prefix}${century}${decade}${year}${last_month}${start_postfix}"
+                           if [ -f $oldfile2 -a ! -f $newfile2 ] ; then
+                              echo "cp $oldfile2 $newfile2"
+                              cp $oldfile2 $newfile2
+                           else
+                              echo "Gap in file for last year = $newfile $oldfile1"
+                           fi
+                        fi
+                        last_month="$month"
+                     else
+                        if [ ! -f ${umdata_home}/${expt}/${dir}/$newfile ] ; then
+                           echo "Alternates are: ${oldfile}${month}${start_postfix} ${newfile_next}${month}${start_postfix}"
+                           if [ -f ${umdata_home}/${expt}/${dir}/${oldfile}${month}${start_postfix} ] ; then
+                              echo "missing_file : cp ${oldfile}${month}${start_postfix} $newfile"
+                              cp ${umdata_home}/${expt}/${dir}/${oldfile}${month}${start_postfix} ${umdata_home}/${expt}/${dir}/$newfile
+                           elif [ -f ${umdata_home}/${expt}/${dir}/${newfile_next}${month}${start_postfix} ] ; then
+                              echo "missing_file : cp ${newfile_next}${month}${start_postfix} $newfile"
+                              cp ${umdata_home}/${expt}/${dir}/${newfile_next}${month}${start_postfix} ${umdata_home}/${expt}/${dir}/$newfile
+                           else
+                              echo "missing_file : No obvious replacement $newfile"
+                           fi
+                        fi
+                     fi
+                  done
+               fi
+            done
+         elif [ "$long_filenames" = "verylong" -a "$fill" = "y" ] ; then
+            if [ "$type" = "precipevap" ] ; then
+               start_year=`echo $first_file | cut -c18-26`
+               start_prefix=`echo $first_file | cut -c1-17`
+               start_postfix=`echo $first_file | cut -c30-`
+            else
+               start_year=`echo $first_file | cut -c10-18`
+               start_prefix=`echo $first_file | cut -c1-9`
+               if [ "$type" = "pg" -o "$type" = "pl" ] ; then
+                  start_postfix=`echo $first_file | cut -c19-`
+               else
+                  start_postfix=`echo $first_file | cut -c22-`
+               fi 
+            fi
+#
+            if [ "$type" = "precipevap" ] ; then
+               last_year=`echo $last_file | cut -c18-26`
+               last_prefix=`echo $last_file | cut -c1-17`
+               last_postfix=`echo $last_file | cut -c30-`
+            else   
+               last_year=`echo $last_file | cut -c10-18`
+               last_month=`echo $last_file | cut -c19-21`
+               last_prefix=`echo $last_file | cut -c1-9`
+               if [ "$type" = "pg" -o "$type" = "pl" ] ; then
+                  last_postfix=`echo $last_file | cut -c19-`
+               else
+                  last_postfix=`echo $last_file | cut -c22-`
+               fi
+            fi
+#
+            if [ "$start_prefix" != "$last_prefix" -o "$start_postfix" != "$last_postfix" ] ; then
+               echo "Error in $0: start prefix != last_prefix or postfix"
+               echo "$first_file $start_prefix $start_postfix $last_file $last_prefix $last_postfix"
+               exit 1
+            fi
+#
+            year="$start_year"
+            started="n"
+            ended="n"
+            until [ "$year" = "$last_year" ] ; do
+               if [ "$type" = "pg" -o "$type" = "pl" ] ; then
+                  oldfile="${start_prefix}${year}${start_postfix}"
+                  forward_year    
+                  save_year="${year}"    
+                  forward_year
+                  newfile_next="${start_prefix}${year}${start_postfix}"
+                  year=${save_year}
+                  newfile="${start_prefix}${year}${start_postfix}"
+                  if [ ! -f ${umdata_home}/${expt}/${dir}/$newfile ] ; then
+                     if [ -f ${umdata_home}/${expt}/${dir}/$oldfile ] ; then
+                        echo "missing_file : cp $oldfile $newfile"
+                        cp ${umdata_home}/${expt}/${dir}/$oldfile ${umdata_home}/${expt}/${dir}/$newfile
+                     elif [ -f ${umdata_home}/${expt}/${dir}/$newfile_next ] ; then
+                        echo "missing_file : cp $newfile_next $newfile"
+                        cp ${umdata_home}/${expt}/${dir}/$newfile_next ${umdata_home}/${expt}/${dir}/$newfile
+                     else
+                        echo "missing_file : No obvious replacement $newfile"
+                     fi
+                  fi
+               else
+                  oldfile="${start_prefix}${year}"
+                  if [ "$started" = "n" ] ; then
+                     for month in jan feb mar apr may jun jul aug sep oct nov dec ; do
+                        newfile="${start_prefix}${year}${month}${start_postfix}"
+                        if [ -f ${umdata_home}/${expt}/${dir}/$newfile ] ; then
+                           started="y"
+                        elif [ "$started" = "y" -a ! -f ${umdata_home}/${expt}/${dir}/$newfile ] ; then
+                           save_year="$year"
+                           forward_year
+                           newfile1="${start_prefix}${year}${month}${start_postfix}"
+                           year=$save_year
+                           if [ -f ${umdata_home}/${expt}/${dir}/$newfile1 ] ; then
+                              echo "missing_file : cp $newfile1 $newfile"
+                              cp ${umdata_home}/${expt}/${dir}/$newfile1 ${umdata_home}/${expt}/${dir}/$newfile
+                           else
+                              echo "Missing file at start, longfile = $newfile $oldfile $newfile1"
+                           fi
+                        fi
+                     done
+                  fi           
+                  forward_year    
+                  save_year="${year}"    
+                  forward_year
+                  newfile_next="${start_prefix}${year}"
+                  year=${save_year}
+                  for month in jan feb mar apr may jun jul aug sep oct nov dec ; do
+                     newfile="${start_prefix}${year}${month}${start_postfix}"
+                     if [ "$year" = "$last_year" -a "$month" = "${last_month}" ] ; then
+                        if [ "$ended" = "n" -a ! -f ${umdata_home}/${expt}/${dir}/$newfile ] ; then
+                           ended="y"
+                        elif [ "$ended" = "y" -a -f ${umdata_home}/${expt}/${dir}/$newfile ] ; then
+                           echo "Gap in (longname) file after last_month. last year ($last_file) = $newfile"
+                        fi
+                     else
+                        if [ ! -f ${umdata_home}/${expt}/${dir}/$newfile -a "$year" != "$last_year" ] ; then
+                           echo "Alternates are: ${oldfile}${month}${start_postfix} ${newfile_next}${month}${start_postfix}"
+                           if [ -f ${umdata_home}/${expt}/${dir}/${oldfile}${month}${start_postfix} ] ; then
+                              echo "missing_file : cp ${oldfile}${month}${start_postfix} $newfile"
+                              cp ${umdata_home}/${expt}/${dir}/${oldfile}${month}${start_postfix} ${umdata_home}/${expt}/${dir}/$newfile
+                           elif  [ -f ${umdata_home}/${expt}/${dir}/${newfile_next}${month}${start_postfix} ] ; then
+                              echo "missing_file : cp ${newfile_next}${month}${start_postfix} $newfile"
+                              cp ${umdata_home}/${expt}/${dir}/${newfile_next}${month}${start_postfix} ${umdata_home}/${expt}/${dir}/$newfile
+                           else
+                              echo "missing_file : No obvious replacement $newfile"
+                           fi
+                        fi
+                     fi
+                  done
+               fi
+            done
+         elif [  "$fill" = "y" ] ; then
+            echo "$expt: filename structure not coded $long_filenames"
+            exit 1
+         fi
+      fi
+   done
+   echo ""
+   fi
+done

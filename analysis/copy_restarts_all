@@ -1,0 +1,64 @@
+#!/bin/ksh
+
+indir_root=/home/bridge/ggdjl/umdata
+
+# **edit this
+exprootroot=tfks
+# **
+
+oudir=/home/bridge/ggdjl/ClimateOutput/scotese_restarts/${exprootroot}
+
+# **edit this
+for exproot in tfks tfkS tfKs tfKS tFks ; do
+# **
+
+  my_loop={a..z}
+
+  if [ "$exproot" = "tFks" ] ; then
+    my_loop={a..e}
+  fi
+
+  for id in ${my_loop} ; do
+
+    exp=${exproot}${id}
+    indir=${indir_root}/${exp}/da
+
+    echo ${exp}
+
+      for year in 000000999c1+ 000001999c1+ 000002999c1+ ; do
+
+    echo ${year}
+
+      if find ${indir}/${exp}a#da${year}* -maxdepth 0 -type f 2>/dev/null | read ; then
+
+      if find ${oudir}/${exp}a#da${year}* -maxdepth 0 -type f 2>/dev/null | read ; then
+
+         :
+#        echo "found in source and destination"
+#        ls -lrt ${indir}/${exp}*${year}*
+#        ls -lrt ${oudir}/${exp}*${year}*
+
+      else
+
+         echo "copying: "
+        ls -lrt ${indir}/${exp}?#da${year}*
+#        ls -lrt ${oudir}/${exp}?#da${year}*
+         cp ${indir}/${exp}a*#da${year}* ${oudir}/
+         cp ${indir}/${exp}o*#da${year}* ${oudir}/
+
+      fi
+
+
+      fi
+
+      done
+
+  done
+done
+
+exit
+
+
+
+
+exit

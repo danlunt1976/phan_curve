@@ -1,0 +1,23 @@
+#!/bin/bash
+
+cd /export/triassic/array-01/ggdjl
+
+for id in {a..n} ; do
+
+echo ${id}
+
+for dir in da dat dodgy_files  info  pc  pd  pf  pg  pi  pl  pt ; do
+
+echo ${dir}
+
+ls -l tfks${id}/${dir}/ | awk '{print $5,$9}'
+
+done
+
+done
+
+
+
+
+
+exit
