@@ -1,0 +1,26 @@
+#!/bin/bash
+
+###  get args
+if [ "$#" -ne 1 ]; then
+    echo "Illegal number of options: must be 1"
+    exit
+fi
+
+exp=$1
+
+if [ ${#exp} -ne 5 ] ; then
+    echo "Illegal expt: must have 5 chars"
+    exit
+fi
+
+echo $# $USER ${exp}
+
+\rm -r /home/bridge/swsvalde/work/derived_silu/${exp}
+for id in dat dodgy_files info pa pb pc pd pf pg pi pl precipevap pt rd ; do
+  \rm -rf /home/bridge/swsvalde/umdata/${exp}/${id}
+done
+
+
+
+
+exit

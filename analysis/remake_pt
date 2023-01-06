@@ -1,0 +1,35 @@
+#!/bin/bash
+
+###  get args
+if [ "$#" -ne 1 ]; then
+    echo "Illegal number of options: must be 1"
+    exit
+fi
+
+exp=$1
+
+if [ "$USER" != swsvalde ]; then
+    echo "Illegal user: must be swsvalde"
+    exit
+fi
+
+if [ ${#exp} -ne 5 ] ; then
+    echo "Illegal expt: must have 5 chars"
+    exit
+fi
+
+
+
+
+echo $# $USER ${exp}
+
+dirroot='/home/bridge/ggdjl/umdata'
+scrroot='/home/bridge/swsvalde/ummodel/scripts'
+
+
+\rm -r ${dirroot}/${exp}/pt/*
+${scrroot}/make_pt_new03 ${exp}
+${scrroot}/make_monthly_files -expt ${exp} -type pt
+
+
+exit
