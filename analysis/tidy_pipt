@@ -1,0 +1,38 @@
+#!/bin/bash
+
+###  get args
+if [ "$#" -ne 1 ]; then
+    echo "Illegal number of options: must be 1"
+    exit
+fi
+
+
+exp=$1
+
+
+yearlist='3000'
+monlist='nov dec'
+
+cd ~/umdata/${exp}/pi
+
+for year in ${yearlist} ; do
+for mon in ${monlist} ; do
+
+/home/bridge/swsvalde/ummodel/scripts/make_pt_file ${exp}a#pi00000${year}${mon}+.nc
+mv -i ${exp}a#pt00000${year}${mon}+.nc ~/umdata/${exp}/pt/
+
+
+done
+done
+
+
+
+
+
+
+
+
+
+
+
+exit

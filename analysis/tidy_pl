@@ -1,0 +1,41 @@
+#!/bin/bash
+
+###  get args
+if [ "$#" -ne 1 ]; then
+    echo "Illegal number of options: must be 1"
+    exit
+fi
+
+
+exp=$1
+
+
+yearlist='3000'
+
+
+echo ${yearlist}
+
+cd ~/umdata/${exp}/pl
+
+for year in ${yearlist} ; do
+
+yeam=`expr ${year} - 1`
+yeam=$(printf "%04d" ${yeam})
+echo ${yeam}
+
+cp -n -p ${exp}o#pl00000${yeam}c1+.nc ${exp}o#pl00000${year}c1+.nc 
+
+
+done
+
+
+
+
+
+
+
+
+
+
+
+exit

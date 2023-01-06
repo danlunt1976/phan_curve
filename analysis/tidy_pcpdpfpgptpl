@@ -1,0 +1,18 @@
+#!/bin/bash
+
+###  get args
+if [ "$#" -ne 1 ]; then
+    echo "Illegal number of options: must be 1"
+    exit
+fi
+
+exp=$1
+
+for type in pc pd pf pg pt pl ; do
+./fill_gaps_new01_djl -expt ${exp} -type ${type}
+done
+
+
+
+
+exit
