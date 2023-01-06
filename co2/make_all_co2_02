@@ -1,9 +1,0 @@
-#
-\rm -rf co2_all_02.dat
-#
-ages=`cat dumps.dat | awk '{print $1}'`
-for age in $ages ; do
-   echo $age | make_co2_02
-   cat fort.10 >> co2_all_02.dat
-   \rm fort.10
-done
