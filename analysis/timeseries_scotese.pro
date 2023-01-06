@@ -25,13 +25,15 @@ do_ice_plot=0 ; prescribed ice sheets
 do_forcings_plot=0 ; prescribed forcings in Wm-2
 do_forctemps_plot=0 ; prescribed forcings in oC
 do_polamp_plot=0 ;  plot polamp
-do_clim_plot=0 ;  plot new vs old, EBM, MDC, and resid
+do_clim_plot=1 ;  plot new vs old, EBM, MDC, and resid
 do_textfile=0 ; textfile of proxies for Emily
+do_textfile2=0 ; textfile of proxies for Chris
+
 
 ;;;;
 ; Total number of time snapshots
 ndates=109
-nexp=5
+nexp=6
 tmax=4000
 nstart=0
 ;;;;
@@ -43,6 +45,7 @@ writing(*,1)=0
 writing(*,2)=0
 writing(*,3)=0
 writing(*,4)=0
+writing(*,5)=0
 
 reading=intarr(ndates,nexp)
 reading(*,0)=1-writing(*,0)
@@ -50,37 +53,46 @@ reading(*,1)=1-writing(*,1)
 reading(*,2)=1-writing(*,2)
 reading(*,3)=1-writing(*,3)
 reading(*,4)=1-writing(*,4)
+reading(*,5)=1-writing(*,4)
 
-readfile=intarr(ndates,nexp) ; does data exist for this simulation?
+readfile=intarr(ndates,nexp) ; does clim data exist for this simulation?
 if (do_times eq 1) then begin
 readfile(*,0)=1
 readfile(*,1)=1
 readfile(*,2)=1
 readfile(*,3)=1
 readfile(*,4)=1
+readfile(*,5)=1
 endif else begin
 readfile(*,0)=0
 readfile(*,1)=0
 readfile(*,2)=0
 readfile(*,3)=0
 readfile(*,4)=1
+readfile(*,5)=1
+; missing tfks files
+tfks_missing=[5,12,21,22,24,25,46,47,48,49,50,51,70,71,75,79,81]-1
+readfile(tfks_missing,5)=0
 endelse
 
-readtype=intarr(ndates,nexp) ; umdata [0] or ummodel [1] for clims
+readtype=intarr(ndates,nexp) ; um_climates [0] or ummodel [1] for clims
 readtype(*,0)=1
 readtype(*,1)=1
 readtype(*,2)=1
 readtype(*,3)=1
 readtype(*,4)=1
+readtype(*,5)=0
 
 
-locdata=intarr(ndates,nexp) ; umdata [1] or ummodel [0] for timeseries
+locdata=intarr(ndates,nexp) ; um_climates [1] or ummodel [0] for timeseries
 locdata(*,0)=0
 locdata(*,1)=0
 locdata(*,2)=0
 locdata([16,39,50,59,66,68],2)=1 ; jaq,jAn,jAy,Jah,Jao,Jaq
 locdata(*,3)=0
 locdata(*,4)=0
+locdata(*,5)=1
+
 
 co2file=strarr(nexp)
 co2file(0)='co2_all_02'
@@ -88,6 +100,7 @@ co2file(1)='co2_all_02'
 co2file(2)='co2_all_03_nt'
 co2file(3)='co2_all_02'
 co2file(4)='co2_all_03_nt'
+co2file(5)='co2_all_04_nt'
 
 colexp=intarr(nexp)
 colexp(0)=50
@@ -95,6 +108,7 @@ colexp(1)=100
 colexp(2)=150
 colexp(3)=200
 colexp(4)=0
+colexp(5)=250
 
 
 
@@ -153,6 +167,12 @@ exproot(52:77,4)=['tfKe']
 exproot(78:103,4)=['tfKE']
 exproot(104:108,4)=['tFke']
 
+; My tfks
+exproot(0:25,5)=['tfks']
+exproot(26:51,5)=['tfkS']
+exproot(52:77,5)=['tfKs']
+exproot(78:103,5)=['tfKS']
+exproot(104:108,5)=['tFks']
 
 for e=1,nexp-1 do begin
 exptail(*,e)=exptail(*,0)
@@ -162,6 +182,8 @@ exptail2(*,1)=''
 exptail2(*,2)=''
 exptail2(*,3)='3'
 exptail2(*,4)=''
+exptail2(*,5)=''
+
 
 ; which set of simulations to plot and analyse
 pe=4
@@ -172,24 +194,25 @@ varname(*,1)='temp_ym_dpth'
 varname(*,2)='temp_ym_dpth'
 varname(*,3)='temp_ym_dpth'
 varname(*,4)='temp_ym_dpth'
+varname(*,5)='temp_ym_dpth'
 
 if (nexp gt 1) then begin
 myshift=intarr(nexp)
-myshift(*)=[2100,3250,6350,-1,9450]
+myshift(*)=[2100,3250,6350,-1,9450,12550]
 endif
 
 ; plot_times: do we want to plot the timeseries?
 plot_tims=intarr(nexp)
-plot_tims(*)=[1,1,1,0,1]
+plot_tims(*)=[1,1,1,0,1,1]
 
 ; cont_tims: which experiment will we difference from to check
 ; continuity [-1 = none]
 cont_tims=intarr(nexp)
-cont_tims(*)=[-1,0,1,-1,2]
+cont_tims(*)=[-1,0,1,-1,2,4]
 
 ; navy = how many years for averaging means
 navy=intarr(nexp)
-navy(*)=[20,20,20,20,20]
+navy(*)=[20,20,20,20,20,20]
 
 ;;;;
 
@@ -742,14 +765,14 @@ for v=0,nvar-1 do begin
 
 if (readfile(n,e) eq 1) then begin
 
-if (readtype(e) eq 1) then begin
+if (readtype(n,e) eq 1) then begin
 data_filename=root(n,e)+'/'+exproot(n,e)+exptail(n,e)+exptail2(n,e)+'/climate/'+exproot(n,e)+exptail(n,e)+exptail2(n,e)+climtag(v)+'clann.nc'
 endif
-if (readtype(e) eq 0) then begin
+if (readtype(n,e) eq 0) then begin
 data_filename=root(n,e)+'/'+exproot(n,e)+exptail(n,e)+exptail2(n,e)+'/'+exproot(n,e)+exptail(n,e)+exptail2(n,e)+climtag(v)+'clann.nc'
 endif
 
-print,n,data_filename
+print,readtype(n,e),n,data_filename
 id1=ncdf_open(data_filename)
 ncdf_varget,id1,climname(v),dummy
 ncdf_close,id1
@@ -1486,8 +1509,8 @@ if (do_clim_plot eq 1) then begin
 
 ; GMST PLOT
 
-ntype=3
-mytypename=['new','cmp','pro']
+ntype=4
+mytypename=['new','cmp','pro','bot']
 
 
 for t=0,ntype-1 do begin
@@ -1503,7 +1526,7 @@ xmax=0
 ymin=yminc(v)
 ymax=ymaxc(v)
 
-if (t eq 2 and v eq 0) then begin
+if ((t eq 2 or t eq 3) and v eq 0) then begin
 ymin=5
 ymax=40
 endif
@@ -1524,16 +1547,23 @@ mycol=0
 
 if (t eq 1) then begin
 
-; plot non-pe points
+; plot non-pe model points
 for e=0,nexp-1 do begin
 if (e ne pe) then begin
 plots,dates2(n),climav(n,e,v),color=colexp(e),psym=5,symsize=0.5
 endif
 endfor
 endif
+
 ; plot hadcm3l (pe) points
 plots,dates2(n),climav(n,pe,v),color=mycol,psym=6,symsize=0.5
+; plot hadcm3l (pe) curves
+oplot,dates2(*),climav(*,pe,v),thick=3
 
+if (t eq 3) then begin
+; plot tuned runs
+plots,dates2(n),climav(n,5,v),color=210,psym=6,symsize=0.5
+endif
 
 if (t eq 1 or t eq 0) then begin
 ;xyouts,dates2(n)+5,climav(n,pe,v)+0.1,exproot(n,e)+exptail(n,e),charsize=0.2
@@ -1551,8 +1581,7 @@ endfor
 endif
 
 
-; plot hadcm3l (pe) curves
-oplot,dates2(*),climav(*,pe,v),thick=3
+
 
 if (v eq 0 and t eq 0) then begin
 oplot,dates2(*),temp_all_lin(*),color=200,thick=3
@@ -1575,6 +1604,14 @@ oplot,dates_scot,temp_scot,color=250,thick=3
 oplot,dates_wing,temp_wing,color=80,thick=3
 endif
 
+if (v eq 0 and t eq 3) then begin
+;plots,dates_scot,temp_scot,psym=8,symsize=0.5,color=250
+oplot,dates2,temp_scot1m_interp,color=250,thick=3
+
+;plots,dates_wing,temp_wing,psym=8,symsize=0.5,color=80
+oplot,dates_wing,temp_wing,color=80,thick=3
+endif
+
 
 if (t eq 1) then begin
 for e=0,nexp-1 do begin
@@ -1591,7 +1628,7 @@ plots,-520,12,psym=6,symsize=0.5
 oplot,[-510,-530],[12,12]
 endif
 
-if (v eq 0 and t eq 2) then begin
+if (v eq 0 and (t eq 2 or t eq 3)) then begin
 x1=-300
 dx1=40
 dx2=50
@@ -1844,9 +1881,17 @@ endfor
 
 close,1
 
-
 endif
 
+if (do_textfile2 eq 1) then begin
+
+openw,1,'temp_chris.dat'
+for n=0,ndates-1 do begin
+printf,1,dates2(n),temp_scot1m_interp(n)
+endfor
+close,1
+
+endif
 
 
 
