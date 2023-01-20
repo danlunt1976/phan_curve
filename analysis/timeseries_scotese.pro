@@ -39,6 +39,7 @@ nstart=0
 ;;;;
 
 ;;;;
+; for timeseries to save time
 writing=intarr(ndates,nexp)
 writing(*,0)=0
 writing(*,1)=0
@@ -71,7 +72,7 @@ readfile(*,3)=0
 readfile(*,4)=1
 readfile(*,5)=1
 ; missing tfks files
-tfks_missing=[5,12,21,22,24,25,46,47,48,49,50,51,70,71,75,79,81]-1
+tfks_missing=[12,21,49,51]-1
 readfile(tfks_missing,5)=0
 endelse
 
@@ -81,7 +82,7 @@ readtype(*,1)=1
 readtype(*,2)=1
 readtype(*,3)=1
 readtype(*,4)=1
-readtype(*,5)=0
+readtype(*,5)=1
 
 
 locdata=intarr(ndates,nexp) ; um_climates [1] or ummodel [0] for timeseries
@@ -91,7 +92,7 @@ locdata(*,2)=0
 locdata([16,39,50,59,66,68],2)=1 ; jaq,jAn,jAy,Jah,Jao,Jaq
 locdata(*,3)=0
 locdata(*,4)=0
-locdata(*,5)=1
+locdata(*,5)=0
 
 
 co2file=strarr(nexp)
