@@ -1,0 +1,21 @@
+
+scotese_dates_orig.dat:
+  This is from ` ls ~ggpjv/working/oil/scotese/rawdata/PALEOMAP_PaleoDEMS_1x1/PaleoDEMS_netcdf/`
+
+dumps.dat:
+  This is from /home/bridge/ggpjv/working/oil/scotese/dumps.dat
+
+make_all_co2_02 ; make_co2_02.f90
+  These are from /home/bridge/ggpjv/working/oil/scotese/
+
+to compile:
+  ifort make_co2_02.f90 -o make_co2_02
+
+foster_loess.dat
+  These are from /home/bridge/ggpjv/working/oil/scotese/
+
+
+
+
+
+
