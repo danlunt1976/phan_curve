@@ -1,0 +1,124 @@
+#!/bin/bash
+
+#############
+
+# e.g. : 'make_restart_c1 tfgwd 2545 2850'
+
+#############
+
+
+###  get args
+if [ "$#" -ne 3 ]; then
+    echo "Illegal number of options: must be equal to 3"
+    exit
+fi
+
+mydate=`date '+%Y%m%d%H%M%S'`
+
+exp=$1
+echo ${exp}
+expid=`echo ${exp} | cut -c -4`
+echo ${expid}
+
+basistime=$2
+endyear=$3
+runtargetend=`expr ${endyear} - ${basistime}`
+
+#
+\cd ~/scotese/islands
+#
+#
+   if [ "$expid" = "tfgw" ] ; then
+      expid_old="teye"
+   elif [ "$expid" = "tfgW" ] ; then
+      expid_old="teyE"
+   elif [ "$expid" = "tfGw" ] ; then
+      expid_old="teYe"
+   elif [ "$expid" = "tfGW" ] ; then
+      expid_old="teYE"
+   elif [ "$expid" = "tFgw" ] ; then
+      expid_old="tEye"
+   else
+      echo 'expid not coded'
+      exit
+   fi
+
+
+echo ${expid_old}
+echo ${basistime}
+echo ${endyear}
+echo ${runtargetend}
+
+# no longer needed....
+#  rootmbt='1850 , 12 , 1 , 0 , 0 , 0 ,'
+#  rootf21='FIXHD(21)=1850,'
+#  rootf28='FIXHD(28)=1850,'
+#  rootrte='200 , 1 , 0 , 0 , 0 , 0 ,'
+
+mbt="${basistime} , 12 , 1 , 0 , 0 , 0 ,"
+f21="FIXHD(21)=${basistime},"
+f28="FIXHD(28)=${basistime},"
+rte="${runtargetend} , 1 , 0 , 0 , 0 , 0 ,"
+
+echo ${mbt}
+echo ${f21}
+echo ${f28}
+echo ${rte}
+
+#echo "First of all, run move_restarts on eocene, in /home/bridge/ggdjl/ggdjl/bas/doc/phan_curve/islands"
+#read -rsp $'**Then press any key to continue...\n' -n1 key
+#echo "First of all, sftp appropriate c1 restart file in dump2hold/dumps_deeptime_djl/teye_newislands on bc4, and gunzip"
+#read -rsp $'**Then press any key to continue...\n' -n1 key
+#echo "Then link atmos, e.g. rm teyEe.atmos ; ln -s tfgWea#da000002003c1+ teyEe.atmos"
+#read -rsp $'**Then press any key to continue...\n' -n1 key
+#echo "Then link ocean, e.g. rm teyEe.ocean ; ln -s tfgWeo#da000002003c1+ teyEe.ocean"
+#read -rsp $'**Then press any key to continue...\n' -n1 key
+
+myoutdir=~/umui_jobs/${exp}
+
+file=CNTLALL # XX ****************
+filein=${myoutdir}/${file}
+\cp ${filein} ${filein}.make_restart_c1.copy.${mydate}
+sed -i -e "s/MODEL_BASIS_TIME=.*/MODEL_BASIS_TIME= ${mbt}/g;
+s/RUN_TARGET_END=.*/RUN_TARGET_END= ${rte}/g" ${filein}
+
+file=CONTCNTL # XX ****************
+filein=${myoutdir}/${file}
+\cp ${filein} ${filein}.make_restart_c1.copy.${mydate}
+sed -i -e "s/MODEL_BASIS_TIME=.*/MODEL_BASIS_TIME= ${mbt}/g;
+s/RUN_TARGET_END=.*/RUN_TARGET_END= ${rte}/g" ${filein}
+
+file=RECONA # XX ****************
+filein=${myoutdir}/${file}
+\cp ${filein} ${filein}.make_restart_c1.copy.${mydate}
+sed -i -e "s/FIXHD(21)=.*/${f21}/g;
+s/FIXHD(28)=.*/${f28}/g;
+s/RUN_TARGET_END=.*/RUN_TARGET_END= ${rte}/g" ${filein}
+
+file=RECONO # XX ****************
+filein=${myoutdir}/${file}
+\cp ${filein} ${filein}.make_restart_c1.copy.${mydate}
+sed -i -e "s/FIXHD(21)=.*/${f21}/g;
+s/FIXHD(28)=.*/${f28}/g;
+s/RUN_TARGET_END=.*/RUN_TARGET_END= ${rte}/g" ${filein}
+
+file=SIZES # XX ****************
+filein=${myoutdir}/${file}
+\cp ${filein} ${filein}.make_restart_c1.copy.${mydate}
+sed -i -e "s/RUN_TARGET_END=.*/RUN_TARGET_END= ${rte}/g" ${filein}
+
+
+echo ${mbt}
+echo ${f21}
+echo ${f28}
+echo ${rte}
+mystring="${exp} ::  ${basistime} :: ${endyear} :: ${runtargetend} :: ${mbt} :: ${f21} :: ${f28} :: ${rte}"
+echo ${mystring} > ${myoutdir}/make_restart_c1.out.${mydate}
+
+
+read -rsp $'**Dont forget to run move_restarts on eocene, in /home/bridge/ggdjl/ggdjl/bas/doc/phan_curve/islands \n' -n1 key
+read -rsp $'**Dont forget to clustersubmit with **-c n**...\n' -n1 key
+
+
+
+exit
