@@ -28,16 +28,16 @@ for id in {a..z} ; do
         echo ${numfiles}
 #        if [ ${numfiles} == 199 ] ; then
 #        if [[ ${numfiles} == 1050 ]] || [[ ${numfiles} == 1049 ]] ; then
-#        if [[ ${numfiles} == 3000 ]] ; then
+        if [[ ${numfiles} == 3000 ]] ; then
 #        if [[ ${numfiles} -gt 205 ]] ; then
-        if [[ ${numfiles} -gt 2000 ]] ; then
+#        if [[ ${numfiles} -gt 2000 ]] ; then
 
         echo "running as correct number of pg files"
 #        /home/bridge/ggdjl/ggdjl/um/scripts/make_climate -y '0000020[3-4]?' ${exp}
 #        /home/bridge/ggdjl/ggdjl/um/scripts/make_climate -y '0000028[7-9]?' ${exp}
 #        /home/bridge/ggdjl/ggdjl/um/scripts/make_climate -y '0000029[7-9]?' ${exp}
 #        /home/bridge/ggdjl/ggdjl/um/scripts/make_climate -y '00000019[5-9]' ${exp}
-        /home/bridge/ggdjl/ggdjl/um/scripts/make_climate -y '00000199[0-9]' ${exp}
+        /home/bridge/ggdjl/ggdjl/um/scripts/make_climate -y '0000029[8-9]?' ${exp}
         fi
       fi
 

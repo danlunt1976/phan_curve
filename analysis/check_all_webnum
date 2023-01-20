@@ -5,8 +5,10 @@ indir_root=/home/bridge/ggdjl/ummodel
 #for exproot in tfja tfjA tfJa tfJA tFja ; do
 #for exproot in tfja ; do
 #for exproot in tFke ; do
-for exproot in tfke ; do
+#for exproot in tfke ; do
 #for exproot in tfkE tfKe ; do
+
+for exproot in tfkS ; do
 
 biomenum=6
 climatenum=146
@@ -21,12 +23,13 @@ wetlandnum=13
 
 
 #my_loop={a..z}
-my_loop={f..z}
+#my_loop={f..z}
 #   my_loop={a..e}
 #   my_loop={a..z}
 #   my_loop={a..b}
+my_loop={g..i}
 
-   if [[ "$exproot" = "tFgw" || "$exproot" = "tFja" || "$exproot" = "tFke" ]] ; then
+   if [[ "$exproot" = "tFgw" || "$exproot" = "tFja" || "$exproot" = "tFke" || "$exproot" = "tFks" ]] ; then
       my_loop={a..e}
    fi
 

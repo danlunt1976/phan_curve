@@ -1,21 +1,32 @@
 
-Useful tidy scripts:
+Useful tidy scripts (run on silurian):
 
-tidy_expt -expt EXP -machine bc4 : tidy experiment
+(A) tidy_expt -expt EXP -machine bc4 : download final files of experiment from bc4.
 
-./check_all_filenum : checks for filenum in ~/umdata/EXP
+(B) ./check_all_filenum : checks for filenum in ~/umdata/EXP
 
-./tidy_pcpdpfpg EXP : fills gaps in pc,pd,pf,pg
+(C) ./tidy_pcpdpfpgptpl EXP : fills gaps in pc,pd,pf,pg,pt,pl
 
+(D) ./tidy_pipt EXP : creates pt files for last pi files after tidy_expt [be careful - can sometimes make pt files of wrong size?] [ONLY IF NEEDED]
+
+(E) ./tidy_pl EXP : copies year N pl file from year N-1. [ONLY IF NEEDED]
+
+(F) ./check_all_filenum : checks for filenum in ~/umdata/EXP
+
+
+ALSO:
 ~swsvalde/ummodel/scripts/make_pt_file tfjafa#pi000003000dec+.nc : make individual pt files [be careful - can sometimes make pt files of wrong size?]
 
-/home/bridge/swsvalde/ummodel/scripts/fill_gaps_new01 -expt tfjaf -type pt : fill gaps in pt
-
-./tidy_pipt EXP : creates pt files for last pi files after tidy_expt [be careful - can sometimes make pt files of wrong size?]
+/home/bridge/swsvalde/ummodel/scripts/fill_gaps_new01 -expt tfjaf -type pt : fill gaps in pt NO LONGER NEEDED AS IN tidy_pcpdpfpgptpl
 
 ~swsvalde/ummodel/scripts/make_pk -expt tfjae : makes all pl files
 
-./tidy_pl EXP : makes all pl files
+~swsvalde/bin/convert_file -file tfksaa#pc000000001ag+ -expt tfksa -type pc : converts raw pp to netcdf
+
+
+
+
+
 
 
 
