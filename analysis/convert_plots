@@ -19,7 +19,33 @@
 
 #for ty in polampxtemp_sst_scatter ; do
 
-for ty in ice_time ; do
+#for ty in ice_time ; do
+
+#for ty in grads_time scattemp_time clim_temp_egu_time ; do
+
+# for ty in climsens_time ; do
+
+## FOR EGU:
+
+#for ty in temp_scotese_time_03 ; do
+
+#for ty in co2_time_0 solar_time ; do
+
+#for ty in clim_temp_pro_time ; do
+
+#for ty in clim_temp_new_time forcings_time_2 ; do
+
+#for ty in resid_temp_time ; do
+
+#for ty in grads_time ; do
+
+#for ty in polamp_temp_time polamp_sst_time polampxtemp_temp_scatter polampxtemp_sst_scatter; do
+
+#for ty in co2_time_2; do
+
+#for ty in clim_temp_egu_time scattemp_time ; do
+
+for ty in climsens_time ; do
 
 gs -dSAFER -dEPSCrop -r600 -sDEVICE=pngalpha -o ${ty}.png ${ty}.eps
 

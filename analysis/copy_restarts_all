@@ -10,7 +10,7 @@ oudir=/home/bridge/ggdjl/ClimateOutput/scotese_restarts/${exprootroot}
 
 # **edit this
 #for exproot in tfks tfkS tfKs tfKS tFks ; do
-for exproot in tfkS ; do
+for exproot in tfks ; do
 # **
 
   my_loop={a..z}
@@ -20,7 +20,7 @@ for exproot in tfkS ; do
     my_loop={a..e}
   fi
   if [ "$exproot" = "tfks" ] ; then
-    my_loop={n..z}
+    my_loop=u
   fi
   if [ "$exproot" = "tfkS" ] ; then
     my_loop=w

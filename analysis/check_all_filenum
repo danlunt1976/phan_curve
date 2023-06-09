@@ -14,7 +14,7 @@ indir_root=/home/bridge/ggdjl/umdata
 #for exproot in tFke ; do
 #for exproot in tfke ; do
 
-for exproot in tfKS ; do
+for exproot in tfks ; do
 
 ptnum=36001
 panum=0
@@ -29,7 +29,10 @@ rdnum=0
 #   my_loop={a..e}
 #   my_loop={a..h}
 #   my_loop={f..z}
-   my_loop={a..z}
+#   my_loop={a..z}
+
+#   my_loop='w y'
+   my_loop='u'
 
    if [[ "$exproot" = "tFgw" || "$exproot" = "tFja" || "$exproot" = "tFke" || "$exproot" = "tFks" ]] ; then
       my_loop={a..e}

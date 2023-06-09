@@ -27,7 +27,7 @@ wetlandnum=13
 #   my_loop={a..e}
 #   my_loop={a..z}
 #   my_loop={a..b}
-my_loop={g..i}
+my_loop='w y'
 
    if [[ "$exproot" = "tFgw" || "$exproot" = "tFja" || "$exproot" = "tFke" || "$exproot" = "tFks" ]] ; then
       my_loop={a..e}

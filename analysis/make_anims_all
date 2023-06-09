@@ -1,31 +1,57 @@
 #!/bin/ksh
 
-indir_root=/home/bridge/ggdjl/um_climates
+#indir_root=/home/bridge/ggdjl/um_climates
+indir_root=/home/bridge/ggdjl/ummodel/data
 
 explist=''
 
-for exproot in tfgw tfgW tfGw tfGW tFgw ; do
-   if [ "$exproot" = "tfgw" ] ; then
-      exproot_old="teye"      
+#exptype1=tfks
+exptype1=tfke
+#exptype1=tfja
+#exptype1=tfgw
+
+exp1a=${exptype1}
+exp1b=`sed 's/./\U&/4' <<< "${exp1a}"`
+exp1c=`sed 's/./\U&/3' <<< "${exp1a}"`
+exp1d=`sed 's/./\U&/3' <<< "${exp1b}"`
+exp1e=`sed 's/./\U&/2' <<< "${exp1a}"`
+
+exp2a=${exptype2}
+exp2b=`sed 's/./\U&/4' <<< "${exp2a}"`
+exp2c=`sed 's/./\U&/3' <<< "${exp2a}"`
+exp2d=`sed 's/./\U&/3' <<< "${exp2b}"`
+exp2e=`sed 's/./\U&/2' <<< "${exp2a}"`
+
+expids1="${exp1a} ${exp1b} ${exp1c} ${exp1d} ${exp1e}"
+expids2="${exp2a} ${exp2b} ${exp2c} ${exp2d} ${exp2e}"
+
+echo ${expids1}
+echo ${expids2}
+
+#
+for expid in ${expids1} ; do
+
+   if [ "$expid" = ${exp1a} ] ; then
+      expid_old=${exp2a}
       my_loop={a..z}
-   elif [ "$exproot" = "tfgW" ] ; then
-      exproot_old="teyE"
+   elif [ "$expid" = ${exp1b} ] ; then
+      expid_old=${exp2b}
       my_loop={a..z}
-   elif [ "$exproot" = "tfGw" ] ; then
-      exproot_old="teYe"
+   elif [ "$expid" = ${exp1c} ] ; then
+      expid_old=${exp2c}
       my_loop={a..z}
-   elif [ "$exproot" = "tfGW" ] ; then
-      exproot_old="teYE"
+   elif [ "$expid" = ${exp1d} ] ; then
+      expid_old=${exp2d}
       my_loop={a..z}
-   elif [ "$exproot" = "tFgw" ] ; then
-      exproot_old="tEye"
+   elif [ "$expid" = ${exp1e} ] ; then
+      expid_old=${exp2e}
       my_loop={a..e}
    fi
 
    for id in ${my_loop} ; do
 
-     exp=${exproot}${id}
-     exr=${exproot_old}${id}
+     exp=${expid}${id}
+     exr=${expid_old}${id}
 
      explist_uv_00=${explist_uv_00}' plots/uv_'${exp}_00'.pdf'
      explist_uv_11=${explist_uv_11}' plots/uv_'${exp}_11'.pdf'
@@ -43,8 +69,8 @@ for exproot in tfgw tfgW tfGw tfGW tFgw ; do
 done
 
 convert -loop 0 -delay 20 ${explist_uv_00} anim_uv_00.gif
-convert -loop 0 -delay 20 ${explist_uv_11} anim_uv_11.gif
-convert -loop 0 -delay 20 ${explist_uv_15} anim_uv_15.gif
+#convert -loop 0 -delay 20 ${explist_uv_11} anim_uv_11.gif
+#convert -loop 0 -delay 20 ${explist_uv_15} anim_uv_15.gif
 convert -loop 0 -delay 20 ${explist_stream} anim_stream.gif
 convert -loop 0 -delay 20 ${explist_mixed} anim_mixed.gif
 convert -loop 0 -delay 20 ${explist_merid} anim_merid.gif

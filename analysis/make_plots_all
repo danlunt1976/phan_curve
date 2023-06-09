@@ -1,60 +1,106 @@
 #!/bin/ksh
 
-indir_root=/home/bridge/ggdjl/um_climates
+#indir_root=/home/bridge/ggdjl/um_climates
+indir_root=/home/bridge/ggdjl/ummodel/data
 
-#for exproot in tfgw tfgW tfGw tfGW tFgw ; do
-for exproot in tfja tfjA tfJa tfJA tFja ; do
+#exptype1=tfks
+exptype1=tfke
+#exptype1=tfja
+#exptype1=tfgw
 
-   if [ "$exproot" = "tfgw" ] ; then
-      exproot_old="teye"      
+if [ ${exptype1} == 'tfgw' ] ; then
+co2_file='co2_all_02.dat'
+exptype2='teye'
+fi
+if [ ${exptype1} == 'tfja' ] ; then
+co2_file='co2_all_03_nt.dat'
+exptype2='tfgw'
+fi
+if [ ${exptype1} == 'tfke' ] ; then
+co2_file='co2_all_03_nt.dat'
+exptype2='tfja'
+fi
+if [ ${exptype1} == 'tfks' ] ; then
+co2_file='co2_all_04_nt.dat'
+exptype2='tfke'
+fi
+
+temp=`cat ${co2_file} | awk '{print $1}'`
+set -A dates $temp # dates is an array of dates
+ic="0"
+
+exp1a=${exptype1}
+exp1b=`sed 's/./\U&/4' <<< "${exp1a}"`
+exp1c=`sed 's/./\U&/3' <<< "${exp1a}"`
+exp1d=`sed 's/./\U&/3' <<< "${exp1b}"`
+exp1e=`sed 's/./\U&/2' <<< "${exp1a}"`
+
+exp2a=${exptype2}
+exp2b=`sed 's/./\U&/4' <<< "${exp2a}"`
+exp2c=`sed 's/./\U&/3' <<< "${exp2a}"`
+exp2d=`sed 's/./\U&/3' <<< "${exp2b}"`
+exp2e=`sed 's/./\U&/2' <<< "${exp2a}"`
+
+expids1="${exp1a} ${exp1b} ${exp1c} ${exp1d} ${exp1e}"
+expids2="${exp2a} ${exp2b} ${exp2c} ${exp2d} ${exp2e}"
+
+echo ${expids1}
+echo ${expids2}
+
+#
+for expid in ${expids1} ; do
+
+   if [ "$expid" = ${exp1a} ] ; then
+      expid_old=${exp2a}
       my_loop={a..z}
-   elif [ "$exproot" = "tfgW" ] ; then
-      exproot_old="teyE"
+   elif [ "$expid" = ${exp1b} ] ; then
+      expid_old=${exp2b}
       my_loop={a..z}
-   elif [ "$exproot" = "tfGw" ] ; then
-      exproot_old="teYe"
+   elif [ "$expid" = ${exp1c} ] ; then
+      expid_old=${exp2c}
       my_loop={a..z}
-   elif [ "$exproot" = "tfGW" ] ; then
-      exproot_old="teYE"
+   elif [ "$expid" = ${exp1d} ] ; then
+      expid_old=${exp2d}
       my_loop={a..z}
-   elif [ "$exproot" = "tFgw" ] ; then
-      exproot_old="tEye"
+   elif [ "$expid" = ${exp1e} ] ; then
+      expid_old=${exp2e}
       my_loop={a..e}
    fi
-
-   if [ "$exproot" = "tfja" ] ; then
-      exproot_old="tfgw"      
-      my_loop={a..z}
-   elif [ "$exproot" = "tfjA" ] ; then
-      exproot_old="tfgW"
-      my_loop={a..z}
-   elif [ "$exproot" = "tfJa" ] ; then
-      exproot_old="tfGw"
-      my_loop={a..z}
-   elif [ "$exproot" = "tfJA" ] ; then
-      exproot_old="tfGW"
-      my_loop={a..z}
-   elif [ "$exproot" = "tFja" ] ; then
-      exproot_old="tFgw"
-      my_loop={a..e}
-   fi
-
 
    for id in ${my_loop} ; do
 
-     exp=${exproot}${id}
-     exr=${exproot_old}${id}
+     if [ "${dates[$ic]}" != "" ] ; then # if this index exists in co2_all.dat
 
-     indir=${indir_root}/${exp}
+     exp=${expid}${id}
+     exr=${expid_old}${id}
+
+     date1="${dates[$ic]}"
+     age1=`echo $date1 | cut -d_ -f1`
+     age2=`echo $date1 | cut -d_ -f2`
+     age1=`expr $age1 + 0`
+     age="${age1}.${age2}"
+     co2=`cat ${co2_file} | grep $date1 | grep $age | awk '{print $3}'`
+     
+     echo ${exp}
+     echo ${exp_old}
+     echo ${age}
+     echo ${date1}
+
+     indir=${indir_root}/${exp}/climate
 
      echo ${exp}
 
        if find ${indir}/${exp}a.pdclann.nc -maxdepth 0 -type f 2>/dev/null | read ; then 
          echo 'file exists so plotting'
-         ./plot_clim_scotese ${exp} ${exr} 1
+         ./plot_clim_scotese ${exp} ${exr} ${age} 1
        else
-         ./plot_clim_scotese ${exp} ${exr} 0
+         echo 'file does not exist'
+         ./plot_clim_scotese ${exp} ${exr} ${age} 0
        fi
+
+     fi
+
+   ic=`expr $ic + 1`
 
    done
 done
