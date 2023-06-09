@@ -1,35 +1,37 @@
 #!/bin/bash
 
 
-plot_tempdiff=1
-plot_streamabs=0
-plot_uv=0
-plot_mixed=0
-plot_merid=0
-plot_wind=0
-plot_temp=0
-plot_salin=0
+plot_tempdiff=0
+plot_streamabs=1
+plot_uv=1
+plot_mixed=1
+plot_merid=1
+plot_wind=1
+plot_temp=1
+plot_salin=1
 plot_topo=0
-plot_albdiff=1
-plot_smdiff=1
+plot_albdiff=0
+plot_smdiff=0
 
 
 ###  get args
-if [ "$#" -ne 3 ]; then
-    echo "Illegal number of options: must be 3"
+if [ "$#" -ne 4 ]; then
+    echo "Illegal number of options: must be 4"
     exit
 fi
 
 ###  setup
 exp=${1}
 exr=${2}
-doplot=${3}
+age=${3}
+doplot=${4}
 
 if [ ${plot_topo} -eq 1 ] ; then
 jobfile="ncl.${exp}.topo.ncl"
 \cp ncl.SKEL.clim_topo.ncl ${jobfile}
 sed -i "s/EXR/${exr}/g" ${jobfile}
 sed -i "s/EXP/${exp}/g" ${jobfile}
+sed -i "s/AGE/${age}/g" ${jobfile}
 sed -i "s/DOPLOT/${doplot}/g" ${jobfile}
 ncl ${jobfile}
 \rm ${jobfile}
@@ -41,6 +43,7 @@ jobfile="ncl.${exp}.clim_dif.ncl"
 \cp ncl.SKEL.clim_dif.ncl ${jobfile}
 sed -i "s/EXP/${exp}/g" ${jobfile}
 sed -i "s/EXR/${exr}/g" ${jobfile}
+sed -i "s/AGE/${age}/g" ${jobfile}
 sed -i "s/DOPLOT/${doplot}/g" ${jobfile}
 ncl ${jobfile}
 \rm ${jobfile}
@@ -51,6 +54,7 @@ jobfile="ncl.${exp}.clim_alb_dif.ncl"
 \cp ncl.SKEL.clim_alb_dif.ncl ${jobfile}
 sed -i "s/EXP/${exp}/g" ${jobfile}
 sed -i "s/EXR/${exr}/g" ${jobfile}
+sed -i "s/AGE/${age}/g" ${jobfile}
 sed -i "s/DOPLOT/${doplot}/g" ${jobfile}
 ncl ${jobfile}
 \rm ${jobfile}
@@ -61,6 +65,7 @@ jobfile="ncl.${exp}.clim_sm_dif.ncl"
 \cp ncl.SKEL.clim_sm_dif.ncl ${jobfile}
 sed -i "s/EXP/${exp}/g" ${jobfile}
 sed -i "s/EXR/${exr}/g" ${jobfile}
+sed -i "s/AGE/${age}/g" ${jobfile}
 sed -i "s/DOPLOT/${doplot}/g" ${jobfile}
 ncl ${jobfile}
 \rm ${jobfile}
@@ -71,6 +76,7 @@ jobfile="ncl.${exp}.clim_abs.ncl"
 \cp ncl.SKEL.clim_abs.ncl ${jobfile}
 sed -i "s/EXP/${exp}/g" ${jobfile}
 sed -i "s/EXR/${exr}/g" ${jobfile}
+sed -i "s/AGE/${age}/g" ${jobfile}
 sed -i "s/TYP/pf/g" ${jobfile}
 sed -i "s/COL/BlueDarkRed18/g" ${jobfile}
 sed -i "s/MAX/1.5e14/g" ${jobfile}
@@ -93,6 +99,7 @@ jobfile="ncl.${exp}.clim_abs.ncl"
 \cp ncl.SKEL.clim_abs.ncl ${jobfile}
 sed -i "s/EXP/${exp}/g" ${jobfile}
 sed -i "s/EXR/${exr}/g" ${jobfile}
+sed -i "s/AGE/${age}/g" ${jobfile}
 sed -i "s/TYP/pf/g" ${jobfile}
 sed -i "s/COL/WhBlGrYeRe/g" ${jobfile}
 sed -i "s/MAX/300/g" ${jobfile}
@@ -115,6 +122,7 @@ jobfile="ncl.${exp}.clim_abs.ncl"
 \cp ncl.SKEL.clim_abs.ncl ${jobfile}
 sed -i "s/EXP/${exp}/g" ${jobfile}
 sed -i "s/EXR/${exr}/g" ${jobfile}
+sed -i "s/AGE/${age}/g" ${jobfile}
 sed -i "s/TYP/pg/g" ${jobfile}
 sed -i "s/COL/BlAqGrYeOrReVi200/g" ${jobfile}
 sed -i "s/MAX/0.005/g" ${jobfile}
@@ -136,6 +144,7 @@ jobfile="ncl.${exp}.clim_abs.ncl"
 \cp ncl.SKEL.clim_abs.ncl ${jobfile}
 sed -i "s/EXP/${exp}/g" ${jobfile}
 sed -i "s/EXR/${exr}/g" ${jobfile}
+sed -i "s/AGE/${age}/g" ${jobfile}
 sed -i "s/TYP/pg/g" ${jobfile}
 sed -i "s/COL/BlAqGrYeOrReVi200/g" ${jobfile}
 sed -i "s/MAX/40/g" ${jobfile}
@@ -159,6 +168,7 @@ jobfile="ncl.${exp}.clim_uv.ncl"
 \cp ncl.SKEL.clim_uv.ncl ${jobfile}
 sed -i "s/EXP/${exp}/g" ${jobfile}
 sed -i "s/EXR/${exr}/g" ${jobfile}
+sed -i "s/AGE/${age}/g" ${jobfile}
 sed -i "s/DOPLOT/${doplot}/g" ${jobfile}
 sed -i "s/LEV/${lev}/g" ${jobfile}
 ncl ${jobfile}
@@ -171,6 +181,7 @@ jobfile="ncl.${exp}.clim_wind.ncl"
 \cp ncl.SKEL.clim_wind.ncl ${jobfile}
 sed -i "s/EXP/${exp}/g" ${jobfile}
 sed -i "s/EXR/${exr}/g" ${jobfile}
+sed -i "s/AGE/${age}/g" ${jobfile}
 sed -i "s/DOPLOT/${doplot}/g" ${jobfile}
 ncl ${jobfile}
 \rm ${jobfile}
@@ -182,6 +193,8 @@ jobfile="ncl.${exp}.clim_merid.ncl"
 \cp ncl.SKEL.clim_merid.ncl ${jobfile}
 sed -i "s/EXP/${exp}/g" ${jobfile}
 sed -i "s/EXR/${exr}/g" ${jobfile}
+sed -i "s/AGE/${age}/g" ${jobfile}
+sed -i "s/DOPLOT/${doplot}/g" ${jobfile}
 ncl ${jobfile}
 \rm ${jobfile}
 fi
