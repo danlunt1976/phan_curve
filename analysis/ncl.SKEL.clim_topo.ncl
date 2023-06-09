@@ -2,6 +2,7 @@ begin
 
 exrname="EXR"
 expname="EXP"
+age="AGE"
 doplot=DOPLOT
 
 exr_dir="/home/bridge/swsvalde/ummodel/data"
@@ -35,7 +36,7 @@ wks_type@wkPaperHeightF=5.5
 wks=gsn_open_wks(wks_type,"plots/topo_"+expname)
 
 res=True
-res@tiMainString="Topography "+expname
+res@tiMainString="Topography "+expname+" "+age+"Ma"
 res@cnFillOn=True
 res@cnLinesOn=False
 res@lbOrientation="horizontal"

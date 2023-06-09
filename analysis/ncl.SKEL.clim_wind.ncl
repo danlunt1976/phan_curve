@@ -2,9 +2,10 @@ begin
 
 expname="EXP"
 exrname="EXR"
+age="AGE"
 doplot=DOPLOT
 
-exp_dir="/home/bridge/ggdjl/um_climates"
+exp_dir="/home/bridge/swsvalde/ummodel/data"
 exr_dir="/home/bridge/swsvalde/ummodel/data"
 
 g3=addfile(exr_dir+"/"+exrname+"/inidata/"+exrname+".qrparm.omask.nc","r")
@@ -14,7 +15,7 @@ my_var_2_u=g2->taux_mm_hyb(0,0,:,:)
 my_var_2_v=g2->tauy_mm_hyb(0,0,:,:)
 
 if (doplot .eq. 1) then
-g1=addfile(exp_dir+"/"+expname+"/"+expname+"a.pdclann.nc","r")
+g1=addfile(exp_dir+"/"+expname+"/climate/"+expname+"a.pdclann.nc","r")
 my_var_1_u=g1->taux_mm_hyb(0,0,:,:)
 my_var_1_v=g1->tauy_mm_hyb(0,0,:,:)
 
@@ -41,7 +42,7 @@ wks_type@wkPaperHeightF=5.5
 wks=gsn_open_wks(wks_type,"plots/wind_"+expname)
 
 res=True
-res@tiMainString="Wind stress "+expname
+res@tiMainString="Wind stress "+expname+" "+age+"Ma"
 res@lbOrientation="horizontal"
 res@mpCenterLonF=0
 res@mpOutlineOn=False

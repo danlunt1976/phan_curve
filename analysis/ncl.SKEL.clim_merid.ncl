@@ -2,6 +2,8 @@ begin
 
 expname="EXP"
 exrname="EXR"
+age="AGE"
+doplot=DOPLOT
 
 exp_dir="/home/bridge/swsvalde/ummodel/data"
 exr_dir="/home/bridge/swsvalde/ummodel/data"
@@ -29,7 +31,7 @@ wks_type@wkPaperHeightF=5.5
 wks=gsn_open_wks(wks_type,"plots/merid_"+expname)
 
 res=True
-res@tiMainString="Overturning Streamfunction "+expname
+res@tiMainString="Overturning Streamfunction "+expname+" "+age+"Ma"
 res@cnFillOn=True
 res@cnLinesOn=False
 res@lbOrientation="horizontal"
@@ -66,14 +68,17 @@ res@gsnYAxisIrregular2Linear = True
 map = gsn_csm_contour(wks,my_var_1,res)
 map2 = gsn_csm_contour(wks,my_var_1,cres2)
 overlay(map,map2)
-
+if (doplot .eq. 1) then
 draw(map)
+end if
 frame(wks)
 
 wks=gsn_open_wks(wks_type,"plots/merid_"+exrname)
 res@tiMainString="Overturning Streamfunction "+exrname
 map = gsn_csm_contour(wks,my_var_2,res)
+if (doplot .eq. 1) then
 draw(map)
+end if
 frame(wks)
 
 

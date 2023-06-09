@@ -2,9 +2,10 @@ begin
 
 expname="EXP"
 exrname="EXR"
+age="AGE"
 doplot=DOPLOT
 
-exp_dir="/home/bridge/ggdjl/um_climates"
+exp_dir="/home/bridge/swsvalde/ummodel/data"
 exr_dir="/home/bridge/swsvalde/ummodel/data"
 
 g3=addfile(exr_dir+"/"+exrname+"/inidata/"+exrname+".qrparm.omask.nc","r")
@@ -14,7 +15,7 @@ my_var_2=g2->VAR(0,0,:,:)
 my_var_2=mask(my_var_2,my_lsm,0)
 
 if (doplot .eq. 1) then
-g1=addfile(exp_dir+"/"+expname+"/"+expname+"o.TYPclann.nc","r")
+g1=addfile(exp_dir+"/"+expname+"/climate/"+expname+"o.TYPclann.nc","r")
 my_var_1=g1->VAR(0,0,:,:)
 my_var_1=mask(my_var_1,my_lsm,0)
 else 
@@ -38,7 +39,7 @@ wks_type@wkPaperHeightF=5.5
 wks=gsn_open_wks(wks_type,"plots/VSHORT_"+expname)
 
 res=True
-res@tiMainString="VLONG "+expname
+res@tiMainString="VLONG "+expname+" "+age+"Ma"
 res@cnFillOn=True
 res@cnLinesOn=False
 res@lbOrientation="horizontal"

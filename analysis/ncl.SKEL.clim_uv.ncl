@@ -2,10 +2,11 @@ begin
 
 expname="EXP"
 exrname="EXR"
+age="AGE"
 doplot=DOPLOT
 lev=LEV
 
-exp_dir="/home/bridge/ggdjl/um_climates"
+exp_dir="/home/bridge/swsvalde/ummodel/data"
 exr_dir="/home/bridge/swsvalde/ummodel/data"
 
 g3=addfile(exr_dir+"/"+exrname+"/inidata/"+exrname+".qrparm.omask.nc","r")
@@ -15,7 +16,7 @@ my_var_2_u=g2->ucurrTot_ym_dpth(0,LEV,:,:)
 my_var_2_v=g2->vcurrTot_ym_dpth(0,LEV,:,:)
 
 if (doplot .eq. 1) then
-g1=addfile(exp_dir+"/"+expname+"/"+expname+"o.pgclann.nc","r")
+g1=addfile(exp_dir+"/"+expname+"/climate/"+expname+"o.pgclann.nc","r")
 my_var_1_u=g1->ucurrTot_ym_dpth(0,LEV,:,:)
 my_var_1_v=g1->vcurrTot_ym_dpth(0,LEV,:,:)
 
@@ -59,7 +60,7 @@ wks_type@wkPaperHeightF=5.5
 wks=gsn_open_wks(wks_type,"plots/uv_"+expname+"_"+levshort)
 
 res=True
-res@tiMainString="UV "+expname+" : "+levlong
+res@tiMainString="UV "+expname+" "+age+"Ma"+" : "+levlong
 res@lbOrientation="horizontal"
 res@mpCenterLonF=0
 res@mpOutlineOn=False

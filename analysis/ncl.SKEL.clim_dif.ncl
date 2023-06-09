@@ -2,16 +2,17 @@ begin
 
 expname="EXP"
 exrname="EXR"
+age="AGE"
 doplot=DOPLOT
 
-exp_dir="/home/bridge/ggdjl/um_climates"
+exp_dir="/home/bridge/swsvalde/ummodel/data"
 exr_dir="/home/bridge/swsvalde/ummodel/data"
 
 g3=addfile(exr_dir+"/"+exrname+"/inidata/"+exrname+".qrparm.mask.nc","r")
 my_lsm=g3->lsm(0,0,:,:)
 
 if (doplot .eq. 1) then
-g1=addfile(exp_dir+"/"+expname+"/"+expname+"a.pdclann.nc","r")
+g1=addfile(exp_dir+"/"+expname+"/climate/"+expname+"a.pdclann.nc","r")
 g2=addfile(exr_dir+"/"+exrname+"/climate/"+exrname+"a.pdclann.nc","r")
 my_var_1=g1->temp_mm_1_5m(0,0,:,:)
 my_var_2=g2->temp_mm_1_5m(0,0,:,:)
@@ -34,7 +35,7 @@ wks_type@wkPaperHeightF=5.5
 wks=gsn_open_wks(wks_type,"plots/temp_"+expname+"-"+exrname)
 
 res=True
-res@tiMainString="1.5m air temperature "+expname+"-"+exrname
+res@tiMainString="1.5m air temperature "+expname+"-"+exrname+" "+age+"Ma"
 res@cnFillOn=True
 res@cnLinesOn=False
 res@lbOrientation="horizontal"
