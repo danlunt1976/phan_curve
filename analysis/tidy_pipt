@@ -10,7 +10,9 @@ fi
 exp=$1
 
 
-yearlist='3000'
+#yearlist='3000'
+yearlist='0110'
+
 monlist='nov dec'
 
 cd ~/umdata/${exp}/pi

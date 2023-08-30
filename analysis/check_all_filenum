@@ -13,26 +13,36 @@ indir_root=/home/bridge/ggdjl/umdata
 #for exproot in tfJA tFja ; do
 #for exproot in tFke ; do
 #for exproot in tfke ; do
+#for exproot in tfks ; do
+#ptnum=36001
+#panum=0
+#pgnum=3000
+#pcnum=36001
+#pinum=0
+#plnum=3000
+#penum=0
+#rdnum=0
 
-for exproot in tfks ; do
-
-ptnum=36001
-panum=0
-pgnum=3000
-pcnum=36001
+for exproot in tFlm ; do
+ptnum=1321
+panum=660
+panum1=600
+pgnum=110
+pcnum=1321
 pinum=0
-plnum=3000
+plnum=110
 penum=0
 rdnum=0
 
+
 #   my_loop={o..z}
-#   my_loop={a..e}
+   my_loop={a..e}
 #   my_loop={a..h}
 #   my_loop={f..z}
 #   my_loop={a..z}
-
+#   my_loop='c'
 #   my_loop='w y'
-   my_loop='u'
+#   my_loop='u'
 
    if [[ "$exproot" = "tFgw" || "$exproot" = "tFja" || "$exproot" = "tFke" || "$exproot" = "tFks" ]] ; then
       my_loop={a..e}
@@ -79,7 +89,7 @@ rdnum=0
      if [ ${panum} != 0 ] ; then
      echo ${type}
      mynum=`ls ${indir}/${type}/${exp}??${type}*.nc | wc | awk {'print $1}'`
-     if [ ${mynum} != ${panum} ] ; then
+     if [[ ${mynum} != ${panum} && ${mynum} != ${panum1} ]] ; then
        echo 'DODGY '${type}' '${mynum}' '${panum}
      fi
      fi

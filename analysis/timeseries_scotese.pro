@@ -10,37 +10,38 @@ Aaa = FINDGEN(17) * (!PI*2/16.)
 USERSYM, COS(Aaa), SIN(Aaa), /FILL 
 
 ; times
-do_times=0 ; if 0 then only read in most recent simulations, for speed
-do_timeseries_plot=0 ; plot global mean SST timeseries of each simulation
+do_times=1 ; if 0 then only read in most recent simulations, for speed
+do_timeseries_plot=1 ; plot global mean SST timeseries of each simulation
 do_gmst_plot=0 ; plot last navy years of SST through phanerozoic
 
 ;means
-do_clims=1 ; read in and analyse model output
-do_readbounds=1 ; read in mask and ice
-do_readsolar=1 ; read solar forcing and albedo
-do_ff_model=1 ; forcing/feedback model
-do_temp_plot=1 ; global mean from proxies
-do_co2_plot=1 ; prescribed co2
-do_lsm_plot=1 ; prescribed land area
-do_solar_plot=1 ; prescribed solar forcing
-do_ice_plot=1 ; prescribed ice sheets
-do_forcings_plot=1 ; prescribed forcings in Wm-2
-do_forctemps_plot=1 ; prescribed forcings in oC
-do_polamp_plot=1 ;  plot polamp
-do_clim_plot=1 ;  plot new vs old, EBM, MDC, and resid
-do_scattemp_plot=1
-do_climsens_plot=1
-do_ess_plot=1
-do_grads_plot=1
+do_clims=0 ; read in and analyse model output
+do_readbounds=0 ; read in mask and ice
+do_readsolar=0 ; read solar forcing and albedo
+do_ff_model=0 ; forcing/feedback model
+do_temp_plot=0 ; global mean from proxies
+do_co2_plot=0 ; prescribed co2
+do_lsm_plot=0 ; prescribed land area
+do_solar_plot=0 ; prescribed solar forcing
+do_ice_plot=0 ; prescribed ice sheets
+do_forcings_plot=0 ; prescribed forcings in Wm-2
+do_forctemps_plot=0 ; prescribed forcings in oC
+do_polamp_plot=0 ;  plot polamp
+do_clim_plot=0 ;  plot new vs old, EBM, MDC, and resid
+do_scattemp_plot=0
+do_climsens_plot=0
+do_ess_plot=0
+do_grads_plot=0
 do_textfile1=0 ; textfile of proxies for Emily
 do_textfile2=0 ; textfile of proxies for Chris
-do_textfile3=1 ; textfile of fluxes for Emily
+do_textfile3=0 ; textfile of fluxes for Emily
+do_textfile4=0 ; textfile of forcings for Emily
 
 
 ;;;;
 ; Total number of time snapshots
 ndates=109
-nexp=6
+nexp=7
 tmax=4000
 nstart=0
 ;;;;
@@ -54,6 +55,7 @@ writing(*,2)=0
 writing(*,3)=0
 writing(*,4)=0
 writing(*,5)=0
+writing(*,6)=0
 
 reading=intarr(ndates,nexp)
 reading(*,0)=1-writing(*,0)
@@ -61,7 +63,8 @@ reading(*,1)=1-writing(*,1)
 reading(*,2)=1-writing(*,2)
 reading(*,3)=1-writing(*,3)
 reading(*,4)=1-writing(*,4)
-reading(*,5)=1-writing(*,4)
+reading(*,5)=1-writing(*,5)
+reading(*,6)=1-writing(*,6)
 
 readfile=intarr(ndates,nexp) ; does clim data exist for this simulation?
 if (do_times eq 1) then begin
@@ -71,6 +74,7 @@ readfile(*,2)=1
 readfile(*,3)=1
 readfile(*,4)=1
 readfile(*,5)=1
+readfile(*,6)=1
 endif else begin
 readfile(*,0)=0
 readfile(*,1)=0
@@ -78,6 +82,7 @@ readfile(*,2)=0
 readfile(*,3)=0
 readfile(*,4)=1
 readfile(*,5)=1
+readfile(*,6)=1
 ;;;;;;;; *******************************
 ; missing tfks files
 ;tfks_missing=[21,49,51]-1
@@ -92,6 +97,7 @@ readtype(*,2)=1
 readtype(*,3)=1
 readtype(*,4)=1
 readtype(*,5)=1
+readtype(*,6)=0
 ;;;;;;;; *******************************
 ;readtype([20,48,50],5)=0
 ;;;;;;;; *******************************
@@ -106,6 +112,7 @@ locdata([16,39,50,59,66,68],2)=1 ; jaq,jAn,jAy,Jah,Jao,Jaq ; CHECK THIS!!!
 locdata(*,3)=0
 locdata(*,4)=0
 locdata(*,5)=0
+locdata(*,6)=1
 
 
 co2file=strarr(nexp)
@@ -115,6 +122,7 @@ co2file(2)='co2_all_03_nt'
 co2file(3)='co2_all_02'
 co2file(4)='co2_all_03_nt'
 co2file(5)='co2_all_04_nt'
+co2file(6)='co2_all_04_nt'
 
 colexp=intarr(nexp)
 colexp(0)=50
@@ -123,6 +131,7 @@ colexp(2)=150
 colexp(3)=200
 colexp(4)=0
 colexp(5)=250
+colexp(6)=220
 
 
 
@@ -188,6 +197,13 @@ exproot(52:77,5)=['tfKs']
 exproot(78:103,5)=['tfKS']
 exproot(104:108,5)=['tFks']
 
+; My tflm
+exproot(0:25,6)=['tflm']
+exproot(26:51,6)=['tflM']
+exproot(52:77,6)=['tfLm']
+exproot(78:103,6)=['tfLM']
+exproot(104:108,6)=['tFlm']
+
 for e=1,nexp-1 do begin
 exptail(*,e)=exptail(*,0)
 endfor
@@ -197,6 +213,7 @@ exptail2(*,2)=''
 exptail2(*,3)='3'
 exptail2(*,4)=''
 exptail2(*,5)=''
+exptail2(*,6)=''
 
 
 ; which set of simulations to plot and analyse
@@ -212,27 +229,29 @@ varname(*,2)='temp_ym_dpth'
 varname(*,3)='temp_ym_dpth'
 varname(*,4)='temp_ym_dpth'
 varname(*,5)='temp_ym_dpth'
+varname(*,6)='temp_ym_dpth'
 
 if (nexp gt 1) then begin
 myshift=intarr(nexp)
-myshift(*)=[2100,3250,6350,-1,9450,12550]
+myshift(*)=[2100,3250,6350,-1,9450,12550,15650] ; [*ny + 100]
 endif
 
 ; plot_times: do we want to plot the timeseries?
 plot_tims=intarr(nexp)
-plot_tims(*)=[1,1,1,0,1,1]
+plot_tims(*)=[1,1,1,0,1,1,1]
 
 ; cont_tims: which experiment will we difference from to check
 ; continuity [-1 = none]
 cont_tims=intarr(nexp)
-cont_tims(*)=[-1,0,1,-1,2,4]
+cont_tims(*)=[-1,0,1,-1,2,4,5]
 
 ; navy = how many years for averaging means
 navy=intarr(nexp)
-navy(*)=[20,20,20,20,20,20]
+navy(*)=[20,20,20,20,20,20,20]
 
-;;;;
-
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;No more EXP edits needed beyond here ;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 check_names=1
 
@@ -660,6 +679,41 @@ temp_wing=[temp_wing0,temp_wing1]
 
 
 line=''
+dum=''
+nrows_judd=85
+dates_judd=fltarr(nrows_judd)
+close,1
+openr,1,'pal_data/GTS.csv'
+readf,1,dum
+for n=0,nrows_judd-1 do begin
+;print,n
+readf,1,line
+;print,line
+my_line=strsplit(line,',',/EXTRACT,/PRESERVE_NULL)
+dates_judd(n)=my_line(5)
+endfor
+close,1
+dates_judd=dates_judd*(-1.0)
+
+line=''
+dum=''
+nrows_judd=85
+temp_judd=fltarr(nrows_judd)
+close,1
+openr,1,'pal_data/GMST.csv'
+readf,1,dum
+for n=0,nrows_judd-1 do begin
+;print,n
+readf,1,line
+;print,line
+my_line=strsplit(line,',',/EXTRACT,/PRESERVE_NULL)
+temp_judd(n)=my_line(2)
+endfor
+close,1
+
+
+
+line=''
 close,1
 openr,1,'../islands/'+co2file(pe)+'.dat'
 for n=nstart,ndates-1 do begin
@@ -988,6 +1042,7 @@ temp_all= climav(baseline,pe,0) + (-1.0*lambda-sqrt(lambda*lambda-4.0*c_a*f_all)
 temp_scot_interp=interpol(temp_scot,dates_scot,dates2)
 temp_scot1m_interp=interpol(temp_scot1m,dates_scot1m,dates2)
 
+temp_judd_interp=interpol(temp_judd,dates_judd,dates2)
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1108,7 +1163,7 @@ for d=0,ndepth-1 do begin
 device,filename='timeseries_'+depth(d)+'_new4.eps',/encapsulate,/color,set_font='Helvetica',xsize=7,ysize=5,/inches
 
 xmin=0
-xmax=11000
+xmax=14000
 times=indgen(xmax)
 
 ; where individual names on lines are
@@ -1274,9 +1329,9 @@ endif ; end gmst plot
 
 if (do_temp_plot eq 1) then begin
 
-npp=3
+npp=4
 ppname=strarr(npp)
-ppname(*)=['01','02','03']
+ppname(*)=['01','02','03','04']
 for p=0,npp-1 do begin
 
 device,filename='temp_scotese_time_'+ppname(p)+'.eps',/encapsulate,/color,set_font='Helvetica',xsize=7,ysize=5,/inches
@@ -1310,10 +1365,17 @@ if (p eq 1) then begin
 oplot,dates_scot1m,temp_scot1morig,color=180,thick=3
 endif
 
-if (p eq 2) then begin
+if (p eq 2 or p eq 3) then begin
 ; Plot final Scotese 1m in red
 oplot,dates_scot1m,temp_scot1m,color=250,thick=3
 ;plots,dates2,temp_scot1m_interp,psym=6,symsize=0.5,color=250
+endif
+
+if (p eq 3) then begin
+; Plot Judd in orange
+oplot,dates_judd,temp_judd,color=200,thick=3
+oplot,dates2,temp_judd_interp,color=225,thick=3,linestyle=1
+
 endif
 
 
@@ -1346,9 +1408,14 @@ oplot,[x1,x1+dx1],[y1+dy1,y1+dy1],color=180,thick=3
 xyouts,x1+dx2,y1+dy1-dy2,'Scotese et al (2021) [B]',color=180
 endif
 
-if (p eq 2) then begin
+if (p eq 2 or p eq 3) then begin
 oplot,[x1,x1+dx1],[y1,y1],color=250,thick=3
 xyouts,x1+dx2,y1-dy2,'Scotese et al (2021) [smoothed]',color=250
+endif
+
+if (p eq 3) then begin
+oplot,[x1,x1+dx1],[y1+dy1,y1+dy1],color=200,thick=3
+xyouts,x1+dx2,y1+dy1-dy2,'Judd',color=200
 endif
 
 
@@ -2198,6 +2265,8 @@ endif
 
 if (do_ess_plot eq 1) then begin
 
+ptf=1.0
+;ptf=2.0
 
 nt=9
 xtit=strarr(nt)
@@ -2222,55 +2291,55 @@ plot,temp_scot1m_interp,climav(*,pe,0),yrange=[ymin,ymax],xrange=[xmin,xmax],xti
 if (t eq 0) then begin
 thisxf=alog(co2/280.0)/alog(2.0)
 ;thisy=climav(*,pe,0)
-thisy=14+(climav(*,pe,0)-14)*2
+thisy=14+(climav(*,pe,0)-14)*ptf
 endif
 
 if (t eq 1) then begin
 thisxf=alog(co2_inf_1m/280.0)/alog(2.0)
 ;thisy=climav(*,pt,0)
-thisy=14+(climav(*,pe,0)-14)*2
+thisy=14+(climav(*,pe,0)-14)*ptf
 endif
 
 if (t eq 2) then begin
 thisxf=alog(co2/280.0)/alog(2.0) + t_solar_tun*((1.0-c_alb)*(solar-mean(solar))/4.0)/c_co2
 ;thisy=climav(*,pe,0)
-thisy=14+(climav(*,pe,0)-14)*2
+thisy=14+(climav(*,pe,0)-14)*ptf
 endif
 
 if (t eq 3) then begin
 thisxf=alog(co2/280.0)/alog(2.0) + t_solar_tun*((1.0-c_alb)*(solar-mean(solar))/4.0)/c_co2 + t_area_tun*(solar*(-1.0)*(masks_mean-masks_mean(baseline))*c_dalb/4.0)/c_co2 + t_ice_tun*(solar*(-1.0)*(ice_mean-ice_mean(baseline))*c_dice/4.0)/c_co2
 ;thisy=climav(*,pe,0)
-thisy=14+(climav(*,pe,0)-14)*2
+thisy=14+(climav(*,pe,0)-14)*ptf
 endif
 
 if (t eq 4) then begin
 thisxf=alog(co2/280.0)/alog(2.0) + t_solar_tun*((1.0-c_alb)*(solar-mean(solar))/4.0)/c_co2 + t_area_tun*(solar*(-1.0)*(masks_mean-masks_mean(baseline))*c_dalb/4.0)/c_co2
 ;thisy=climav(*,pe,0)
-thisy=14+(climav(*,pe,0)-14)*2
+thisy=14+(climav(*,pe,0)-14)*ptf
 endif
 
 if (t eq 5) then begin
 thisxf=alog(co2_inf_1m/280.0)/alog(2.0) + t_solar_tun*((1.0-c_alb)*(solar-mean(solar))/4.0)/c_co2 + t_area_tun*(solar*(-1.0)*(masks_mean-masks_mean(baseline))*c_dalb/4.0)/c_co2
 ;thisy=climav(*,pe,0)
-thisy=14+(climav(*,pe,0)-14)*2
+thisy=14+(climav(*,pe,0)-14)*ptf
 endif
 
 if (t eq 6) then begin
 thisxf=alog(co2/280.0)/alog(2.0) + t_solar_tun*((1.0-c_alb)*(solar-mean(solar))/4.0)/c_co2 + t_area_tun*(solar*(-1.0)*(masks_mean-masks_mean(baseline))*c_dalb/4.0)/c_co2 + t_ice_tun*(solar*(-1.0)*(ice_mean-ice_mean(baseline))*c_dice/4.0)/c_co2 - resid*lambda_tun/c_co2
 ;thisy=climav(*,pe,0)
-thisy=14+(climav(*,pe,0)-14)*2
+thisy=14+(climav(*,pe,0)-14)*ptf
 endif
 
 if (t eq 7) then begin
 thisxf=alog(co2/280.0)/alog(2.0)+0.5*randomn(1.0,ndates) + t_solar_tun*((1.0-c_alb)*(solar-mean(solar))/4.0)/c_co2 + t_area_tun*(solar*(-1.0)*(masks_mean-masks_mean(baseline))*c_dalb/4.0)/c_co2
 ;thisy=climav(*,pe,0)
-thisy=14+(climav(*,pe,0)-14)*2+3.0*randomn(2.0,ndates)
+thisy=14+(climav(*,pe,0)-14)*ptf+3.0*randomn(2.0,ndates)
 endif
 
 if (t eq 8) then begin
 thisxf=alog(co2/280.0)/alog(2.0)+0.5*randomn(1.0,ndates)
 ;thisy=climav(*,pe,0)
-thisy=14+(climav(*,pe,0)-14)*2+3.0*randomn(2.0,ndates)
+thisy=14+(climav(*,pe,0)-14)*ptf+3.0*randomn(2.0,ndates)
 endif
 
 for n=nstart,ndates-1 do begin
@@ -2305,7 +2374,14 @@ device,/close
 
 endfor
 
-device,filename='ess_forcings.eps',/encapsulate,/color,set_font='Helvetica',xsize=14,ysize=12
+
+nessf=7
+ftit=strarr(nessf)
+ftit(*)=['temp vs. CO2','temp vs. CO2+solar','temp vs. CO2+solar+area+ice','temp vs. CO2+solar+area+ice+resid','temp vs. CO2','temp vs. CO2+solar','temp vs. CO2+solar+area']
+
+for t=0,nessf-1 do begin
+
+device,filename='ess_forcings_'+strtrim(t,2)+'.eps',/encapsulate,/color,set_font='Helvetica',xsize=14,ysize=12
 
 xmin=-1
 xmax=6
@@ -2315,21 +2391,54 @@ ymax=50
 
 plot,temp_scot1m_interp,climav(*,pe,0),yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='forcing',ytitle='GMST',ystyle=1,xstyle=1,/nodata
 
-
-;thisxf=f_co2_tun/c_co2 ; THIS ONE IS IDENTICAL TO _0, ; i.e. co2 forcing only 
-
-;thisxf=f_co2_tun/c_co2 + (f_solar_tun-mean(f_solar_tun))/c_co2 ; this one is identical to _2, i.e. co2 and solar forcing only
-
-thisxf=f_co2_tun/c_co2 + (f_solar_tun-mean(f_solar_tun))/c_co2 + (f_area_tun-mean(f_area_tun))/c_co2 + (f_ice_tun-mean(f_ice_tun))/c_co2 ; this one is identical to _3, i.e. all the explained forcings
-
-;thisxf=f_co2_tun/c_co2 + (f_solar_tun-mean(f_solar_tun))/c_co2 + (f_area_tun-mean(f_area_tun))/c_co2 + (f_ice_tun-mean(f_ice_tun))/c_co2 - resid*lambda_tun/c_co2 ; this one is a straight line.
-
-
-
+if (t eq 0) then begin
+thisxf=f_co2_tun/c_co2 ; THIS ONE IS IDENTICAL TO _0, ; i.e. co2 forcing only 
 thisy=climav(*,pe,0)
+nndates=ndates
+endif
+
+if (t eq 1) then begin
+thisxf=f_co2_tun/c_co2 + (f_solar_tun-mean(f_solar_tun))/c_co2 ; this one is identical to _2, i.e. co2 and solar forcing only
+thisy=climav(*,pe,0)
+nndates=ndates
+endif
+
+if (t eq 2) then begin
+thisxf=f_co2_tun/c_co2 + (f_solar_tun-mean(f_solar_tun))/c_co2 + (f_area_tun-mean(f_area_tun))/c_co2 + (f_ice_tun-mean(f_ice_tun))/c_co2 ; this one is identical to _3, i.e. all the explained forcings
+thisy=climav(*,pe,0)
+nndates=ndates
+endif
+
+if (t eq 3) then begin
+thisxf=f_co2_tun/c_co2 + (f_solar_tun-mean(f_solar_tun))/c_co2 + (f_area_tun-mean(f_area_tun))/c_co2 + (f_ice_tun-mean(f_ice_tun))/c_co2 - resid*lambda_tun/c_co2 ; this one is a straight line.
+thisy=climav(*,pe,0)
+nndates=ndates
+endif
 
 
-for n=nstart,ndates-1 do begin
+njm=97
+
+if (t eq 4) then begin
+thisxf=f_co2_jud(0:njm-1)/c_co2
+thisy=temp_judd_interp(0:njm-1)
+nndates=njm
+endif
+
+if (t eq 5) then begin
+thisxf=f_co2_jud(0:njm-1)/c_co2 + (f_solar_jud(0:njm-1)-mean(f_solar_jud(0:njm-1)))/c_co2
+thisy=temp_judd_interp(0:njm-1)
+nndates=njm
+endif
+
+if (t eq 6) then begin
+thisxf=f_co2_jud(0:njm-1)/c_co2 + (f_solar_jud(0:njm-1)-mean(f_solar_jud(0:njm-1)))/c_co2 + (f_area_jud(0:njm-1)-mean(f_area_jud(0:njm-1)))/c_co2
+thisy=temp_judd_interp(0:njm-1)
+nndates=njm
+endif
+
+
+
+for n=nstart,nndates-1 do begin
 x=n-nstart
 xx=ndates-nstart
 mycol=(x)*250.0/(xx-1)
@@ -2344,20 +2453,19 @@ print,mysigma
 
 oplot,[xmin,xmax],[myessresult(0)+xmin*myessresult(1),myessresult(0)+xmax*myessresult(1)]
 
-
-
 myyy=ymin+(ymax-ymin)*0.9
 myxx=xmin+(xmax-xmin)*0.1
 mydy=(ymax-ymin)*0.05
 mydy2=(ymax-ymin)*0.01
 mydx=(xmax-xmin)*0.02
 plots,myxx,myyy,psym=8,color=0,symsize=0.5
-xyouts,myxx+mydx,myyy-0*mydy-mydy2,'forcing vs. co2'
+xyouts,myxx+mydx,myyy-0*mydy-mydy2,ftit(t)
 xyouts,myxx+mydx,myyy-1*mydy-mydy2,string(myessresult(1), format = '(f4.2)')
 xyouts,myxx+mydx,myyy-2*mydy-mydy2,string(mysigma(1), format = '(f4.2)')
 
 
 device,/close
+endfor
 
 
 endif
@@ -2402,6 +2510,22 @@ endfor
 close,1
 
 endif
+
+if (do_textfile4 eq 1) then begin
+
+openw,1,'forcings_emily.dat'
+
+printf,1,'dates C S L GMST'
+for n=0,ndates-1 do begin
+printf,1,dates2(n),co2(n),solar(n),masks_mean(n),temp_judd_interp(n),format='(f0," ",4(" ",f0))'
+endfor
+
+
+
+close,1
+
+endif
+
 
 stop
 

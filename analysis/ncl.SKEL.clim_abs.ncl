@@ -4,20 +4,24 @@ expname="EXP"
 exrname="EXR"
 age="AGE"
 doplot=DOPLOT
+flip=FLIP
+mymask=MASK
 
 exp_dir="/home/bridge/swsvalde/ummodel/data"
 exr_dir="/home/bridge/swsvalde/ummodel/data"
 
 g3=addfile(exr_dir+"/"+exrname+"/inidata/"+exrname+".qrparm.omask.nc","r")
 my_lsm=g3->lsm(:,:)
-g2=addfile(exr_dir+"/"+exrname+"/climate/"+exrname+"o.TYPclann.nc","r")
+g2=addfile(exr_dir+"/"+exrname+"/climate/"+exrname+"CODE.TYPclann.nc","r")
 my_var_2=g2->VAR(0,0,:,:)
 my_var_2=mask(my_var_2,my_lsm,0)
 
 if (doplot .eq. 1) then
-g1=addfile(exp_dir+"/"+expname+"/climate/"+expname+"o.TYPclann.nc","r")
+g1=addfile(exp_dir+"/"+expname+"/climate/"+expname+"CODE.TYPclann.nc","r")
 my_var_1=g1->VAR(0,0,:,:)
+if (mymask .eq. 1) then
 my_var_1=mask(my_var_1,my_lsm,0)
+end if
 else 
 my_var_1=my_lsm
 end if
@@ -85,6 +89,18 @@ res@mpFillOn     = False
   cres2@cnMaxLevelValF       = my_max2
   cres2@cnLevelSpacingF      = my_del2
   cres2@gsnAddCyclic         = True           ; add longitude cyclic point
+
+
+if (flip .eq. 1) then
+printVarSummary(my_var_1)
+xx=my_var_1
+do j=0,72
+do i=0,95
+yy=xx(j,i)
+my_var_1(72-j,i)=yy
+end do
+end do
+end if
 
 map = gsn_csm_contour_map(wks,my_var_1,res)
 map2 = gsn_csm_contour(wks,my_lsm,cres)

@@ -14,7 +14,10 @@ indir_root=/home/bridge/ggdjl/umdata
 #for exproot in tfke ; do
 #    for id in {f..z} ; do
 
-for exproot in tfks tfkS tfKs tfKS tFks ; do
+#for exproot in tfks tfkS tfKs tfKS tFks ; do
+#for id in {a..z} ; do
+
+for exproot in tflm tflM tfLm tfLM tFlm ; do
 for id in {a..z} ; do
 
     exp=${exproot}${id}
@@ -28,7 +31,8 @@ for id in {a..z} ; do
         echo ${numfiles}
 #        if [ ${numfiles} == 199 ] ; then
 #        if [[ ${numfiles} == 1050 ]] || [[ ${numfiles} == 1049 ]] ; then
-        if [[ ${numfiles} == 3000 ]] ; then
+#        if [[ ${numfiles} == 3000 ]] ; then
+        if [[ ${numfiles} == 110 ]] ; then
 #        if [[ ${numfiles} -gt 205 ]] ; then
 #        if [[ ${numfiles} -gt 2000 ]] ; then
 
@@ -37,7 +41,10 @@ for id in {a..z} ; do
 #        /home/bridge/ggdjl/ggdjl/um/scripts/make_climate -y '0000028[7-9]?' ${exp}
 #        /home/bridge/ggdjl/ggdjl/um/scripts/make_climate -y '0000029[7-9]?' ${exp}
 #        /home/bridge/ggdjl/ggdjl/um/scripts/make_climate -y '00000019[5-9]' ${exp}
-        /home/bridge/ggdjl/ggdjl/um/scripts/make_climate -y '0000029[8-9]?' ${exp}
+#        /home/bridge/ggdjl/ggdjl/um/scripts/make_climate -y '0000029[8-9]?' ${exp}
+
+        /home/bridge/ggdjl/ggdjl/um/scripts/make_climate -y '0000001[0-1]?' ${exp}
+
         fi
       fi
 

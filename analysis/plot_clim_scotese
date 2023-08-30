@@ -2,16 +2,18 @@
 
 
 plot_tempdiff=0
-plot_streamabs=1
-plot_uv=1
-plot_mixed=1
-plot_merid=1
-plot_wind=1
-plot_temp=1
-plot_salin=1
+plot_streamabs=0
+plot_uv=0
+plot_mixed=0
+plot_merid=0
+plot_wind=0
+plot_temp=0
+plot_salin=0
 plot_topo=0
 plot_albdiff=0
 plot_smdiff=0
+plot_precip=1
+
 
 
 ###  get args
@@ -78,6 +80,9 @@ sed -i "s/EXP/${exp}/g" ${jobfile}
 sed -i "s/EXR/${exr}/g" ${jobfile}
 sed -i "s/AGE/${age}/g" ${jobfile}
 sed -i "s/TYP/pf/g" ${jobfile}
+sed -i "s/CODE/o/g" ${jobfile}
+sed -i "s/FLIP/0/g" ${jobfile}
+sed -i "s/MASK/1/g" ${jobfile}
 sed -i "s/COL/BlueDarkRed18/g" ${jobfile}
 sed -i "s/MAX/1.5e14/g" ${jobfile}
 sed -i "s/MIN/-1.5e14/g" ${jobfile}
@@ -101,6 +106,9 @@ sed -i "s/EXP/${exp}/g" ${jobfile}
 sed -i "s/EXR/${exr}/g" ${jobfile}
 sed -i "s/AGE/${age}/g" ${jobfile}
 sed -i "s/TYP/pf/g" ${jobfile}
+sed -i "s/CODE/o/g" ${jobfile}
+sed -i "s/FLIP/0/g" ${jobfile}
+sed -i "s/MASK/1/g" ${jobfile}
 sed -i "s/COL/WhBlGrYeRe/g" ${jobfile}
 sed -i "s/MAX/300/g" ${jobfile}
 sed -i "s/MIN/100/g" ${jobfile}
@@ -124,6 +132,9 @@ sed -i "s/EXP/${exp}/g" ${jobfile}
 sed -i "s/EXR/${exr}/g" ${jobfile}
 sed -i "s/AGE/${age}/g" ${jobfile}
 sed -i "s/TYP/pg/g" ${jobfile}
+sed -i "s/CODE/o/g" ${jobfile}
+sed -i "s/FLIP/0/g" ${jobfile}
+sed -i "s/MASK/1/g" ${jobfile}
 sed -i "s/COL/BlAqGrYeOrReVi200/g" ${jobfile}
 sed -i "s/MAX/0.005/g" ${jobfile}
 sed -i "s/MIN/-0.005/g" ${jobfile}
@@ -146,6 +157,9 @@ sed -i "s/EXP/${exp}/g" ${jobfile}
 sed -i "s/EXR/${exr}/g" ${jobfile}
 sed -i "s/AGE/${age}/g" ${jobfile}
 sed -i "s/TYP/pg/g" ${jobfile}
+sed -i "s/CODE/o/g" ${jobfile}
+sed -i "s/FLIP/0/g" ${jobfile}
+sed -i "s/MASK/1/g" ${jobfile}
 sed -i "s/COL/BlAqGrYeOrReVi200/g" ${jobfile}
 sed -i "s/MAX/40/g" ${jobfile}
 sed -i "s/MIN/-2/g" ${jobfile}
@@ -161,6 +175,30 @@ ncl ${jobfile}
 \rm ${jobfile}
 fi
 
+if [ ${plot_precip} -eq 1 ] ; then
+jobfile="ncl.${exp}.clim_abs.ncl"
+\cp ncl.SKEL.clim_abs.ncl ${jobfile}
+sed -i "s/EXP/${exp}/g" ${jobfile}
+sed -i "s/EXR/${exr}/g" ${jobfile}
+sed -i "s/AGE/${age}/g" ${jobfile}
+sed -i "s/TYP/pd/g" ${jobfile}
+sed -i "s/CODE/a/g" ${jobfile}
+sed -i "s/FLIP/0/g" ${jobfile}
+sed -i "s/MASK/0/g" ${jobfile}
+sed -i "s/COL/CBR_drywet/g" ${jobfile}
+sed -i "s/MAX/1e-4/g" ${jobfile}
+sed -i "s/MIN/0/g" ${jobfile}
+sed -i "s/DEL/5e-6/g" ${jobfile}
+sed -i "s/MX2/3e-4/g" ${jobfile}
+sed -i "s/MN2/0/g" ${jobfile}
+sed -i "s/DL2/5e-5/g" ${jobfile}
+sed -i "s/VAR/precip_mm_srf/g" ${jobfile}
+sed -i "s/VSHORT/precip/g" ${jobfile}
+sed -i "s/VLONG/Precipitation/g" ${jobfile}
+sed -i "s/DOPLOT/${doplot}/g" ${jobfile}
+ncl ${jobfile}
+\rm ${jobfile}
+fi
 
 if [ ${plot_uv} -eq 1 ] ; then
 for lev in 0 11 15 ; do

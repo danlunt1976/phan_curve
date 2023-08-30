@@ -10,8 +10,8 @@ fi
 exp=$1
 
 
-yearlist='3000'
-
+#yearlist='3000'
+yearlist='0110'
 
 echo ${yearlist}
 

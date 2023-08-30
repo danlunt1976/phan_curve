@@ -10,8 +10,11 @@ fi
 exp=$1
 machine=$2
 
-sed  -i "1i ${exp} -delete_existing no -step04 yes -step05 yes -step06 yes -step07 yes -step08 no -delete_means no -delete_storms no" /home/bridge/swsvalde/ummodel/scripts/expts_${machine}.dat
+# no storms
+#sed  -i "1i ${exp} -delete_existing no -step04 yes -step05 yes -step06 yes -step07 yes -step08 no -delete_means no -delete_storms no" /home/bridge/swsvalde/ummodel/scripts/expts_${machine}.dat
 
+#storms
+sed  -i "1i ${exp} -delete_existing no -step04 yes -step05 yes -step06 yes -step07 yes -step08 yes -delete_means no -delete_storms no" /home/bridge/swsvalde/ummodel/scripts/expts_${machine}.dat
 
 
 exit

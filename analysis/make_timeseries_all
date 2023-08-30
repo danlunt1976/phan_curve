@@ -12,20 +12,19 @@ indir_root=/home/bridge/ggdjl/umdata
 #for exproot in tfke ; do
 #    my_loop={f..z}
 
-for exproot in tfks tfkS tfKs tfKS tFks ; do
-  my_loop={a..z}
+#for exproot in tfks tfkS tfKs tfKS tFks ; do
+#  my_loop={a..z}
 
+for exproot in tflm tflM tfLm tfLM tFlm ; do
+  my_loop={a..z}
 
 #  if [ "$exproot" = "tFgw" ] ; then
 #  if [ "$exproot" = "tFke" ] ; then
-
-  if [ "$exproot" = "tFks" ] ; then
+#  if [ "$exproot" = "tFks" ] ; then
+  if [ "$exproot" = "tFlm" ] ; then
     my_loop={a..e}
   fi
 
-  if [ "$exproot" = "tfks" ] ; then
-    my_loop={o..z}
-  fi
 
   for id in ${my_loop} ; do
 

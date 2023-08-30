@@ -62,25 +62,26 @@ for expid in ${expids1} ; do
      explist_wind=${explist_wind}' plots/wind_'${exp}'.pdf'
      explist_salin=${explist_salin}' plots/salin_'${exp}'.pdf'
      explist_temp=${explist_temp}' plots/temp_'${exp}'.pdf'
+     explist_precip=${explist_precip}' plots/precip_'${exp}'.pdf'
      explist_topo=${explist_topo}' plots/topo_'${exp}'.pdf'
      explist_islands=${explist_islands}' ../islands/'${exr}'/newislands_'${exr}'-crop.pdf'
 
    done
 done
 
-convert -loop 0 -delay 20 ${explist_uv_00} anim_uv_00.gif
+#convert -loop 0 -delay 20 ${explist_uv_00} anim_uv_00.gif
 #convert -loop 0 -delay 20 ${explist_uv_11} anim_uv_11.gif
 #convert -loop 0 -delay 20 ${explist_uv_15} anim_uv_15.gif
-convert -loop 0 -delay 20 ${explist_stream} anim_stream.gif
-convert -loop 0 -delay 20 ${explist_mixed} anim_mixed.gif
-convert -loop 0 -delay 20 ${explist_merid} anim_merid.gif
-convert -loop 0 -delay 20 ${explist_wind} anim_wind.gif
-convert -loop 0 -delay 20 ${explist_salin} anim_salin.gif
-convert -loop 0 -delay 20 ${explist_temp} anim_temp.gif
+#convert -loop 0 -delay 20 ${explist_stream} anim_stream.gif
+#convert -loop 0 -delay 20 ${explist_mixed} anim_mixed.gif
+#convert -loop 0 -delay 20 ${explist_merid} anim_merid.gif
+#convert -loop 0 -delay 20 ${explist_wind} anim_wind.gif
+#convert -loop 0 -delay 20 ${explist_salin} anim_salin.gif
+#convert -loop 0 -delay 20 ${explist_temp} anim_temp.gif
 #convert -loop 0 -delay 20 ${explist_topo} anim_topo.gif
 #convert -loop 0 -delay 20 ${explist_islands} anim_islands.gif
 
-
+convert -loop 0 -delay 20 ${explist_precip} anim_precip.gif
 
 exit
 

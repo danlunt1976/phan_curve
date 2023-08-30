@@ -1,8 +1,8 @@
 #!/bin/bash
 #
 
-add_ftp=1
-mk_dirs=1
+add_ftp=1 # [only works if file has some text in already]
+mk_dirs=0
 
 ###  get args
 if [ "$#" -ne 2 ]; then
@@ -34,6 +34,7 @@ fi
 
 # make directories
 if [ ${mk_dirs} -ne 0 ] ; then
+
 dir1=/export/${mymachine}/array-01/ggdjl/${exp} 
 if [ ! -d ${dir1} ]; then
 mkdir -p ${dir1}

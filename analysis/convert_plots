@@ -45,10 +45,14 @@
 
 #for ty in clim_temp_egu_time scattemp_time ; do
 
-for ty in climsens_time ; do
+#for ty in climsens_time ; do
 
-gs -dSAFER -dEPSCrop -r600 -sDEVICE=pngalpha -o ${ty}.png ${ty}.eps
+for ty in ess_co2_temp_ ; do
+for n in 0 1 2 3 4 5 6 7 8 ; do
 
+gs -dSAFER -dEPSCrop -r600 -sDEVICE=pngalpha -o ${ty}${n}.png ${ty}${n}.eps
+
+done
 done
 
 

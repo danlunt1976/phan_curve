@@ -3,7 +3,8 @@
 make_html=1
 make_inidata=1
 #
-exptype1=tfks
+exptype1=tflm
+#exptype1=tfks
 #exptype1=tfke
 #exptype1=tfja
 #exptype1=tfgw
@@ -23,6 +24,10 @@ fi
 if [ ${exptype1} == 'tfks' ] ; then
 co2_file='co2_all_04_nt.dat'
 exptype2='tfke'
+fi
+if [ ${exptype1} == 'tflm' ] ; then
+co2_file='co2_all_04_nt.dat'
+exptype2='tfks'
 fi
 #
 ###  get args
@@ -112,6 +117,7 @@ MY_START='1850'
 MY_LENGTH='1050'
 MY_MEANS='30'
 MY_SPINUP='1020'
+MY_PAPB='50'
 MY_LONG="This is the ${age} Ma simulation using the Scotese palaeogeographies and revised CCN etc.  This version has islands included.  Started from end of ${exp_old}."
 MY_LONGER="Scientifically as benchmark except using water age update, dark respiration, salinity conservation and revised ozone. Also using new orbital and solar update, and outputting leaf CO2.  This version has islands included.  Started from end of ${exp_old}."
 MY_OWNER='ggdjl'
@@ -123,6 +129,7 @@ MY_START='0000'
 MY_LENGTH='3000'
 MY_MEANS='100'
 MY_SPINUP='2900'
+MY_PAPB='50'
 MY_LONG="This is the ${age} Ma simulation using the Scotese palaeogeographies and revised CCN etc.  This version has islands and smoothing included.  Started from end of ${exp_old}."
 MY_LONGER="Scientifically as benchmark except using water age update, dark respiration, salinity conservation and revised ozone. Also using new orbital and solar update, and outputting leaf CO2.  This version has islands included and atmospheric smoothing.  Started from end of ${exp_old}."
 MY_OWNER='ggdjl'
@@ -134,6 +141,7 @@ MY_START='0000'
 MY_LENGTH='3000'
 MY_MEANS='100'
 MY_SPINUP='2900'
+MY_PAPB='50'
 MY_LONG="This is the ${age} Ma simulation using the Scotese palaeogeographies and revised CCN etc.  This version has islands and smoothing and desert albedo included.  Started from end of ${exp_old}."
 MY_LONGER="Scientifically as benchmark except using water age update, dark respiration, salinity conservation and revised ozone. Also using new orbital and solar update, and outputting leaf CO2.  This version has islands included and atmospheric smoothing and desert albedo.  Started from end of ${exp_old}."
 MY_OWNER='ggdjl'
@@ -145,8 +153,21 @@ MY_START='0000'
 MY_LENGTH='3000'
 MY_MEANS='100'
 MY_SPINUP='2900'
+MY_PAPB='50'
 MY_LONG="This is the ${age} Ma simulation using the Scotese palaeogeographies and revised CCN etc.  This version has islands and smoothing and desert albedo included.  Tuned CO2 to give Scotese temperatures.  Started from end of ${exp_old}."
 MY_LONGER="Scientifically as benchmark except using water age update, dark respiration, salinity conservation and revised ozone. Also using new orbital and solar update, and outputting leaf CO2.  This version has islands included and atmospheric smoothing and desert albedo.  Tuned CO2 to give Scotese temperatures.  Started from end of ${exp_old}."
+MY_OWNER='ggdjl'
+MY_ANOMALY="EXPTID-${exp_old}"
+fi
+
+if [ ${exptype1} == 'tflm' ] ; then
+MY_START='0000'
+MY_LENGTH='110'
+MY_MEANS='100'
+MY_SPINUP='10'
+MY_PAPB='55'
+MY_LONG="This is the ${age} Ma simulation using the Scotese palaeogeographies and revised CCN etc.  This version has islands and smoothing and desert albedo included.  Tuned CO2 to give Scotese temperatures.  Started from end of ${exp_old}.  With JEDI output."
+MY_LONGER="Scientifically as benchmark except using water age update, dark respiration, salinity conservation and revised ozone. Also using new orbital and solar update, and outputting leaf CO2.  This version has islands included and atmospheric smoothing and desert albedo.  Tuned CO2 to give Scotese temperatures.  Started from end of ${exp_old}.  With JEDI output."
 MY_OWNER='ggdjl'
 MY_ANOMALY="EXPTID-${exp_old}"
 fi
@@ -184,6 +205,7 @@ sed -i "s/ longer_description_para1=.*/ longer_description_para1=\"${MY_LONGER}\
 sed -i "s/ owner=.*/ owner=\"${MY_OWNER}\";/g" ${newdir}/${exp}.dat
 sed -i "s/ anomaly=.*/ anomaly=\"${MY_ANOMALY}\";/g" ${newdir}/${exp}.dat
 sed -i "s/ start_year=.*/ start_year=\"${MY_START}\";/g" ${newdir}/${exp}.dat
+sed -i "s/ remove_papb=.*/ remove_papb=\"${MY_PAPB}\";/g" ${newdir}/${exp}.dat
 
 fi
 
