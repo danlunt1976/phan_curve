@@ -1,6 +1,5 @@
 pro time
 
-
 set_plot,'ps'
 !P.FONT=0
 
@@ -37,11 +36,12 @@ do_textfile2=0 ; textfile of proxies for Chris
 do_textfile3=0 ; textfile of fluxes for Emily
 do_textfile4=0 ; textfile of forcings for Emily
 
+check_names=1 ; check names
 
 ;;;;
 ; Total number of time snapshots
 ndates=109
-nexp=7
+nexp=9
 tmax=4000
 nstart=0
 ;;;;
@@ -56,6 +56,9 @@ writing(*,3)=0
 writing(*,4)=0
 writing(*,5)=0
 writing(*,6)=0
+writing(*,7)=0
+writing(*,8)=0
+
 
 reading=intarr(ndates,nexp)
 reading(*,0)=1-writing(*,0)
@@ -65,6 +68,9 @@ reading(*,3)=1-writing(*,3)
 reading(*,4)=1-writing(*,4)
 reading(*,5)=1-writing(*,5)
 reading(*,6)=1-writing(*,6)
+reading(*,7)=1-writing(*,7)
+reading(*,8)=1-writing(*,8)
+
 
 readfile=intarr(ndates,nexp) ; does clim data exist for this simulation?
 if (do_times eq 1) then begin
@@ -75,14 +81,18 @@ readfile(*,3)=1
 readfile(*,4)=1
 readfile(*,5)=1
 readfile(*,6)=1
+readfile(*,7)=1
+readfile(*,8)=1
 endif else begin
 readfile(*,0)=0
 readfile(*,1)=0
 readfile(*,2)=0
 readfile(*,3)=0
-readfile(*,4)=1
-readfile(*,5)=1
-readfile(*,6)=1
+readfile(*,4)=0
+readfile(*,5)=0
+readfile(*,6)=0
+readfile(*,7)=0
+readfile(*,8)=1
 ;;;;;;;; *******************************
 ; missing tfks files
 ;tfks_missing=[21,49,51]-1
@@ -98,6 +108,10 @@ readtype(*,3)=1
 readtype(*,4)=1
 readtype(*,5)=1
 readtype(*,6)=0
+readtype(*,7)=1
+readtype(*,8)=1
+
+
 ;;;;;;;; *******************************
 ;readtype([20,48,50],5)=0
 ;;;;;;;; *******************************
@@ -113,6 +127,9 @@ locdata(*,3)=0
 locdata(*,4)=0
 locdata(*,5)=0
 locdata(*,6)=1
+locdata(*,7)=0
+locdata(*,8)=0
+
 
 
 co2file=strarr(nexp)
@@ -123,6 +140,8 @@ co2file(3)='co2_all_02'
 co2file(4)='co2_all_03_nt'
 co2file(5)='co2_all_04_nt'
 co2file(6)='co2_all_04_nt'
+co2file(7)='co2_all_02'
+co2file(8)='co2_all_02'
 
 colexp=intarr(nexp)
 colexp(0)=50
@@ -132,7 +151,8 @@ colexp(3)=200
 colexp(4)=0
 colexp(5)=250
 colexp(6)=220
-
+colexp(7)=130
+colexp(8)=80
 
 
 ndepth=3
@@ -146,9 +166,6 @@ my_missing(*,*,*,*)=1
 exproot=strarr(ndates,nexp)
 exptail=strarr(ndates,nexp)
 exptail2=strarr(ndates,nexp)
-
-
-
 
 ; Paul's teye 
 exproot(0:25,0)=['teye']
@@ -204,9 +221,24 @@ exproot(52:77,6)=['tfLm']
 exproot(78:103,6)=['tfLM']
 exproot(104:108,6)=['tFlm']
 
+; Paul's teyd
+exproot(0:25,7)=['teyd']
+exproot(26:51,7)=['teyD']
+exproot(52:77,7)=['teYd']
+exproot(78:103,7)=['teYD']
+exproot(104:108,7)=['tEyd']
+
+; Paul's teyd
+exproot(0:25,8)=['teyd']
+exproot(26:51,8)=['teyD']
+exproot(52:77,8)=['teYd']
+exproot(78:103,8)=['teYD']
+exproot(104:108,8)=['tEyd']
+
 for e=1,nexp-1 do begin
 exptail(*,e)=exptail(*,0)
 endfor
+
 exptail2(*,0)=''
 exptail2(*,1)=''
 exptail2(*,2)=''
@@ -214,6 +246,8 @@ exptail2(*,3)='3'
 exptail2(*,4)=''
 exptail2(*,5)=''
 exptail2(*,6)=''
+exptail2(*,7)=''
+exptail2(*,8)='1'
 
 
 ; which set of simulations to plot and analyse
@@ -230,34 +264,45 @@ varname(*,3)='temp_ym_dpth'
 varname(*,4)='temp_ym_dpth'
 varname(*,5)='temp_ym_dpth'
 varname(*,6)='temp_ym_dpth'
+varname(*,7)='temp_ym_dpth'
+varname(*,8)='temp_ym_dpth'
 
-if (nexp gt 1) then begin
-myshift=intarr(nexp)
-myshift(*)=[2100,3250,6350,-1,9450,12550,15650] ; [*ny + 100]
-endif
+
+nyear=intarr(nexp)
+nyear(*)=[2000,1050,3000,-1,3000,3000,110,2000,2000]
+torder=intarr(nexp)
+torder(*)=[2,3,4,-1,5,6,7,0,1]
+check_cont=intarr(nexp)
+check_cont(*)=[0,1,1,-1,1,1,1,0,0]
+xmint=0
+xmaxt=20000
+times=indgen(xmaxt)
 
 ; plot_times: do we want to plot the timeseries?
 plot_tims=intarr(nexp)
-plot_tims(*)=[1,1,1,0,1,1,1]
-
-; cont_tims: which experiment will we difference from to check
-; continuity [-1 = none]
-cont_tims=intarr(nexp)
-cont_tims(*)=[-1,0,1,-1,2,4,5]
+plot_tims(*)=[1,1,1,0,1,1,1,1,1]
 
 ; navy = how many years for averaging means
 navy=intarr(nexp)
-navy(*)=[20,20,20,20,20,20,20]
+navy(*)=[20,20,20,20,20,20,20,20,20]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;No more EXP edits needed beyond here ;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-check_names=1
+nexp2=total(torder ne -1)
+myshift=intarr(nexp)
+myshift(*)=-1
+run=0
+for tt=0,nexp2-1 do begin
+ttt=where(torder(*) eq tt)
+myshift(ttt)=run
+run=run+nyear(ttt)+100
+endfor
+print,'myshift: '+myshift
+
 
 ;;;;
-
-
 
 depthname2=strarr(ndepth)
 depthname2=['5','666','2731']
@@ -312,6 +357,7 @@ sim_ext=strarr(ndates,nexp)
 
 
 expname=strarr(ndates,nexp)
+expnamel=strarr(ndates,nexp)
 dates=fltarr(ndates,nexp)
 names=strarr(ndates,nexp)
 dates2=fltarr(ndates)
@@ -319,8 +365,11 @@ dates3=strarr(ndates)
 co2=fltarr(ndates)
 solar=fltarr(ndates)
 
-
-
+for e=0,nexp-1 do begin
+for n=nstart,ndates-1 do begin
+expnamel(n,e)=exproot(n,e)+exptail(n,e)+exptail2(n,e)
+endfor
+endfor
 
 nx=96
 ny=73
@@ -332,12 +381,13 @@ latsedge(0)=90.0
 latsedge(ny)=-90.0
 
 
-
 weight_lat=fltarr(ny)
 for j=0,ny-1 do begin
 weight_lat(j)=-0.5*(sin(latsedge(j+1)*2*!pi/360.0)-sin(latsedge(j)*2*!pi/360.0))
 lats(j)=0.5*(latsedge(j+1)+latsedge(j))
 endfor
+; Note - weighting above is correct as weighted half for northern
+;        and southern boxes. 
 
 weight=fltarr(nx,ny)
 newweight=fltarr(nx,ny)
@@ -445,11 +495,11 @@ if (writing(n,e) eq 1) then begin
 if (readfile(n,e) eq 1) then begin
 
 if (locdata(n,e) eq 0) then begin
-data_filename=roottim(n,e)+'/'+exproot(n,e)+exptail(n,e)+exptail2(n,e)+'/monthly/'+exproot(n,e)+exptail(n,e)+exptail2(n,e)+'.temp_ym_dpth_'+depthname2(d)+'.annual.nc'
+data_filename=roottim(n,e)+'/'+expnamel(n,e)+'/monthly/'+expnamel(n,e)+'.temp_ym_dpth_'+depthname2(d)+'.annual.nc'
 endif
 
 if (locdata(n,e) eq 1) then begin
-data_filename=roottim(n,e)+'/'+exproot(n,e)+exptail(n,e)+exptail2(n,e)+'/'+exproot(n,e)+exptail(n,e)+exptail2(n,e)+'.oceantemppg'+depthname3(d)+'.monthly.nc'
+data_filename=roottim(n,e)+'/'+expnamel(n,e)+'/'+expnamel(n,e)+'.oceantemppg'+depthname3(d)+'.monthly.nc'
 endif
 
 print,n,data_filename
@@ -486,7 +536,7 @@ endif
 
 endfor ; end t (ntimes)
 
-my_filename='my_data/temp_'+exproot(n,e)+exptail(n,e)+exptail2(n,e)+'_'+depth(d)+'.dat'
+my_filename='my_data/temp_'+expnamel(n,e)+'_'+depth(d)+'.dat'
 openw,1,my_filename
 printf,1,ntimes(n,e)
 printf,1,mytemp(*,n,d,e)
@@ -513,7 +563,7 @@ if (reading(n,e) eq 1) then begin
 
 if (readfile(n,e) eq 1) then begin
 
-my_filename='my_data/temp_'+exproot(n,e)+exptail(n,e)+exptail2(n,e)+'_'+depth(d)+'.dat'
+my_filename='my_data/temp_'+expnamel(n,e)+'_'+depth(d)+'.dat'
 print,my_filename
 openr,1,my_filename
 readf,1,aa
@@ -550,20 +600,39 @@ endfor ; end e (nexp)
 
 ; check for continuity
 
-for e=1,nexp-1 do begin
-if (cont_tims(e) ne -1) then begin
+print,'CONTINUITY CHECK'
+for tt=0,nexp2-1 do begin
+ttt=where(torder(*) eq tt)
+print,ttt,exproot(0,ttt)
+if (torder(ttt) ne -1 and torder(ttt) ne 0 and check_cont(ttt) eq 1) then begin
+tttm=where(torder(*) eq tt-1)
 for n=nstart,ndates-1 do begin
-if (readfile(n,e) eq 1) then begin
-print,'checking continuity for: '+exproot(n,e)+exptail(n,e)+exptail2(n,e)
-diff=mytemp(ntimes(n,cont_tims(e))-1,n,2,cont_tims(e))-mytemp(0,n,2,e)
-print,mytemp(ntimes(n,0)-1,n,2,cont_tims(e)),mytemp(0,n,2,e),diff
+if (readfile(n,ttt) eq 1) then begin
+print,'checking continuity for: '+expnamel(n,ttt)
+diff=mytemp(ntimes(n,tttm)-1,n,2,tttm)-mytemp(0,n,2,ttt)
+print,mytemp(ntimes(n,tttm)-1,n,2,tttm),mytemp(0,n,2,ttt),diff
 if (abs(diff) gt 0.02) then begin
-print,'OWCH - non-continuity'
+print,'OWCH - non-continuity', ttt,tttm,n,expnamel(n,ttt),expnamel(n,tttm),diff
 endif
 endif
 endfor
 endif
 endfor
+
+
+
+; check for expected length
+for e=1,nexp-1 do begin
+for n=nstart,ndates-1 do begin
+if (nyear(e) ne -1) then begin
+if (abs(ntimes(n,e)-nyear(e)) gt 0) then begin
+print,'PROBLEM in expected length!!'
+print,expnamel(n,e),ntimes(n,e),nyear(e)
+endif
+endif
+endfor
+endfor
+
 
 endif ; end times
 
@@ -817,7 +886,7 @@ if (do_readbounds eq 1) then begin
 masks_mean(*)=0.0
 for n=nstart,ndates-1 do begin
 ; read in lsm
-filename=root(0,0)+'/'+exproot(n,0)+exptail(n,0)+exptail2(n,0)+'/inidata/'+exproot(n,0)+exptail(n,0)+exptail2(n,0)+'.qrparm.mask.nc'
+filename=root(0,0)+'/'+expnamel(n,0)+'/inidata/'+expnamel(n,0)+'.qrparm.mask.nc'
 print,filename
 id1=ncdf_open(filename)
 ncdf_varget,id1,'lsm',dummy
@@ -831,7 +900,7 @@ endfor
 ice_mean(*)=0.0
 for n=nstart,ndates-1 do begin
 ; read in ice
-filename=root(0,0)+'/'+exproot(n,0)+exptail(n,0)+exptail2(n,0)+'/inidata/'+exproot(n,0)+exptail(n,0)+exptail2(n,0)+'.qrfrac.type.nc'
+filename=root(0,0)+'/'+expnamel(n,0)+'/inidata/'+expnamel(n,0)+'.qrfrac.type.nc'
 print,filename
 id1=ncdf_open(filename)
 ncdf_varget,id1,'field1391',dummy
@@ -856,7 +925,7 @@ for n=nstart,ndates-1 do begin
 
 for f=0,nflr-1 do begin
 ; read in fluxes
-filename=root(0,0)+'/'+exproot(n,0)+exptail(n,0)+exptail2(n,0)+'/climate/'+exproot(n,0)+exptail(n,0)+exptail2(n,0)+'a.pdclann.nc'
+filename=root(0,0)+'/'+expnamel(n,0)+'/climate/'+expnamel(n,0)+'a.pdclann.nc'
 print,filename
 id1=ncdf_open(filename)
 ncdf_varget,id1,flname(f),dummy
@@ -888,10 +957,10 @@ for v=0,nvar-1 do begin
 if (readfile(n,e) eq 1) then begin
 
 if (readtype(n,e) eq 1) then begin
-data_filename=root(n,e)+'/'+exproot(n,e)+exptail(n,e)+exptail2(n,e)+'/climate/'+exproot(n,e)+exptail(n,e)+exptail2(n,e)+climtag(v)+'clann.nc'
+data_filename=root(n,e)+'/'+expnamel(n,e)+'/climate/'+expnamel(n,e)+climtag(v)+'clann.nc'
 endif
 if (readtype(n,e) eq 0) then begin
-data_filename=root(n,e)+'/'+exproot(n,e)+exptail(n,e)+exptail2(n,e)+'/'+exproot(n,e)+exptail(n,e)+exptail2(n,e)+climtag(v)+'clann.nc'
+data_filename=root(n,e)+'/'+expnamel(n,e)+'/'+expnamel(n,e)+climtag(v)+'clann.nc'
 endif
 
 print,readtype(n,e),n,data_filename
@@ -1162,10 +1231,6 @@ for d=0,ndepth-1 do begin
 
 device,filename='timeseries_'+depth(d)+'_new4.eps',/encapsulate,/color,set_font='Helvetica',xsize=7,ysize=5,/inches
 
-xmin=0
-xmax=14000
-times=indgen(xmax)
-
 ; where individual names on lines are
 labelx=9000
 ; where all naems are listed in relation to this
@@ -1175,22 +1240,16 @@ ymin=ymina(d)
 ymax=ymaxa(d)
 
 
-plot,times(0:ntimes(0,0)-1),mytemp(0:ntimes(0,0)-1,0,0,0),yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Year of simulation',psym=2,/nodata,ytitle='Temperature [degrees C]',title='Global mean ocean temperature at '+depthname(d),ystyle=1,xstyle=1
+plot,times(0:ntimes(0,0)-1),mytemp(0:ntimes(0,0)-1,0,0,0),yrange=[ymin,ymax],xrange=[xmint,xmaxt],xtitle='Year of simulation',psym=2,/nodata,ytitle='Temperature [degrees C]',title='Global mean ocean temperature at '+depthname(d),ystyle=1,xstyle=1
 
-;plot,times(0:ntimes(0,0)-1),mytemp(0:ntimes(0,0)-1,0,0,0),yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Year of simulation',psym=2,/nodata,ytitle='Temperature [degrees C]',title='Global mean ocean temperature at '+depthname(d),ystyle=1,xtickname=['0','500','1000','1500','2000','2500','3000','3500','4000'],xtickv=[0,500,1000,1500,2000,2500,3000,3500,4000],xticks=8,xstyle=1
+;plot,times(0:ntimes(0,0)-1),mytemp(0:ntimes(0,0)-1,0,0,0),yrange=[ymin,ymax],xrange=[xmint,xmaxt],xtitle='Year of simulation',psym=2,/nodata,ytitle='Temperature [degrees C]',title='Global mean ocean temperature at '+depthname(d),ystyle=1,xtickname=['0','500','1000','1500','2000','2500','3000','3500','4000'],xtickv=[0,500,1000,1500,2000,2500,3000,3500,4000],xticks=8,xstyle=1
 
 ;;;;;;;;;;;;;
 for n=nstart,ndates-1 do begin
 
-
-
 x=n-nstart
 xx=ndates-nstart
-
 mycol=(x)*250.0/(xx-1)
-
-if (readfile(n,0) eq 1) then begin
-oplot,times(0:ntimes(n,0)-1),mytemp(0:ntimes(n,0)-1,n,d,0),color=mycol
 
 if (total(mytemp(0:ntimes(n,0)-1,n,d,0) eq 0) gt 0) then begin
 print,mytemp(0:ntimes(n,0)-1,n,d,0)
@@ -1199,28 +1258,24 @@ print,total(mytemp(0:ntimes(n,0)-1,n,d,0) le 0)
 print,n,sim_names_long(n),d
 stop
 endif
-endif
 
-if (nexp gt 1) then begin
-for e=1,nexp-1 do begin
+for e=0,nexp-1 do begin
 if (plot_tims(e) eq 1) then begin
 if (readfile(n,e) eq 1) then begin
-ttt=myshift(cont_tims(e))
-oplot,times(ttt:ttt+ntimes(n,e)-1),mytemp(0:ntimes(n,e)-1,n,d,e),color=(x)*250.0/(xx-1)
-if (e eq nexp-1) then begin
-xyouts,labelx,mytemp(ntimes(n,e)-1,n,d,e),exproot(n,e)+exptail(n,e)+exptail2(n,e)+' '+strtrim(ntimes(n,e),2),charsize=0.25,color=mycol
+xxx=myshift(e)
+oplot,times(xxx:xxx+ntimes(n,e)-1),mytemp(0:ntimes(n,e)-1,n,d,e),color=mycol
+if (e eq 0) then begin
+xyouts,labelx,mytemp(ntimes(n,e)-1,n,d,e),expnamel(n,e)+' '+strtrim(ntimes(n,e),2),charsize=0.25,color=mycol
 endif
 endif
 endif
-
 endfor
-endif
 
 
 explab=2
 z=ymin+0.9*(ymax-ymin)-0.8*(ymax-ymin)*x/(xx-1)
 oplot,[labelx+ddx,labelx+ddx+70],[z,z],color=(n-nstart)*250.0/(ndates-nstart-1)
-xyouts,labelx+ddx+100,z,sim_names_long(n)+' '+exproot(n,explab)+exptail(n,explab)+exptail2(n,explab)+' '+strtrim(ntimes(n,explab),2),charsize=0.25,color=(n-nstart)*250.0/(ndates-nstart-1)
+xyouts,labelx+ddx+100,z,sim_names_long(n)+' '+expnamel(n,explab)+' '+strtrim(ntimes(n,explab),2),charsize=0.25,color=(n-nstart)*250.0/(ndates-nstart-1)
 
 endfor
 
@@ -1228,7 +1283,7 @@ endfor
 for e=0,nexp-1 do begin
 if (plot_tims(e) eq 1) then begin
 z=ymin+0.97*(ymax-ymin)
-xyouts,myshift(e)-500,z,exproot(0,e)+'*'
+xyouts,myshift(e)+nyear(e),z,exproot(0,e)+exptail2(0,e)+'*',alignment=1
 endif
 endfor
 
@@ -1285,12 +1340,12 @@ endif
 
 if (readfile(n,2) eq 1) then begin
 plots,dates2(n),gmst(n,d,2),color=mycol,psym=7
-xyouts,dates2(n)+5,gmst(n,d,2)+0.1,exproot(n,2)+exptail(n,2)+exptail2(n,2),charsize=0.2
+xyouts,dates2(n)+5,gmst(n,d,2)+0.1,expnamel(n,2),charsize=0.2
 endif
 
 if (readfile(n,3) eq 1) then begin
 plots,dates2(n),gmst(n,d,3),color=mycol,psym=4
-xyouts,dates2(n)+5,gmst(n,d,3)+0.1,exproot(n,3)+exptail(n,3)+exptail2(n,3),charsize=0.2
+xyouts,dates2(n)+5,gmst(n,d,3)+0.1,expnamel(n,3),charsize=0.2
 endif
 
 endfor ; end n
