@@ -273,14 +273,15 @@ nyear(*)=[2000,1050,3000,-1,3000,3000,110,2000,2000]
 torder=intarr(nexp)
 torder(*)=[2,3,4,-1,5,6,7,0,1]
 check_cont=intarr(nexp)
-check_cont(*)=[0,1,1,-1,1,1,1,0,0]
+check_cont(*)=[1,1,1,-1,1,1,1,0,1]
 xmint=0
-xmaxt=20000
+xmaxt=21000
 times=indgen(xmaxt)
+explab=5 ; final simulation that will be labelled
 
 ; plot_times: do we want to plot the timeseries?
 plot_tims=intarr(nexp)
-plot_tims(*)=[1,1,1,0,1,1,1,1,1]
+plot_tims(*)=[1,1,1,0,1,1,0,1,1]
 
 ; navy = how many years for averaging means
 navy=intarr(nexp)
@@ -314,7 +315,7 @@ depthname=['5m','670m','2700m']
 ymina=fltarr(ndepth)
 ymaxa=fltarr(ndepth)
 ymina=[13,2,-2]
-ymaxa=[30,16,15]
+ymaxa=[30,16,16]
 
 lim=fltarr(ndepth,2)
 lim(0,0)=10.0
@@ -322,7 +323,7 @@ lim(1,0)=2.0
 lim(2,0)=-2
 lim(0,1)=28.0
 lim(1,1)=15.5
-lim(2,1)=14
+lim(2,1)=16
 
 
 root=strarr(ndates,nexp)
@@ -598,7 +599,7 @@ endfor ; end d (depth)
 endfor ; end e (nexp)
 
 
-; check for continuity
+; check for continuity across experiments
 
 print,'CONTINUITY CHECK'
 for tt=0,nexp2-1 do begin
@@ -608,9 +609,9 @@ if (torder(ttt) ne -1 and torder(ttt) ne 0 and check_cont(ttt) eq 1) then begin
 tttm=where(torder(*) eq tt-1)
 for n=nstart,ndates-1 do begin
 if (readfile(n,ttt) eq 1) then begin
-print,'checking continuity for: '+expnamel(n,ttt)
+;print,'checking continuity for: '+expnamel(n,ttt)
 diff=mytemp(ntimes(n,tttm)-1,n,2,tttm)-mytemp(0,n,2,ttt)
-print,mytemp(ntimes(n,tttm)-1,n,2,tttm),mytemp(0,n,2,ttt),diff
+;print,mytemp(ntimes(n,tttm)-1,n,2,tttm),mytemp(0,n,2,ttt),diff
 if (abs(diff) gt 0.02) then begin
 print,'OWCH - non-continuity', ttt,tttm,n,expnamel(n,ttt),expnamel(n,tttm),diff
 endif
@@ -619,6 +620,39 @@ endfor
 endif
 endfor
 
+; check for continuity within experiment
+
+cclim=fltarr(ndepth)
+cclim(*)=[1,0.5,0.2]
+
+for e=1,nexp-1 do begin
+for d=0,ndepth-1 do begin
+for n=nstart,ndates-1 do begin
+
+corr_count=0
+
+if (readfile(n,e) eq 1) then begin
+
+for t=1,ntimes(n,e)-1 do begin
+diff=mytemp(t,n,d,e)-mytemp(t-1,n,d,e)
+if (abs(diff) gt cclim(d)) then begin
+;print,'problem - correcting!'
+;print,expnamel(n,e),diff,n,e,t
+mytemp(t,n,d,e)=mytemp(t-1,n,d,e)
+corr_count=corr_count+1
+endif
+endfor
+
+if (corr_count ne 0) then begin
+print,'corrected:'
+print,expnamel(n,e),d,corr_count
+endif
+
+endif
+
+endfor
+endfor
+endfor
 
 
 ; check for expected length
@@ -1232,7 +1266,7 @@ for d=0,ndepth-1 do begin
 device,filename='timeseries_'+depth(d)+'_new4.eps',/encapsulate,/color,set_font='Helvetica',xsize=7,ysize=5,/inches
 
 ; where individual names on lines are
-labelx=9000
+labelx=18000
 ; where all naems are listed in relation to this
 ddx=900
 
@@ -1259,20 +1293,19 @@ print,n,sim_names_long(n),d
 stop
 endif
 
+; plot each line
 for e=0,nexp-1 do begin
 if (plot_tims(e) eq 1) then begin
 if (readfile(n,e) eq 1) then begin
 xxx=myshift(e)
 oplot,times(xxx:xxx+ntimes(n,e)-1),mytemp(0:ntimes(n,e)-1,n,d,e),color=mycol
-if (e eq 0) then begin
+if (e eq explab) then begin
 xyouts,labelx,mytemp(ntimes(n,e)-1,n,d,e),expnamel(n,e)+' '+strtrim(ntimes(n,e),2),charsize=0.25,color=mycol
 endif
 endif
 endif
 endfor
 
-
-explab=2
 z=ymin+0.9*(ymax-ymin)-0.8*(ymax-ymin)*x/(xx-1)
 oplot,[labelx+ddx,labelx+ddx+70],[z,z],color=(n-nstart)*250.0/(ndates-nstart-1)
 xyouts,labelx+ddx+100,z,sim_names_long(n)+' '+expnamel(n,explab)+' '+strtrim(ntimes(n,explab),2),charsize=0.25,color=(n-nstart)*250.0/(ndates-nstart-1)
@@ -1283,7 +1316,7 @@ endfor
 for e=0,nexp-1 do begin
 if (plot_tims(e) eq 1) then begin
 z=ymin+0.97*(ymax-ymin)
-xyouts,myshift(e)+nyear(e),z,exproot(0,e)+exptail2(0,e)+'*',alignment=1
+xyouts,myshift(e)+nyear(e),z,exproot(0,e)+exptail2(0,e),alignment=1
 endif
 endfor
 
