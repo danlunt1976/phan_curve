@@ -131,16 +131,16 @@ endfor
 
 
 ; blended CO2
-astart=50
-afinis=70
+astartb=50
+afinisb=70
 for i=0,ns-1 do begin
-if (ages(i,t) le astart) then begin
+if (ages(i,t) le astartb) then begin
   wf=0
 endif
-if (ages(i,t) gt astart and ages(i,t) le afinis) then begin
-  wf=(ages(i,t)-astart)/(afinis-astart)
+if (ages(i,t) gt astartb and ages(i,t) le afinisb) then begin
+  wf=(ages(i,t)-astartb)/(afinisb-astartb)
 endif
-if (ages(i,t) gt afinis) then begin
+if (ages(i,t) gt afinisb) then begin
   wf=1
 endif
 co2s(i,2,t)=co2s(i,0,t)*wf + co2s(i,1,t)*(1.0-wf)
@@ -217,18 +217,23 @@ stageb(*)=-1.0*[0,66.0,145.0,201.3,251.902,298.9,358.9,419.2,443.8,485.4,541.0]
 stagen=strarr(nstage)
 stagen(*)=['Cenozoic','Cretaceous','Jurassic','Triassic','Permian','Carb.','Devonian','Sil.','Ord.','Cambrian']
 
-nplot=2
+nplot=3
 xmin=fltarr(nplot)
 xmax=fltarr(nplot)
 ymin=fltarr(nplot)
 ymax=fltarr(nplot)
 plotname=strarr(nplot)
-
-xmin(*)=[-550,-100]
-xmax(*)=[0,0]
-ymin(*)=[0,0]
-ymax(*)=[4000,2000]
-plotname(*)=['a','b']
+myclip=intarr(nplot)
+stageend=intarr(nplot)
+mythick=fltarr(nplot)
+xmin(*)=[-550,-100,-100]
+xmax(*)=[0,5,5]
+ymin(*)=[0,0,0]
+ymax(*)=[4000,2000,2000]
+plotname(*)=['a','b','c']
+myclip(*)=[1,0,0]
+stageend=[nstage-1,0,0]
+mythick=[1,1,4]
 
 loadct,39
 
@@ -239,28 +244,66 @@ dtopbar=(ymax(p)-ymin(p))*0.6/35.0
 
 device,filename='co2_'+plotname(p)+'.eps',/encapsulate,/color,set_font='Helvetica'
 
-plot,ages(*,0)*(-1),co2s(*,0),yrange=[ymin(p),ymax(p)],xrange=[xmin(p),xmax(p)],xtitle='Myrs BP',psym=2,/nodata,ytitle='CO2 [ppmv]',ystyle=1,xstyle=1
+plot,ages(*,0)*(-1),co2s(*,0),yrange=[ymin(p),ymax(p)],xrange=[xmin(p),xmax(p)],xtitle='Ma BP',psym=2,/nodata,ytitle='CO!D2!N [ppmv]',ystyle=1,xstyle=1
+
+oplot,age(0:nt(0)-1,0)*(-1),co2(0:nt(0)-1,0),thick=mythick(p),color=100
+
+oplot,age_rae*(-1),co2_rae,thick=mythick(p),color=200
 
 for t=0,ntim-1 do begin
 
 for s=0,ns-1 do begin
-plots,ages(s,t)*(-1),co2s(s,0,t),color=0,psym=5,symsize=0.5*timfact(t);,NOCLIP=0
+; plot Foster CO2
+if (t ne 1 or p ne 2) then begin; don't plot if new times and paper plot
+plots,ages(s,t)*(-1),co2s(s,0,t),color=0,psym=5,symsize=1.0*timfact(t),NOCLIP=myclip(p),thick=mythick(p)
+endif
 endfor
+
+if (p ne 2) then begin
+; plot foster rae CO2
+for s=0,ns-1 do begin
+plots,ages(s,t)*(-1),co2s(s,1,t),color=0,psym=6,symsize=1.5*timfact(t),NOCLIP=myclip(p),thick=mythick(p)
+endfor
+endif
 
 for s=0,ns-1 do begin
-plots,ages(s,t)*(-1),co2s(s,1,t),color=0,psym=6,symsize=1.5*timfact(t);,NOCLIP=0
+; plot foster rae rae CO2
+if (t ne 0 or p ne 2) then begin; don't plot if old times and paper plot
+plots,ages(s,t)*(-1),co2s(s,3,t),color=250,psym=4,symsize=2*timfact(t),NOCLIP=myclip(p),thick=mythick(p)
+endif
 endfor
 
-for s=0,ns-1 do begin
-plots,ages(s,t)*(-1),co2s(s,3,t),color=250,psym=4,symsize=2*timfact(t);,NOCLIP=0
 endfor
 
-endfor
+if (p eq 2) then begin
+; plot blending
 
+oplot,[astart,afinis]*(-1),[co2s(istart,3,1),co2s(ifinis,3,1)],thick=0.5,linestyle=2
 
-oplot,age(0:nt(0)-1,0)*(-1),co2(0:nt(0)-1,0),thick=1,color=100
+endif
 
-oplot,age_rae*(-1),co2_rae,thick=1,color=200
+if (p eq 2) then begin
+; plot legend
+
+xls=-40
+xll=10
+yls=1700
+dyl=120
+dyl2=-20
+dxl=2.5
+mycharsize=1
+
+; foster
+oplot,[xls,xls+xll],[yls,yls],thick=mythick(p),color=100
+plots,xls+xll/2.0,yls,thick=mythick(p),color=0,psym=5,symsize=1*timfact(0)
+xyouts,xls+xll+dxl,yls+dyl2,color=0,charsize=mycharsize,'CO!L2!N Foster et al (2017)'
+
+; rae line
+oplot,[xls,xls+xll],[yls-dyl,yls-dyl],thick=mythick(p),color=200
+plots,xls+xll/2.0,yls-dyl,thick=mythick(p),color=250,psym=4,symsize=2*timfact(1)
+xyouts,xls+xll+dxl,yls-dyl+dyl2,color=0,charsize=mycharsize,'CO!L2!N this study'
+
+endif
 
 
 
@@ -268,8 +311,8 @@ oplot,[xmin(p),xmax(p)],[topbar,topbar]
 for n=1,nstage-1 do begin
 oplot,[stageb(n),stageb(n)],[topbar,ymax(p)]
 endfor
-for n=0,nstage-1 do begin
-xyouts,(stageb(n)+stageb(n+1))/2.0,topbar+dtopbar,alignment=0.5,stagen(n),charsize=0.7
+for n=0,stageend(p) do begin
+xyouts,(stageb(n)+stageb(n+1))/2.0,topbar+dtopbar,alignment=0.5,stagen(n),charsize=0.7,NOCLIP=myclip(p)
 endfor
 
 
