@@ -9,17 +9,19 @@ Aaa = FINDGEN(17) * (!PI*2/16.)
 USERSYM, COS(Aaa), SIN(Aaa), /FILL 
 
 ; times
-do_times=1 ; if 0 then only read in most recent simulations, for speed
-do_timeseries_plot=1 ; plot global mean SST timeseries of each simulation
+do_times=0 ; if 0 then only read in more recent simulations 
+           ;   (e.g. tfke,tfks), for speed
+do_timeseries_plot=0 ; plot global mean SST timeseries of each simulation
 do_gmst_plot=0 ; plot last navy years of SST through phanerozoic
 
 ;means
-do_clims=0 ; read in and analyse model output
-do_readbounds=0 ; read in mask and ice
-do_readsolar=0 ; read solar forcing and albedo
-do_ff_model=0 ; forcing/feedback model
+do_clims=1 ; read in and analyse model output
+do_readbounds=1 ; read in mask and ice
+do_readsolar=1 ; read solar forcing and albedo
+do_ff_model=1 ; forcing/feedback model 
+              ;   (requires readbounds and readsolar and do_clims)
 do_temp_plot=0 ; global mean from proxies
-do_co2_plot=0 ; prescribed co2
+do_co2_plot=1 ; prescribed co2 (requires do_ff_model)
 do_lsm_plot=0 ; prescribed land area
 do_solar_plot=0 ; prescribed solar forcing
 do_ice_plot=0 ; prescribed ice sheets
@@ -88,11 +90,11 @@ readfile(*,0)=0
 readfile(*,1)=0
 readfile(*,2)=0
 readfile(*,3)=0
-readfile(*,4)=0
-readfile(*,5)=0
+readfile(*,4)=1
+readfile(*,5)=1
 readfile(*,6)=0
 readfile(*,7)=0
-readfile(*,8)=1
+readfile(*,8)=0
 ;;;;;;;; *******************************
 ; missing tfks files
 ;tfks_missing=[21,49,51]-1
@@ -1545,7 +1547,6 @@ plots,dates2,co2_inf_1m,color=0,psym=8,symsize=0.5
 endif
 
 if (t eq 2) then begin
-;oplot,dates2,co2_inf,color=250
 oplot,dates2,co2_inf_1m,color=0,thick=5
 plots,dates2,co2_inf_1m,color=0,psym=8,symsize=0.5
 endif
@@ -1559,14 +1560,19 @@ for n=0,nstage-1 do begin
 xyouts,(stageb(n)+stageb(n+1))/2.0,topbar+dtopbar,alignment=0.5,stagen(n),charsize=0.7
 endfor
 
+corr1=-50
 myy=ymin+(ymax-ymin)*0.9
 dy1=(ymax-ymin)/200
 dy2=(ymax-ymin)/20
-oplot,[-150,-120],[myy,myy],color=50
-xyouts,-100,myy-dy1,'prescribed CO!D2', charsize=0.7
+oplot,[-150,-120]+corr1,[myy,myy],color=50
+xyouts,-100+corr1,myy-dy1,'prescribed CO!D2', charsize=0.7
 if (t eq 1 or t eq 2) then begin
-oplot,[-150,-120],[myy-dy2,myy-dy2], color=0,thick=5
-xyouts,-100,myy-dy2-dy1,'inferred CO!D2', charsize=0.7
+oplot,[-150,-120]+corr1,[myy-dy2,myy-dy2], color=0,thick=5
+xyouts,-100+corr1,myy-dy2-dy1,'inferred CO!D2', charsize=0.7
+endif
+if (t eq 1) then begin
+oplot,[-150,-120]+corr1,[myy-dy2*2,myy-dy2*2], color=250
+xyouts,-100+corr1,myy-dy2*2-dy1,'inferred CO!D2!N (alternate)', charsize=0.7
 endif
 
 device,/close
