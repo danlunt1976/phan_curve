@@ -3,25 +3,38 @@ pro time
 set_plot,'ps'
 !P.FONT=0
 
+loadct,0
+tvlct,r_0,g_0,b_0,/get
+
 loadct,39
+tvlct,r_39,g_39,b_39,/get
 
 Aaa = FINDGEN(17) * (!PI*2/16.)  
 USERSYM, COS(Aaa), SIN(Aaa), /FILL 
 
 ; times
-do_times=0 ; if 0 then only read in more recent simulations 
-           ;   (e.g. tfke,tfks), for speed
+read_all_times=1 ; if 0 [1=default] then only read in more recent simulations 
+           ;   (e.g. tfke,tfks), for testing or gmst
+do_times=0 ; read/write timeseries files
 do_timeseries_plot=0 ; plot global mean SST timeseries of each simulation
 do_gmst_plot=0 ; plot last navy years of SST through phanerozoic
 
+; gregory plots
+read_all_greg=0 ; if 0 [0=default] then only read in more recent simulations 
+           ;   (e.g. tfke,tfks), for speed
+do_greg=1 ; read gregory data
+do_greg_plot=1 ; , make gregory plots
+
 ;means
+read_all_clims=0 ; if 0 [0=default] then only read in more recent simulations 
+           ;   (e.g. tfke,tfks), for speed
 do_clims=1 ; read in and analyse model output
-do_readbounds=1 ; read in mask and ice
-do_readsolar=1 ; read solar forcing and albedo
-do_ff_model=1 ; forcing/feedback model 
+do_readbounds=0 ; read in mask and ice
+do_readsolar=0 ; read solar forcing and albedo
+do_ff_model=0 ; forcing/feedback model 
               ;   (requires readbounds and readsolar and do_clims)
 do_temp_plot=0 ; global mean from proxies
-do_co2_plot=1 ; prescribed co2 (requires do_ff_model)
+do_co2_plot=0 ; prescribed co2 (requires do_ff_model)
 do_lsm_plot=0 ; prescribed land area
 do_solar_plot=0 ; prescribed solar forcing
 do_ice_plot=0 ; prescribed ice sheets
@@ -51,56 +64,54 @@ nstart=0
 ;;;;
 ; for timeseries to save time
 writing=intarr(ndates,nexp)
-writing(*,0)=0
-writing(*,1)=0
-writing(*,2)=0
-writing(*,3)=0
-writing(*,4)=0
-writing(*,5)=0
-writing(*,6)=0
-writing(*,7)=0
-writing(*,8)=0
-
-
+writing(*,*)=0
+;writing(*,4)=1
+;writing(*,5)=1
 reading=intarr(ndates,nexp)
-reading(*,0)=1-writing(*,0)
-reading(*,1)=1-writing(*,1)
-reading(*,2)=1-writing(*,2)
-reading(*,3)=1-writing(*,3)
-reading(*,4)=1-writing(*,4)
-reading(*,5)=1-writing(*,5)
-reading(*,6)=1-writing(*,6)
-reading(*,7)=1-writing(*,7)
-reading(*,8)=1-writing(*,8)
-
-
-readfile=intarr(ndates,nexp) ; does clim data exist for this simulation?
-if (do_times eq 1) then begin
-readfile(*,0)=1
-readfile(*,1)=1
-readfile(*,2)=1
-readfile(*,3)=1
-readfile(*,4)=1
-readfile(*,5)=1
-readfile(*,6)=1
-readfile(*,7)=1
-readfile(*,8)=1
+for e=0,nexp-1 do begin
+reading(*,e)=1-writing(*,e)
+endfor
+; does time data exist for this simulation?
+readfile_t=intarr(ndates,nexp) 
+if (read_all_times eq 1) then begin
+readfile_t(*,*)=1
 endif else begin
-readfile(*,0)=0
-readfile(*,1)=0
-readfile(*,2)=0
-readfile(*,3)=0
-readfile(*,4)=1
-readfile(*,5)=1
-readfile(*,6)=0
-readfile(*,7)=0
-readfile(*,8)=0
+readfile_t(0:1,4)=1
+readfile_t(0:1,5)=1
+endelse
+
+; for gregory to save time
+writing_g=intarr(ndates,nexp)
+writing_g(*,*)=0
+;writing_g(*,4:5)=1
+reading_g=intarr(ndates,nexp)
+for e=0,nexp-1 do begin
+reading_g(*,e)=1-writing_g(*,e)
+endfor
+; does gregory data exist for this simulation?
+readfile_g=intarr(ndates,nexp)
+if (read_all_greg eq 1) then begin
+readfile_g(*,*)=1
+endif else begin
+readfile_g(*,4)=1
+readfile_g(*,5)=1
+endelse
+
+
+ ; does clim data exist for this simulation?
+readfile=intarr(ndates,nexp)
+if (read_all_clims eq 1) then begin
+readfile(*,*)=1
+endif else begin
+readfile(*,4:5)=1
 ;;;;;;;; *******************************
 ; missing tfks files
 ;tfks_missing=[21,49,51]-1
 ;readfile(tfks_missing,5)=0
 ;;;;;;;; *******************************
 endelse
+
+
 
 readtype=intarr(ndates,nexp) ; um_climates [0] or ummodel [1] for clims
 readtype(*,0)=1
@@ -252,10 +263,13 @@ exptail2(*,7)=''
 exptail2(*,8)='1'
 
 
+nexp_g=2
+ppt=intarr(nexp_g)
+ppt(*)=[4,5]
 ; which set of simulations to plot and analyse
-pe=4
+pe=ppt(0)
 ; tuned simulations
-pt=5
+pt=ppt(1)
 
 
 varname=strarr(ndates,nexp)
@@ -302,7 +316,8 @@ ttt=where(torder(*) eq tt)
 myshift(ttt)=run
 run=run+nyear(ttt)+100
 endfor
-print,'myshift: '+myshift
+print,'myshift: '
+print,myshift
 
 
 ;;;;
@@ -495,7 +510,7 @@ for n=nstart,ndates-1 do begin
 
 if (writing(n,e) eq 1) then begin
 
-if (readfile(n,e) eq 1) then begin
+if (readfile_t(n,e) eq 1) then begin
 
 if (locdata(n,e) eq 0) then begin
 data_filename=roottim(n,e)+'/'+expnamel(n,e)+'/monthly/'+expnamel(n,e)+'.temp_ym_dpth_'+depthname2(d)+'.annual.nc'
@@ -545,7 +560,7 @@ printf,1,ntimes(n,e)
 printf,1,mytemp(*,n,d,e)
 close,1
 
-endif ; end readfile
+endif ; end readfile_t
 
 endif ; end writing(e)
 
@@ -564,16 +579,16 @@ for d=0,ndepth-1 do begin
 for n=nstart,ndates-1 do begin
 if (reading(n,e) eq 1) then begin
 
-if (readfile(n,e) eq 1) then begin
+if (readfile_t(n,e) eq 1) then begin
 
 my_filename='my_data/temp_'+expnamel(n,e)+'_'+depth(d)+'.dat'
 print,my_filename
 openr,1,my_filename
 readf,1,aa
 ntimes(n,e)=aa
-aaa=fltarr(aa)
-readf,1,aaa
-mytemp(0:aa-1,n,d,e)=aaa
+aaaa=fltarr(aa)
+readf,1,aaaa
+mytemp(0:aa-1,n,d,e)=aaaa
 close,1
 
 for t=0,ntimes(n,e)-1 do begin
@@ -610,7 +625,7 @@ print,ttt,exproot(0,ttt)
 if (torder(ttt) ne -1 and torder(ttt) ne 0 and check_cont(ttt) eq 1) then begin
 tttm=where(torder(*) eq tt-1)
 for n=nstart,ndates-1 do begin
-if (readfile(n,ttt) eq 1) then begin
+if (readfile_t(n,ttt) eq 1) then begin
 ;print,'checking continuity for: '+expnamel(n,ttt)
 diff=mytemp(ntimes(n,tttm)-1,n,2,tttm)-mytemp(0,n,2,ttt)
 ;print,mytemp(ntimes(n,tttm)-1,n,2,tttm),mytemp(0,n,2,ttt),diff
@@ -633,7 +648,7 @@ for n=nstart,ndates-1 do begin
 
 corr_count=0
 
-if (readfile(n,e) eq 1) then begin
+if (readfile_t(n,e) eq 1) then begin
 
 for t=1,ntimes(n,e)-1 do begin
 diff=mytemp(t,n,d,e)-mytemp(t-1,n,d,e)
@@ -671,6 +686,160 @@ endfor
 
 
 endif ; end times
+
+
+
+if (do_greg eq 1) then begin
+print,'reading/writing gregory data'
+
+; set up vars:
+nav=500
+tmax_g=3000*12.0
+t1max=tmax_g/12.0
+t2max=tmax_g/(12.0*nav)
+nvar_g=4
+varname_g=strarr(nvar)
+varname_g=['downSol_mm_TOA','upSol_mm_s3_TOA','olr_mm_s3_TOA','temp_mm_1_5m']
+
+mytemp_g=dblarr(tmax_g,ndates,nexp_g,nvar_g)
+mytemp1=fltarr(t1max,ndates,nexp_g,nvar_g)
+mytemp2=fltarr(t2max,ndates,nexp_g,nvar_g)
+mytempsur1=fltarr(t1max,ndates,nexp_g)
+mytemptoa1=fltarr(t1max,ndates,nexp_g)
+mytempsur2=fltarr(t2max,ndates,nexp_g)
+mytemptoa2=fltarr(t2max,ndates,nexp_g)
+
+ntimes_g=lonarr(ndates,nexp_g,nvar_g)
+ntimes1=lonarr(ndates,nexp_g,nvar_g)
+ntimes2=lonarr(ndates,nexp_g,nvar_g)
+
+gmst_g=fltarr(ndates,nexp)
+
+; weights:
+newweight_g=fltarr(nx,ny)
+for j=0,ny-1 do begin
+for i=0,nx-1 do begin
+newweight_g(i,j)=weight_lat(j)
+endfor
+endfor
+totweight_g=total(newweight_g(*,*))
+
+
+; ****
+; main loop for writing
+
+for ee=0,nexp_g-1 do begin
+e=ppt(ee)
+for n=nstart,ndates-1 do begin
+
+if (writing_g(n,e) eq 1) then begin
+if (readfile_g(n,e) eq 1) then begin
+
+for v=0,nvar_g-1 do begin
+
+if (locdata(n,e) eq 0) then begin
+data_filename=roottim(n,e)+'/'+expnamel(n,e)+'/monthly/'+expnamel(n,e)+'.'+varname_g(v)+'.monthly.nc'
+endif
+
+if (locdata(n,e) eq 1) then begin
+print,'Gregory for temporary data not yet coded'
+stop
+endif
+
+print,n,ee,e,data_filename
+
+id1=ncdf_open(data_filename)
+ncdf_varget,id1,varname_g(v),dummy
+ncdf_close,id1
+a=size(dummy)
+ntimes_g(n,ee,v)=a(4)
+
+for t=0,ntimes_g(n,ee,v)-1 do begin
+
+mytemp_g(t,n,ee,v)=total(dummy(*,*,0,t)*newweight_g(*,*))/totweight_g
+
+endfor ; end t (ntimes)
+
+my_filename='my_data/'+varname_g(v)+'_'+expnamel(n,e)+'.dat'
+print,my_filename
+openw,1,my_filename
+printf,1,ntimes_g(n,ee,v)
+printf,1,mytemp_g(*,n,ee,v)
+close,1
+
+endfor
+
+endif
+endif ; end if writing
+
+endfor
+endfor
+
+
+
+; ****
+; main loop for reading
+
+for ee=0,nexp_g-1 do begin
+e=ppt(ee)
+for n=nstart,ndates-1 do begin
+
+if (writing_g(n,e) eq 0) then begin
+if (readfile_g(n,e) eq 1) then begin
+
+for v=0,nvar_g-1 do begin
+
+my_filename='my_data/'+varname_g(v)+'_'+expnamel(n,e)+'.dat'
+print,my_filename
+openr,1,my_filename
+readf,1,aa
+ntimes_g(n,ee,v)=aa
+aaaa=fltarr(aa)
+readf,1,aaaa
+mytemp_g(*,n,ee,v)=aaaa
+close,1
+
+endfor ; end v
+endif ; end readfile_g
+endif ; end if reading
+endfor ; end n
+endfor ; end ee
+
+
+;;; now work out averages...
+
+ntimes1(*,*,*)=ntimes_g(*,*,*)/12.0
+ntimes2(*,*,*)=ntimes_g(*,*,*)/(12.0*nav)
+
+for ee=0,nexp_g-1 do begin
+e=ppt(ee)
+
+for v=0,nvar_g-1 do begin
+for n=nstart,ndates-1 do begin
+
+if (readfile_g(n,e) eq 1) then begin
+
+for t=0,ntimes1(n,ee,v)-1 do begin
+mytemp1(t,n,ee,v)=mean(mytemp_g(t*12L:t*12L+11L,n,ee,v))
+endfor
+
+for t=0,ntimes2(n,ee,v)-1 do begin
+mytemp2(t,n,ee,v)=mean(mytemp_g(t*12L*nav:t*12L*nav+12L*nav-1,n,ee,v))
+endfor
+
+endif ; end readfile
+
+endfor ; end n (nstart)
+endfor ; end e (nexp)
+endfor ; end v 
+
+mytempsur1(*,*,*)=mytemp1(*,*,*,3)-273.15
+mytemptoa1(*,*,*)=mytemp1(*,*,*,0)-mytemp1(*,*,*,1)-mytemp1(*,*,*,2)
+mytempsur2(*,*,*)=mytemp2(*,*,*,3)-273.15
+mytemptoa2(*,*,*)=mytemp2(*,*,*,0)-mytemp2(*,*,*,1)-mytemp2(*,*,*,2)
+
+endif ; end do gregory
+
 
 
 line=''
@@ -1298,7 +1467,7 @@ endif
 ; plot each line
 for e=0,nexp-1 do begin
 if (plot_tims(e) eq 1) then begin
-if (readfile(n,e) eq 1) then begin
+if (readfile_t(n,e) eq 1) then begin
 xxx=myshift(e)
 oplot,times(xxx:xxx+ntimes(n,e)-1),mytemp(0:ntimes(n,e)-1,n,d,e),color=mycol
 if (e eq explab) then begin
@@ -1329,6 +1498,126 @@ endfor
 
 endif
 
+
+if (do_greg_plot eq 1) then begin
+
+ngg=2
+
+for ee=0,nexp_g-1 do begin
+e=ppt(ee)
+
+for n=nstart,ndates-1 do begin
+
+if (readfile_g(n,e) eq 1) then begin
+
+
+set_plot,'ps'
+!P.FONT=0
+
+for gg=0,ngg-1 do begin
+
+if (gg eq 0) then begin
+xmin=10
+xmax=30
+ymin=-1.5
+ymax=1.5
+endif
+if (gg eq 1) then begin
+myincx=1
+myincy=1.5
+xmint=min(mytempsur2(*,n,ee))
+xmaxt=max(mytempsur2(*,n,ee))
+xmin=xmint-(xmaxt-xmint)*myincx
+xmax=xmaxt+(xmaxt-xmint)*myincx
+ymax=max([max(mytemptoa2(*,n,ee)),abs(min(mytemptoa2(*,n,ee)))])*myincy
+ymin=-1*ymax
+
+endif
+
+device,filename='gregory_'+expnamel(n,e)+'_'+strtrim(gg,2)+'.eps',/encapsulate,/color,set_font='Helvetica'
+
+tvlct,r_0,g_0,b_0
+
+plot,[0],[0],yrange=[ymin,ymax],xrange=[xmin,xmax],psym=2,/nodata,xtitle='Global Mean Surface Temperature [!Uo!NC]',ytitle='TOA energy inbalance [W/m!U2!N]',title='Gregory Plot '+expnamel(n,e),xstyle=1,ystyle=1
+
+oplot,mytempsur1(*,n,ee),mytemptoa1(*,n,ee),psym=8,symsize=0.2,color=200
+
+oplot,mytempsur2(*,n,ee),mytemptoa2(*,n,ee),psym=8,symsize=1.5,color=0
+
+oplot,mytempsur2(*,n,ee),mytemptoa2(*,n,ee),psym=8,symsize=0.5,color=250
+
+oplot,mytempsur2(*,n,ee),mytemptoa2(*,n,ee),psym=8,symsize=0.1,color=0
+
+xyouts,mytempsur2(*,n,ee)+(xmax-xmin)*0.02,mytemptoa2(*,n,ee)+(ymax-ymin)*0.02,strtrim(nint([1:t2max]),2),charsize=0.7,charthick=2
+
+oplot,[-20,100],[0,0],color=0
+
+; linear fit
+lfit=linfit(mytempsur2(*,n,ee),mytemptoa2(*,n,ee))
+gmst_g(n,e)=-1*lfit(0)/lfit(1)
+
+oplot,[-1*lfit(0)/lfit(1),mytempsur2(0,n,ee)],[0,lfit(0)+lfit(1)*mytempsur2(0,n,ee)],linestyle=2
+
+dx1=0.7 ; point x
+dy1=0.1 ; start point y
+dx2=0.03 ; delta text x
+dy2=0.05 ; delta y 
+dy3=0.01 ; deta text y
+
+
+; legend for gregory points
+y1=ymax-(ymax-ymin)*(dy1+0*dy2)
+y2=ymax-(ymax-ymin)*(dy1+1*dy2)
+x1=xmin+(xmax-xmin)*(dx1)
+x2=xmin+(xmax-xmin)*(dx1+dx2)
+plots,x1,y1,psym=8,symsize=0.5,color=200
+plots,x1,y2,psym=8,symsize=1.5,color=0
+plots,x1,y2,psym=8,symsize=0.5,color=250
+plots,x1,y2,psym=8,symsize=0.1,color=0
+xyouts,x2,y1-(ymax-ymin)*dy3,'yearly'
+xyouts,x2,y2-(ymax-ymin)*dy3,'500-year mean'
+
+; plot inferred point and mean
+;loadct,39
+tvlct,r_39,g_39,b_39
+plots,[gmst_g(n,e),0],psym=8,symsize=1,color=250
+plots,[climav(n,e,0),0],psym=8,symsize=1,color=70
+
+; legend for above
+y3=ymax-(ymax-ymin)*(dy1+2*dy2)
+y4=ymax-(ymax-ymin)*(dy1+3*dy2)
+plots,x1,y3,psym=8,symsize=1,color=250
+plots,x1,y4,psym=8,symsize=1,color=70
+xyouts,x2,y3-(ymax-ymin)*dy3,'regressed'
+xyouts,x2,y4-(ymax-ymin)*dy3,'final 50-year mean'
+
+device,/close
+
+
+
+endfor
+
+print,'simulation:',expnamel(n,e)
+print,'FINAL TOA INBALANCE:',mytemptoa2(*,n,ee)
+
+endif ; end readfile
+
+endfor ; end dates
+
+print,'** FOR PAPER**  BIGGEST TOA INBALANCE IS:'
+
+e=ppt(ee)
+
+print,e,ee
+print,max(abs(mytemptoa2(t2max-1,*,ee)),nn)
+print,expnamel(nn,e)
+
+print,'**FOR PAPER** MEAN ABS TOA INBALANCE IS:'
+print,mean(abs(mytemptoa2(t2max-1,*,ee)))
+
+endfor ; end e
+
+endif ; end do gregory plot
 
 
 
@@ -1364,21 +1653,21 @@ x=n-nstart
 xx=ndates-nstart
 mycol=(x)*250.0/(xx-1)
 
-if (readfile(n,0) eq 1) then begin
+if (readfile_t(n,0) eq 1) then begin
 plots,dates2(n),gmst(n,d,0),color=mycol,psym=5
 endif
 
-if (readfile(n,1) eq 1) then begin
+if (readfile_t(n,1) eq 1) then begin
 plots,dates2(n),gmst(n,d,1),color=mycol,psym=6
 ;xyouts,dates2(n)+5,gmst(n,d,1)+0.1,exproot(n,1)+exptail(n,1),charsize=0.2
 endif
 
-if (readfile(n,2) eq 1) then begin
+if (readfile_t(n,2) eq 1) then begin
 plots,dates2(n),gmst(n,d,2),color=mycol,psym=7
 xyouts,dates2(n)+5,gmst(n,d,2)+0.1,expnamel(n,2),charsize=0.2
 endif
 
-if (readfile(n,3) eq 1) then begin
+if (readfile_t(n,3) eq 1) then begin
 plots,dates2(n),gmst(n,d,3),color=mycol,psym=4
 xyouts,dates2(n)+5,gmst(n,d,3)+0.1,expnamel(n,3),charsize=0.2
 endif
@@ -1674,10 +1963,12 @@ oplot,dates2,f_solar,color=50,thick=3
 oplot,dates2,f_co2,color=100,thick=3
 oplot,dates2,f_area,color=150,thick=3
 oplot,dates2,f_ice,color=200,thick=3
-loadct,0
+;loadct,0
+tvlct,r_0,g_0,b_0
 oplot,dates2,f_all,color=150,thick=3
 plots,dates2,f_all,color=150,psym=8,symsize=0.5
-loadct,39
+;loadct,39
+tvlct,r_39,g_39,b_39
 endif
 
 if (t eq 2) then begin
@@ -1685,10 +1976,12 @@ oplot,dates2,f_solar_tun,color=50,thick=3
 oplot,dates2,f_co2_tun,color=100,thick=3
 oplot,dates2,f_area_tun,color=150,thick=3
 oplot,dates2,f_ice_tun,color=200,thick=3
-loadct,0
+;loadct,0
+tvlct,r_0,g_0,b_0
 oplot,dates2,f_all_tun,color=150,thick=3
 plots,dates2,f_all_tun,color=150,psym=8,symsize=0.5
-loadct,39
+;loadct,39
+tvlct,r_39,g_39,b_39
 endif
 
 if (t eq 1) then begin
@@ -1703,10 +1996,12 @@ oplot,dates2,f_area_jud,color=150,thick=3
 oplot,dates2,f_area_jud+f_solar_jud,color=250,thick=1,linestyle=1
 oplot,dates2,f_solararea_jud,color=200,thick=1,linestyle=2
 
-loadct,0
+;loadct,0
+tvlct,r_0,g_0,b_0
 oplot,dates2,f_all_jud,color=150,thick=3
 plots,dates2,f_all_jud,color=150,psym=8,symsize=0.5
-loadct,39
+;loadct,39
+tvlct,r_39,g_39,b_39
 endif
 
 
@@ -1737,12 +2032,14 @@ endif else begin
 xyouts,x1+dx2,y1-(3*dy1),color=230,'Solar+land forcing',charsize=cs
 endelse
 
-loadct,0
+;loadct,0
+tvlct,r_0,g_0,b_0
 xyouts,x1+dx2,y1-(4*dy1),color=150,'All forcings',charsize=cs
 oplot,[x1,x1+dx1],[y1-(4*dy1),y1-(4*dy1)],color=150,thick=3
 plots,x1+dx1/2.0,y1-(4*dy1),psym=8,symsize=0.5,color=150
 
-loadct,39
+;loadct,39
+tvlct,r_39,g_39,b_39
 
 oplot,[xmin,xmax],[topbar,topbar]
 for n=1,nstage-1 do begin
@@ -1927,17 +2224,21 @@ endif
 if (v eq 0 and t eq 0) then begin
 ;oplot,dates2(*),temp_all_lin(*),color=200,thick=3
 ;oplot,dates2(*),temp_all(*),color=100
-loadct,0
+;loadct,0
+tvlct,r_0,g_0,b_0
 oplot,dates2(*),temp_all_tun(*),color=150,thick=3
-loadct,39
+;loadct,39
+tvlct,r_39,g_39,b_39
 
 ;xyouts,-500,13,'Forcing/feedback model [non-tuned]'
 ;oplot,[-510,-530],[13,13],color=200,thick=3
 
 xyouts,-500,10,'Forcing/feedback model'
-loadct,0
+;loadct,0
+tvlct,r_0,g_0,b_0
 oplot,[-510,-530],[10,10],color=150,thick=3
-loadct,39
+;loadct,39
+tvlct,r_39,g_39,b_39
 endif
 
 if (v eq 0 and t eq 2) then begin
