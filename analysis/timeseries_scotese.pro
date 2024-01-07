@@ -13,22 +13,22 @@ Aaa = FINDGEN(17) * (!PI*2/16.)
 USERSYM, COS(Aaa), SIN(Aaa), /FILL 
 
 ; times
-read_all_times=1 ; if 0 [1=default] then only read in more recent simulations 
+read_all_times=0 ; if 0 [1=default] then only read in more recent simulations 
            ;   (e.g. tfke,tfks), for testing or gmst
-do_times=0 ; read/write timeseries files
+do_times=1 ; read/write timeseries files
 do_timeseries_plot=0 ; plot global mean SST timeseries of each simulation
 do_gmst_plot=0 ; plot last navy years of SST through phanerozoic
 
 ; gregory plots
 read_all_greg=0 ; if 0 [0=default] then only read in more recent simulations 
            ;   (e.g. tfke,tfks), for speed
-do_greg=1 ; read gregory data
-do_greg_plot=1 ; , make gregory plots
+do_greg=0 ; read gregory data
+do_greg_plot=0 ; , make gregory plots (requires do_greg and do_clims)
 
 ;means
 read_all_clims=0 ; if 0 [0=default] then only read in more recent simulations 
            ;   (e.g. tfke,tfks), for speed
-do_clims=1 ; read in and analyse model output
+do_clims=0 ; read in and analyse model output
 do_readbounds=0 ; read in mask and ice
 do_readsolar=0 ; read solar forcing and albedo
 do_ff_model=0 ; forcing/feedback model 
@@ -76,8 +76,10 @@ readfile_t=intarr(ndates,nexp)
 if (read_all_times eq 1) then begin
 readfile_t(*,*)=1
 endif else begin
-readfile_t(0:1,4)=1
-readfile_t(0:1,5)=1
+;readfile_t(0:1,4)=1
+;readfile_t(0:1,5)=1
+readfile_t(*,4)=1
+readfile_t(*,5)=1
 endelse
 
 ; for gregory to save time
@@ -413,6 +415,7 @@ newweight=fltarr(nx,ny)
 mytemp=fltarr(tmax,ndates,ndepth,nexp)
 ntimes=intarr(ndates,nexp)
 gmst=fltarr(ndates,ndepth,nexp)
+trend=fltarr(ndates,ndepth,nexp)
 
 nxmax=96
 nymax=73
@@ -469,6 +472,7 @@ size_check_1=size(my_lines)
 size_check_2=size(my_dates)
 size_check_3=size(my_names)
 
+print,'size checks:'
 print,size_check_1
 print,size_check_2
 print,size_check_3
@@ -520,7 +524,7 @@ if (locdata(n,e) eq 1) then begin
 data_filename=roottim(n,e)+'/'+expnamel(n,e)+'/'+expnamel(n,e)+'.oceantemppg'+depthname3(d)+'.monthly.nc'
 endif
 
-print,n,data_filename
+print,n,'Reading: '+data_filename
 id1=ncdf_open(data_filename)
 ncdf_varget,id1,varname(n,e),dummy
 ncdf_close,id1
@@ -582,7 +586,7 @@ if (reading(n,e) eq 1) then begin
 if (readfile_t(n,e) eq 1) then begin
 
 my_filename='my_data/temp_'+expnamel(n,e)+'_'+depth(d)+'.dat'
-print,my_filename
+print,'Reading: '+my_filename
 openr,1,my_filename
 readf,1,aa
 ntimes(n,e)=aa
@@ -675,15 +679,49 @@ endfor
 ; check for expected length
 for e=1,nexp-1 do begin
 for n=nstart,ndates-1 do begin
+if (readfile_t(n,e) eq 1) then begin
 if (nyear(e) ne -1) then begin
 if (abs(ntimes(n,e)-nyear(e)) gt 0) then begin
 print,'PROBLEM in expected length!!'
 print,expnamel(n,e),ntimes(n,e),nyear(e)
 endif
 endif
+endif
 endfor
 endfor
 
+; calculate trends for paper
+
+ntrend=500
+for e=1,nexp-1 do begin
+for d=0,ndepth-1 do begin
+for n=nstart,ndates-1 do begin
+if (readfile_t(n,e) eq 1) then begin
+if (ntimes(n,e) ge ntrend) then begin
+
+lfit=linfit(findgen(ntrend), mytemp(ntimes(n,e)-ntrend:ntimes(n,e)-1,n,d,e) )
+trend(n,d,e)=lfit(1)*1000.0
+;print,expnamel(n,e)+' '+depthname(d)+' '+strtrim(trend(n,d,e),2)
+
+endif
+endif
+endfor
+
+if (readfile_t(0,e) eq 1) then begin
+if (ntimes(0,e) ge ntrend) then begin
+print,'** FOR PAPER**  BIGGEST ABS TREND IS: '+depthname(d)
+print,e
+print,max(abs(trend(*,d,e)),nn)
+print,expnamel(nn,e),nn,e
+
+print,'**FOR PAPER** MEAN ABS TREND IS: '+depthname(d)
+print,mean(abs(trend(*,d,e)))
+endif
+endif
+
+
+endfor
+endfor
 
 endif ; end times
 
@@ -713,7 +751,9 @@ ntimes_g=lonarr(ndates,nexp_g,nvar_g)
 ntimes1=lonarr(ndates,nexp_g,nvar_g)
 ntimes2=lonarr(ndates,nexp_g,nvar_g)
 
-gmst_g=fltarr(ndates,nexp)
+gmst_g=fltarr(ndates,nexp_g)
+tempsur_g=fltarr(ndates,nexp_g)
+
 
 ; weights:
 newweight_g=fltarr(nx,ny)
@@ -727,6 +767,8 @@ totweight_g=total(newweight_g(*,*))
 
 ; ****
 ; main loop for writing
+
+print,'writing Gregory fluxes if required'
 
 for ee=0,nexp_g-1 do begin
 e=ppt(ee)
@@ -780,6 +822,7 @@ endfor
 ; ****
 ; main loop for reading
 
+print,'reading Gregory fluxes if required'
 for ee=0,nexp_g-1 do begin
 e=ppt(ee)
 for n=nstart,ndates-1 do begin
@@ -790,7 +833,7 @@ if (readfile_g(n,e) eq 1) then begin
 for v=0,nvar_g-1 do begin
 
 my_filename='my_data/'+varname_g(v)+'_'+expnamel(n,e)+'.dat'
-print,my_filename
+;print,my_filename
 openr,1,my_filename
 readf,1,aa
 ntimes_g(n,ee,v)=aa
@@ -838,6 +881,31 @@ mytemptoa1(*,*,*)=mytemp1(*,*,*,0)-mytemp1(*,*,*,1)-mytemp1(*,*,*,2)
 mytempsur2(*,*,*)=mytemp2(*,*,*,3)-273.15
 mytemptoa2(*,*,*)=mytemp2(*,*,*,0)-mytemp2(*,*,*,1)-mytemp2(*,*,*,2)
 
+for ee=0,nexp_g-1 do begin
+e=ppt(ee)
+for n=nstart,ndates-1 do begin
+
+;print,'simulation:',expnamel(n,e)
+;print,'FINAL TOA INBALANCE:',mytemptoa2(*,n,ee)
+
+; linear fit
+lfit=linfit(mytempsur2(*,n,ee),mytemptoa2(*,n,ee))
+gmst_g(n,ee)=-1*lfit(0)/lfit(1)
+tempsur_g(n,ee)=lfit(0)+lfit(1)*mytempsur2(0,n,ee)
+
+endfor
+
+print,'** FOR PAPER**  BIGGEST TOA INBALANCE IS:'
+print,e,ee
+print,max(abs(mytemptoa2(t2max-1,*,ee)),nn)
+print,expnamel(nn,e)
+
+print,'**FOR PAPER** MEAN ABS TOA INBALANCE IS:'
+print,mean(abs(mytemptoa2(t2max-1,*,ee)))
+
+endfor
+
+
 endif ; end do gregory
 
 
@@ -879,7 +947,7 @@ readf,1,line
 my_line=strsplit(line,',',/EXTRACT,/PRESERVE_NULL)
 dates_scot1m(n)=my_line(0)
 temp_scot1morig(n)=my_line(1)
-print,my_line(0)+' '+my_line(1)+' '+my_line(2)+' '+my_line(3)+' '+my_line(4)
+;print,my_line(0)+' '+my_line(1)+' '+my_line(2)+' '+my_line(3)+' '+my_line(4)
 endfor
 close,1
 dates_scot1m=dates_scot1m*(-1.0)
@@ -934,7 +1002,7 @@ close,1
 openr,1,'pal_data/2.5.1-G5.P1_G2-C_TemperatureGraph_20180226_mod_Kensversion_new_final.txt'
 readf,1,dum
 for n=0,nrows_wing1-1 do begin
-print,n
+;print,n
 readf,1,line
 ;print,line
 my_line=strsplit(line,',',/EXTRACT,/PRESERVE_NULL)
@@ -1092,7 +1160,7 @@ masks_mean(*)=0.0
 for n=nstart,ndates-1 do begin
 ; read in lsm
 filename=root(0,0)+'/'+expnamel(n,0)+'/inidata/'+expnamel(n,0)+'.qrparm.mask.nc'
-print,filename
+print,'Reading: '+filename
 id1=ncdf_open(filename)
 ncdf_varget,id1,'lsm',dummy
 masks(*,*,n)=dummy
@@ -1106,10 +1174,10 @@ ice_mean(*)=0.0
 for n=nstart,ndates-1 do begin
 ; read in ice
 filename=root(0,0)+'/'+expnamel(n,0)+'/inidata/'+expnamel(n,0)+'.qrfrac.type.nc'
-print,filename
+print,'Reading: '+filename
 id1=ncdf_open(filename)
 ncdf_varget,id1,'field1391',dummy
-print,size(dummy)
+;print,size(dummy)
 ice(*,*,n)=dummy(*,*,8)
 ice(*,*,n)=ice(*,*,n)*(ice(*,*,n) gt -1)
 ncdf_close,id1
@@ -1131,7 +1199,7 @@ for n=nstart,ndates-1 do begin
 for f=0,nflr-1 do begin
 ; read in fluxes
 filename=root(0,0)+'/'+expnamel(n,0)+'/climate/'+expnamel(n,0)+'a.pdclann.nc'
-print,filename
+print,'Reading: '+filename
 id1=ncdf_open(filename)
 ncdf_varget,id1,flname(f),dummy
 flsol(*,*,n,f)=dummy
@@ -1534,7 +1602,7 @@ ymin=-1*ymax
 
 endif
 
-device,filename='gregory_'+expnamel(n,e)+'_'+strtrim(gg,2)+'.eps',/encapsulate,/color,set_font='Helvetica'
+device,filename='plots/gregory_'+expnamel(n,e)+'_'+strtrim(gg,2)+'.eps',/encapsulate,/color,set_font='Helvetica'
 
 tvlct,r_0,g_0,b_0
 
@@ -1552,11 +1620,7 @@ xyouts,mytempsur2(*,n,ee)+(xmax-xmin)*0.02,mytemptoa2(*,n,ee)+(ymax-ymin)*0.02,s
 
 oplot,[-20,100],[0,0],color=0
 
-; linear fit
-lfit=linfit(mytempsur2(*,n,ee),mytemptoa2(*,n,ee))
-gmst_g(n,e)=-1*lfit(0)/lfit(1)
-
-oplot,[-1*lfit(0)/lfit(1),mytempsur2(0,n,ee)],[0,lfit(0)+lfit(1)*mytempsur2(0,n,ee)],linestyle=2
+oplot,[gmst_g(n,ee),mytempsur2(0,n,ee)],[0,tempsur_g(n,ee)],linestyle=2
 
 dx1=0.7 ; point x
 dy1=0.1 ; start point y
@@ -1580,7 +1644,7 @@ xyouts,x2,y2-(ymax-ymin)*dy3,'500-year mean'
 ; plot inferred point and mean
 ;loadct,39
 tvlct,r_39,g_39,b_39
-plots,[gmst_g(n,e),0],psym=8,symsize=1,color=250
+plots,[gmst_g(n,ee),0],psym=8,symsize=1,color=250
 plots,[climav(n,e,0),0],psym=8,symsize=1,color=70
 
 ; legend for above
@@ -1593,27 +1657,11 @@ xyouts,x2,y4-(ymax-ymin)*dy3,'final 50-year mean'
 
 device,/close
 
-
-
 endfor
-
-print,'simulation:',expnamel(n,e)
-print,'FINAL TOA INBALANCE:',mytemptoa2(*,n,ee)
 
 endif ; end readfile
 
 endfor ; end dates
-
-print,'** FOR PAPER**  BIGGEST TOA INBALANCE IS:'
-
-e=ppt(ee)
-
-print,e,ee
-print,max(abs(mytemptoa2(t2max-1,*,ee)),nn)
-print,expnamel(nn,e)
-
-print,'**FOR PAPER** MEAN ABS TOA INBALANCE IS:'
-print,mean(abs(mytemptoa2(t2max-1,*,ee)))
 
 endfor ; end e
 
@@ -2747,6 +2795,7 @@ plots,thisxf(n),thisy(n),psym=8,symsize=0.5,color=mycol
 endfor ; end n
 
 myessresult=linfit(thisxf,thisy,sigma=mysigma)
+print,'myessresult:'
 print,myessresult
 print,mysigma
 
@@ -2843,6 +2892,7 @@ plots,thisxf(n),thisy(n),psym=8,symsize=0.5,color=mycol
 endfor ; end n
 
 myessresult=linfit(thisxf,thisy,sigma=mysigma)
+print,'myessresult:'
 print,myessresult
 print,mysigma
 
