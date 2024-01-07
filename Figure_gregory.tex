@@ -1,0 +1,123 @@
+
+\documentclass[12pt,letterpaper]{article}
+
+\usepackage{graphicx,subfigure,setspace,xspace}
+\usepackage{/home/bridge/ggdjl/ggdjl/bas/doc/chattian_veg/natbib}
+%\usepackage[nolists,nomarkers]{endfloat}
+\usepackage{lineno}
+\usepackage{color}
+\usepackage{pdflscape}
+
+
+
+% Page setup
+
+\textwidth=170mm
+\textheight=230mm
+\oddsidemargin=0mm
+\parindent=0mm
+\parskip=6mm
+
+% Times New Roman fonts.
+\renewcommand{\familydefault}{ptm}
+\DeclareMathAlphabet{\mhvrm}{OT1}{ptm}{m}{n}
+\DeclareMathAlphabet{\mhvit}{OT1}{ptm}{m}{sl}
+\DeclareMathAlphabet{\mhvbf}{OT1}{ptm}{bx}{n}
+
+
+\newcommand{\coo}{$\mhvrm{CO_2}$\xspace}
+\newcommand{\pcoo}{$p\mhvrm{CO_2}$\xspace}
+\newcommand{\oo}{$\mhvrm{O_2}$\xspace}
+\newcommand{\degC}{$\mhvrm{{}^\circ C}$\xspace}
+\newcommand{\degrees}{$\mhvrm{{}^\circ}$\xspace}
+\newcommand{\delo}{$\mhvrm{\delta^{18}O}$\xspace}
+\newcommand{\delosw}{$\mhvrm{\delta^{18}O_{sw}}$\xspace}
+\newcommand{\dc}{$\mhvrm{\delta^{13}C}$\xspace}
+\newcommand{\mmday}{$\mhvrm{mmday^{-1}}$\xspace}
+\newcommand{\en}{$\tilde{\rm n}$}
+\newcommand{\dtco}{$dT_{CO_2}$\xspace}
+\newcommand{\dtorog}{$dT_{orog}$\xspace}
+\newcommand{\dtveg}{$dT_{veg}$\xspace}
+\newcommand{\dtice}{$dT_{ice}$\xspace}
+\newcommand{\Dtco}{$\Delta T_{CO_2}$\xspace}
+\newcommand{\Dtorog}{$\Delta T_{orog}$\xspace}
+\newcommand{\Dt}{$\Delta T$\xspace}
+\newcommand{\fco}{$f_{CO_2}$\xspace}
+\newcommand{\forog}{$f_{orog}$\xspace}
+\newcommand{\sa}{S\&A93\xspace}
+\newcommand{\beg}{$^{\bf e.g.}$}
+\newcommand{\eg}{$^{e.g.}$}
+\newcommand{\ess}{$ESS$\xspace}
+\newcommand{\cs}{$CS$\xspace}
+\newcommand{\dt}{$\delta T$\xspace}
+\newcommand{\dtp}{$\delta T'$\xspace}
+\newcommand{\dtpp}{$\delta T''$\xspace}
+\newcommand{\lat}{$\langle LAT \rangle$\xspace}
+\newcommand{\gat}{$\langle GAT \rangle$\xspace}
+\newcommand{\gst}{$\langle GST \rangle$\xspace}
+\newcommand{\latem}{$\langle LAT_e^m \rangle$\xspace}
+\newcommand{\sst}{$\langle SST \rangle$\xspace}
+\newcommand{\sstem}{$\langle SST_e^m \rangle$\xspace}
+\newcommand{\latm}{$\langle LAT^m \rangle$\xspace}
+\newcommand{\sstm}{$\langle SST^m \rangle$\xspace}
+\newcommand{\TEX}{TEX$_{86}$\xspace}
+\newcommand{\TEXL}{TEX$_{86}^{L}$\xspace}
+\newcommand{\TEXH}{TEX$_{86}^{H}$\xspace}
+
+\newcommand{\hilight}[1]{\colorbox{yellow}{#1}}
+
+\bibliographystyle{/home/bridge/ggdjl/ggdjl/bas/doc/chattian_veg/natbib}
+
+\pagestyle{empty}
+
+\begin{document}
+
+
+\begin{figure}[!h]
+\centering
+
+\subfigure[]{
+\begin{minipage}[b]{0.33\textwidth}
+\centering
+\includegraphics[width=55mm]{/home/bridge/ggdjl/ggdjl/bas/doc/phan_curve/analysis/plots/gregory_tfkea_1.eps}
+\end{minipage}}%
+\subfigure[]{
+\begin{minipage}[b]{0.33\textwidth}
+\centering
+\includegraphics[width=55mm]{/home/bridge/ggdjl/ggdjl/bas/doc/phan_curve/analysis/plots/gregory_tfKec_1.eps}
+\end{minipage}}%
+\subfigure[]{
+\begin{minipage}[b]{0.33\textwidth}
+\centering
+\includegraphics[width=55mm]{/home/bridge/ggdjl/ggdjl/bas/doc/phan_curve/analysis/plots/gregory_tFkee_1.eps}
+\end{minipage}}
+
+\subfigure[]{
+\begin{minipage}[b]{0.33\textwidth}
+\centering
+\includegraphics[width=55mm]{/home/bridge/ggdjl/ggdjl/bas/doc/phan_curve/analysis/plots/gregory_tfksa_1.eps}
+\end{minipage}}%
+\subfigure[]{
+\begin{minipage}[b]{0.33\textwidth}
+\centering
+\includegraphics[width=55mm]{/home/bridge/ggdjl/ggdjl/bas/doc/phan_curve/analysis/plots/gregory_tfKsc_1.eps}
+\end{minipage}}%
+\subfigure[]{
+\begin{minipage}[b]{0.33\textwidth}
+\centering
+\includegraphics[width=55mm]{/home/bridge/ggdjl/ggdjl/bas/doc/phan_curve/analysis/plots/gregory_tFkse_1.eps}
+\end{minipage}}
+
+
+
+
+\end{figure}
+
+
+
+
+\bibliography{plio_inc}
+
+
+
+\end{document}
