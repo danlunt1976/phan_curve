@@ -15,7 +15,7 @@ USERSYM, COS(Aaa), SIN(Aaa), /FILL
 ; times
 read_all_times=0 ; if 0 [1=default] then only read in more recent simulations 
            ;   (e.g. tfke,tfks), for testing or gmst
-do_times=1 ; read/write timeseries files
+do_times=0 ; read/write timeseries files
 do_timeseries_plot=0 ; plot global mean SST timeseries of each simulation
 do_gmst_plot=0 ; plot last navy years of SST through phanerozoic
 
@@ -28,24 +28,25 @@ do_greg_plot=0 ; , make gregory plots (requires do_greg and do_clims)
 ;means
 read_all_clims=0 ; if 0 [0=default] then only read in more recent simulations 
            ;   (e.g. tfke,tfks), for speed
-do_clims=0 ; read in and analyse model output
-do_readbounds=0 ; read in mask and ice
-do_readsolar=0 ; read solar forcing and albedo
-do_ff_model=0 ; forcing/feedback model 
-              ;   (requires readbounds and readsolar and do_clims)
-do_temp_plot=0 ; global mean from proxies
-do_co2_plot=0 ; prescribed co2 (requires do_ff_model)
-do_lsm_plot=0 ; prescribed land area
-do_solar_plot=0 ; prescribed solar forcing
-do_ice_plot=0 ; prescribed ice sheets
-do_forcings_plot=0 ; prescribed forcings in Wm-2
-do_forctemps_plot=0 ; prescribed forcings in oC
-do_polamp_plot=0 ;  plot polamp
-do_clim_plot=0 ;  plot new vs old, EBM, MDC, and resid
-do_scattemp_plot=0
-do_climsens_plot=0
-do_ess_plot=0
-do_grads_plot=0
+do_clims=1 ; read in model output
+do_readbounds=1 ; read in mask and ice
+do_readsolar=1 ; read solar forcing and albedo
+  do_ff_model=1 ; forcing/feedback model               
+  do_temp_plot=1 ; global mean from proxies
+  do_co2_plot=0 ; prescribed co2 (requires do_ff_model)
+  do_lsm_plot=0 ; prescribed land area
+  do_solar_plot=0 ; prescribed solar forcing
+  do_ice_plot=0 ; prescribed ice sheets
+  do_forcings_plot=0 ; prescribed forcings in Wm-2
+  do_forctemps_plot=0 ; prescribed forcings in oC
+  do_polamp_plot=0 ;  plot polamp
+  do_clim_plot=1 ;  plot new vs old, EBM, MDC, and resid
+                 ;  (requires ff_model) 
+  do_scattemp_plot=0
+  do_climsens_plot=0
+  do_ess_plot=0
+  do_grads_plot=0
+
 do_textfile1=0 ; textfile of proxies for Emily
 do_textfile2=0 ; textfile of proxies for Chris
 do_textfile3=0 ; textfile of fluxes for Emily
@@ -381,6 +382,8 @@ expnamel=strarr(ndates,nexp)
 dates=fltarr(ndates,nexp)
 names=strarr(ndates,nexp)
 dates2=fltarr(ndates)
+dates2edge=fltarr(ndates+1)
+
 dates3=strarr(ndates)
 co2=fltarr(ndates)
 solar=fltarr(ndates)
@@ -434,16 +437,9 @@ latsedgec(0,v)=90.0
 latsedgec(nyc(v),v)=-90.0
 endfor
 
-clims=fltarr(nxmax,nymax,ndates,nexp,nvar)
-grads=fltarr(nymax,ndates,nexp,nvar)
-masks=fltarr(nx,ny,ndates)
-masks_mean=fltarr(ndates)
-ice=fltarr(nx,ny,ndates)
-ice_mean=fltarr(ndates)
+
 
 nfl=3
-flsol=fltarr(nx,ny,ndates,nfl)
-flsol_mean=fltarr(ndates,nfl)
 nflr=2
 flname=strarr(nflr)
 flname(*)=['downSol_mm_TOA','upSol_mm_s3_TOA']
@@ -1054,7 +1050,6 @@ endfor
 close,1
 
 
-
 line=''
 close,1
 openr,1,'../islands/'+co2file(pe)+'.dat'
@@ -1066,6 +1061,21 @@ co2(n)=my_line(2)
 endfor
 close,1
 dates2=dates2*(-1.0)
+for n=nstart+1,ndates-1 do begin
+dates2edge(n)=(dates2(n-1)+dates2(n))/2.0
+endfor
+dates2edge(nstart)=0
+dates2edge(ndates)=dates2(ndates-1)-1
+;print,'dates2:'
+;print,dates2
+;print,'dates2edge:'
+;print,dates2edge
+
+
+temp_judd_interp=interpol(temp_judd,dates_judd,dates2)
+temp_scot_interp=interpol(temp_scot,dates_scot,dates2)
+temp_scot1m_interp=interpol(temp_scot1m,dates_scot1m,dates2)
+temp_wing_interp=interpol(temp_wing,dates_wing,dates2)
 
 line=''
 close,1
@@ -1107,9 +1117,6 @@ climtag=strarr(nvar)
 climtag(*)=['a.pd','o.pf']
 climname=strarr(nvar)
 climname(*)=['temp_mm_1_5m','temp_mm_uo']
-climav=fltarr(ndates,nexp,nvar)
-
-climav_r=fltarr(ndates,nexp,nvar,nreg)
 
 climnamelong=strarr(nvar)
 climnamelong(*)=['temp','sst']
@@ -1143,7 +1150,6 @@ ymaxp=[45,26]
 
 climweight=fltarr(nxmax,nymax,ndates,nvar)
 climweight_lat=fltarr(nymax,nvar)
-climnewweight=fltarr(nxmax,nymax)
 
 for v=0,nvar-1 do begin
 for j=0,nyc(v)-1 do begin
@@ -1156,7 +1162,11 @@ endfor
 
 if (do_readbounds eq 1) then begin
 
-masks_mean(*)=0.0
+masks=fltarr(nx,ny,ndates)
+masks_mean=fltarr(ndates)
+ice=fltarr(nx,ny,ndates)
+ice_mean=fltarr(ndates)
+
 for n=nstart,ndates-1 do begin
 ; read in lsm
 filename=root(0,0)+'/'+expnamel(n,0)+'/inidata/'+expnamel(n,0)+'.qrparm.mask.nc'
@@ -1170,7 +1180,6 @@ masks_mean(n)=masks_mean(n)+weight_lat(j)*mean(masks(*,j,n))
 endfor
 endfor
 
-ice_mean(*)=0.0
 for n=nstart,ndates-1 do begin
 ; read in ice
 filename=root(0,0)+'/'+expnamel(n,0)+'/inidata/'+expnamel(n,0)+'.qrfrac.type.nc'
@@ -1192,7 +1201,8 @@ endif
 
 if (do_readsolar eq 1) then begin
 
-flsol_mean(*,*)=0.0
+flsol=fltarr(nx,ny,ndates,nfl)
+flsol_mean=fltarr(ndates,nfl)
 
 for n=nstart,ndates-1 do begin
 
@@ -1210,9 +1220,9 @@ endfor
 endfor ; end f
 
 ; planetary albedo
-flsol(*,*,n,2)=flsol(*,*,n,1)/flsol(*,*,n,0)
+flsol(*,*,n,nfl-1)=flsol(*,*,n,1)/flsol(*,*,n,0)
 for j=0,ny-1 do begin
-flsol_mean(n,f)=flsol_mean(n,f)+weight_lat(j)*mean(flsol(*,j,n,f))
+flsol_mean(n,nfl-1)=flsol_mean(n,nfl-1)+weight_lat(j)*mean(flsol(*,j,n,nfl-1))
 endfor
 
 endfor
@@ -1222,6 +1232,12 @@ endif
 
 
 if (do_clims eq 1) then begin
+
+clims=fltarr(nxmax,nymax,ndates,nexp,nvar)
+grads=fltarr(nymax,ndates,nexp,nvar)
+climav=fltarr(ndates,nexp,nvar)
+climav_r=fltarr(ndates,nexp,nvar,nreg)
+climnewweight=fltarr(nxmax,nymax)
 
 for e=0,nexp-1 do begin
 for n=nstart,ndates-1 do begin
@@ -1381,10 +1397,7 @@ f_all_lin=f_co2_lin+f_solar_lin+f_area_lin+f_ice_lin
 temp_all_lin=climav(baseline,pe,0) - 1.0*f_all_lin/lambda_lin 
 temp_all= climav(baseline,pe,0) + (-1.0*lambda-sqrt(lambda*lambda-4.0*c_a*f_all))/(2.0*c_a)
 
-temp_scot_interp=interpol(temp_scot,dates_scot,dates2)
-temp_scot1m_interp=interpol(temp_scot1m,dates_scot1m,dates2)
 
-temp_judd_interp=interpol(temp_judd,dates_judd,dates2)
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1756,6 +1769,11 @@ endif ; end gmst plot
 
 if (do_temp_plot eq 1) then begin
 
+; 01 is Scotese[A] and WingHuber
+; 02 is Scotese[A] and Scotese[B] and WingHuber
+; 03 is Scotese[B]smoothed and WingHuber
+; 04 is Scotese[B]smoothed and WingHuber and Judd
+
 npp=4
 ppname=strarr(npp)
 ppname(*)=['01','02','03','04']
@@ -1801,7 +1819,7 @@ endif
 if (p eq 3) then begin
 ; Plot Judd in orange
 oplot,dates_judd,temp_judd,color=200,thick=3
-oplot,dates2,temp_judd_interp,color=225,thick=3,linestyle=1
+;oplot,dates2,temp_judd_interp,color=225,thick=3,linestyle=1
 
 endif
 
@@ -1842,7 +1860,7 @@ endif
 
 if (p eq 3) then begin
 oplot,[x1,x1+dx1],[y1+dy1,y1+dy1],color=200,thick=3
-xyouts,x1+dx2,y1+dy1-dy2,'Judd',color=200
+xyouts,x1+dx2,y1+dy1-dy2,'Judd et al (in press)',color=200
 endif
 
 
@@ -2187,9 +2205,21 @@ if (do_clim_plot eq 1) then begin
 
 ; GMST PLOT
 
-ntype=5
-mytypename=['new','cmp','pro','bot','egu']
+; new is tfke and forcing-feedback
+; cmp is tfke and tfks
+; pro is tfke and ScoteseSmoothed and Winghuber
+; bot is tfke and tfks and ScoteseSmoothed and Winghuber
+; egu is tfke and tfks and ScoteseSmoothed
+; pap is tfke and ScoteseSmoothed and Winghuber and Judd
 
+ntype=6
+mytypename=['new','cmp','pro','bot','egu','pap']
+
+colwin=80
+coljud=200
+colsco=250
+mycol=0
+mycot=210
 
 for t=0,ntype-1 do begin
 for v=0,nvar-1 do begin
@@ -2200,11 +2230,10 @@ xmin=-550
 xmax=0
 
 
-
 ymin=yminc(v)
 ymax=ymaxc(v)
 
-if ((t eq 2 or t eq 3 or t eq 4) and v eq 0) then begin
+if ((t eq 2 or t eq 3 or t eq 4 or t eq 5) and v eq 0) then begin
 ymin=5
 ymax=40
 endif
@@ -2220,14 +2249,40 @@ dtopbar=(ymax-ymin)*0.6/35.0
 
 plot,dates2,climav(*,0,v),yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',psym=2,/nodata,ytitle=climnametitle(v)+' [degrees C]',ystyle=1,xstyle=1
 
+if (t eq 5) then begin
+br=240
+co=255
+;tvlct,r_0,g_0,b_0
+tvlct,[br,co],[br,br],[co,br],0
+
+for n=nstart,ndates-1 do begin
+
+if (climav(n,pe,v) lt min([temp_scot1m_interp(n),temp_wing_interp(n),temp_judd_interp(n)])) then begin
+polyfill,[dates2edge(n),dates2edge(n+1),dates2edge(n+1),dates2edge(n)],[topbar,topbar,ymin,ymin],color=0
+endif
+
+if (climav(n,pe,v) gt max([temp_scot1m_interp(n),temp_wing_interp(n),temp_judd_interp(n)])) then begin
+polyfill,[dates2edge(n),dates2edge(n+1),dates2edge(n+1),dates2edge(n)],[topbar,topbar,ymin,ymin],color=1
+endif
+
+endfor
+
+tvlct,r_39,g_39,b_39
+axis,yrange=[ymin,ymax],xrange=[xmin,xmax],ystyle=1,xstyle=1,yaxis=0
+axis,yrange=[ymin,ymax],xrange=[xmin,xmax],ystyle=1,xstyle=1,yaxis=1
+axis,yrange=[ymin,ymax],xrange=[xmin,xmax],ystyle=1,xstyle=1,xaxis=0
+endif
+
+
+
 ;;;;;;;;;;;;;
 for n=nstart,ndates-1 do begin
 
 x=n-nstart
 xx=ndates-nstart
-mycol=(x)*250.0/(xx-1)
-mycol=0
-mycot=210
+;mycol=(x)*250.0/(xx-1)
+;mycol=0
+
 
 if (t eq 1) then begin
 ; plot non-pe model points
@@ -2242,7 +2297,7 @@ endif
 plots,dates2(n),climav(n,pe,v),color=mycol,psym=8,symsize=0.5
 
 if (t eq 3 or t eq 4) then begin
-; plot tuned runs
+; plot tuned points
 plots,dates2(n),climav(n,pt,v),color=mycot,psym=6,symsize=0.5
 endif
 
@@ -2261,10 +2316,11 @@ endif
 endfor
 endif
 
-; plot hadcm3l (pe) curves
+; plot hadcm3l (pe) curve
 oplot,dates2(*),climav(*,pe,v),thick=3,color=mycol
 
 if (t eq 3 or t eq 4) then begin
+; plot tuned curve
 oplot,dates2(*),climav(*,pt,v),thick=3,color=mycot
 endif
 
@@ -2290,28 +2346,35 @@ tvlct,r_39,g_39,b_39
 endif
 
 if (v eq 0 and t eq 2) then begin
-;plots,dates_scot,temp_scot,psym=8,symsize=0.5,color=250
-oplot,dates_scot1m,temp_scot1m,color=250,thick=3
-;oplot,dates_scot,temp_scot,color=250,thick=3
+;plots,dates_scot,temp_scot,psym=8,symsize=0.5,color=colsco
+oplot,dates_scot1m,temp_scot1m,color=colsco,thick=3
+;oplot,dates_scot,temp_scot,color=colsco,thick=3
 
-;plots,dates_wing,temp_wing,psym=8,symsize=0.5,color=80
-oplot,dates_wing,temp_wing,color=80,thick=3
+;plots,dates_wing,temp_wing,psym=8,symsize=0.5,color=colwin
+oplot,dates_wing,temp_wing,color=colwin,thick=3
 endif
 
 if (v eq 0 and t eq 3) then begin
-;plots,dates_scot,temp_scot,psym=8,symsize=0.5,color=250
-oplot,dates2,temp_scot1m_interp,color=250,thick=3
+;plots,dates_scot,temp_scot,psym=8,symsize=0.5,color=colsco
+oplot,dates2,temp_scot1m_interp,color=colsco,thick=3
 
-;plots,dates_wing,temp_wing,psym=8,symsize=0.5,color=80
-oplot,dates_wing,temp_wing,color=80,thick=3
+;plots,dates_wing,temp_wing,psym=8,symsize=0.5,color=colwin
+oplot,dates_wing,temp_wing,color=colwin,thick=3
 endif
 
 if (v eq 0 and t eq 4) then begin
-;plots,dates_scot,temp_scot,psym=8,symsize=0.5,color=250
-oplot,dates2,temp_scot1m_interp,color=250,thick=3
+;plots,dates_scot,temp_scot,psym=8,symsize=0.5,color=colsco
+oplot,dates2,temp_scot1m_interp,color=colsco,thick=3
 
-;plots,dates_wing,temp_wing,psym=8,symsize=0.5,color=80
-;oplot,dates_wing,temp_wing,color=80,thick=3
+;plots,dates_wing,temp_wing,psym=8,symsize=0.5,color=colwin
+;oplot,dates_wing,temp_wing,color=colwin,thick=3
+endif
+
+if (v eq 0 and t eq 5) then begin
+; for paper
+oplot,dates2,temp_scot1m_interp,color=colsco,thick=3
+oplot,dates_wing,temp_wing,color=colwin,thick=3
+oplot,dates_judd,temp_judd,color=coljud,thick=3
 endif
 
 
@@ -2330,34 +2393,51 @@ plots,-520,12,psym=8,symsize=0.5
 oplot,[-510,-530],[12,12],thick=3
 endif
 
-if (v eq 0 and (t eq 2 or t eq 3 or t eq 4)) then begin
+if (v eq 0 and (t eq 2 or t eq 3 or t eq 4 or t eq 5)) then begin
+
+if (t ne 5) then begin
 x1=-300
+y1=8
+endif else begin
+x1=-230
+y1=10
+endelse
 dx1=40
 dx2=50
-y1=8
 dy1=1.5
 dy2=0.5
 
 oplot,[x1,x1+dx1],[y1+dy1,y1+dy1],color=0,thick=3
-;plots,x1+dx1/2.0,y1,psym=8,symsize=0.5,color=250
+;plots,x1+dx1/2.0,y1,psym=8,symsize=0.5,color=colsco
 xyouts,x1+dx2,y1+dy1-dy2,'HadCM3L ['+exproot(0,pe)+']',color=0
-plots,x1+dx1/2.0,y1+dy1,color=mycol,psym=6,symsize=0.5
+plots,x1+dx1/2.0,y1+dy1,color=mycol,psym=8,symsize=0.5
 ;plots,-520,12,psym=6,symsize=0.5
-oplot,[x1,x1+dx1],[y1,y1],color=250,thick=3
-;plots,x1+dx1/2.0,y1,psym=8,symsize=0.5,color=250
-xyouts,x1+dx2,y1-dy2,'Scotese et al (2021) [smoothed]',color=250
+oplot,[x1,x1+dx1],[y1,y1],color=colsco,thick=3
+;plots,x1+dx1/2.0,y1,psym=8,symsize=0.5,color=colsco
+if (t ne 5) then begin
+xyouts,x1+dx2,y1-dy2,'Scotese et al (2021) [smoothed]',color=colsco
+endif else begin
+xyouts,x1+dx2,y1-dy2,'Scotese et al (2021)',color=colsco
+endelse
 
 if (t ne 4) then begin
-oplot,[x1,x1+dx1],[y1-dy1,y1-dy1],color=80,thick=3
-;plots,x1+dx1/2.0,y1-dy1,psym=8,symsize=0.5,color=80
-xyouts,x1+dx2,y1-dy1-dy2,'Wing and Huber (2020)',color=80
+oplot,[x1,x1+dx1],[y1-dy1,y1-dy1],color=colwin,thick=3
+;plots,x1+dx1/2.0,y1-dy1,psym=8,symsize=0.5,color=colwin
+xyouts,x1+dx2,y1-dy1-dy2,'Wing and Huber (2020)',color=colwin
 endif
 
 if (t eq 3 or t eq 4) then begin
 oplot,[x1,x1+dx1],[y1+2*dy1,y1+2*dy1],color=mycot,thick=3
-;plots,x1+dx1/2.0,y1,psym=8,symsize=0.5,color=250
+;plots,x1+dx1/2.0,y1,psym=8,symsize=0.5,color=colsco
 xyouts,x1+dx2,y1+2*dy1-dy2,'HadCM3L ['+exproot(0,pt)+']',color=mycot
-plots,x1+dx1/2.0,y1+dy1,color=mycot,psym=6,symsize=0.5
+plots,x1+dx1/2.0,y1+dy1,color=mycot,psym=8,symsize=0.5
+endif
+
+if (t eq 5) then begin
+oplot,[x1,x1+dx1],[y1-dy1,y1-dy1],color=colwin,thick=3
+xyouts,x1+dx2,y1-dy1-dy2,'Wing and Huber (2020)',color=colwin
+oplot,[x1,x1+dx1],[y1-2*dy1,y1-2*dy1],color=coljud,thick=3
+xyouts,x1+dx2,y1-2*dy1-dy2,'Judd et al (in press)',color=coljud
 endif
 
 
@@ -2543,7 +2623,7 @@ for n=nstart,ndates-1 do begin
 
 x=n-nstart
 xx=ndates-nstart
-mycol=(x)*250.0/(xx-1)
+;mycol=(x)*250.0/(xx-1)
 mycol=0
 
 plots,dates2(n),resid(n),color=mycol,psym=8,symsize=0.5
