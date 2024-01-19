@@ -1293,6 +1293,8 @@ endif ; end do_clims
 
 
 
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Forcing/feedback model
 
@@ -3050,6 +3052,16 @@ endfor
 close,1
 
 endif
+
+
+;;;;;
+; Numbers for paper:
+print,'** FOR PAPER**  HIGHEST MODEL TEMP IS: '+strtrim(max(climav(nstart:ndates-1,pe,0),ind),2)
+print,dates2(ind)
+print,'** FOR PAPER**  LOWEST MODEL TEMP IS: '+strtrim(min(climav(nstart:ndates-1,pe,0),ind),2)
+print,dates2(ind)
+print,'** FOR PAPER**  MEAN MODEL TEMP IS: '+strtrim(mean(climav(nstart:ndates-1,pe,0)),2)
+print,'** FOR PAPER**  MODERN MODEL TEMP IS: '+strtrim(climav(nstart,pe,0),2)
 
 
 stop
