@@ -57,7 +57,7 @@ check_names=1 ; check names
 ;;;;
 ; Total number of time snapshots
 ndates=109
-nexp=9
+nexp=10
 tmax=4000
 nstart=0
 ;;;;
@@ -107,6 +107,7 @@ if (read_all_clims eq 1) then begin
 readfile(*,*)=1
 endif else begin
 readfile(*,4:5)=1
+readfile(*,9)=1
 ;;;;;;;; *******************************
 ; missing tfks files
 ;tfks_missing=[21,49,51]-1
@@ -126,6 +127,7 @@ readtype(*,5)=1
 readtype(*,6)=0
 readtype(*,7)=1
 readtype(*,8)=1
+readtype(*,9)=1
 
 
 ;;;;;;;; *******************************
@@ -145,6 +147,7 @@ locdata(*,5)=0
 locdata(*,6)=1
 locdata(*,7)=0
 locdata(*,8)=0
+locdata(*,9)=0
 
 
 
@@ -158,6 +161,8 @@ co2file(5)='co2_all_04_nt'
 co2file(6)='co2_all_04_nt'
 co2file(7)='co2_all_02'
 co2file(8)='co2_all_02'
+co2file(9)='co2_all_xx'
+
 
 colexp=intarr(nexp)
 colexp(0)=50
@@ -169,6 +174,7 @@ colexp(5)=250
 colexp(6)=220
 colexp(7)=130
 colexp(8)=80
+colexp(9)=180
 
 
 ndepth=3
@@ -251,10 +257,16 @@ exproot(52:77,8)=['teYd']
 exproot(78:103,8)=['teYD']
 exproot(104:108,8)=['tEyd']
 
+; Paul's Scotese02
+exproot(0:25,9)=['texp']
+exproot(26:51,9)=['texP']
+exproot(52:77,9)=['teXp']
+exproot(78:103,9)=['teXP']
+exproot(104:108,9)=['texq']
+
 for e=1,nexp-1 do begin
 exptail(*,e)=exptail(*,0)
 endfor
-
 exptail2(*,0)=''
 exptail2(*,1)=''
 exptail2(*,2)=''
@@ -264,7 +276,10 @@ exptail2(*,5)=''
 exptail2(*,6)=''
 exptail2(*,7)=''
 exptail2(*,8)='1'
-
+; Scotese02:
+exptail2(*,9)=''
+exptail2([0,6,7,8,11,12,13,14,20,21,24,25,31,32,34,35,36,37,38,39,40,41,42,43,44,45,46,47],9)='1'
+exptail2([9,10,17,18,19,22,23,26,27,28,29,30,33,48],9)='2'
 
 nexp_g=2
 ppt=intarr(nexp_g)
@@ -273,6 +288,8 @@ ppt(*)=[4,5]
 pe=ppt(0)
 ; tuned simulations
 pt=ppt(1)
+; Scotese02 simulations
+ps=9
 
 
 varname=strarr(ndates,nexp)
@@ -285,14 +302,15 @@ varname(*,5)='temp_ym_dpth'
 varname(*,6)='temp_ym_dpth'
 varname(*,7)='temp_ym_dpth'
 varname(*,8)='temp_ym_dpth'
+varname(*,9)='temp_ym_dpth'
 
 
 nyear=intarr(nexp)
-nyear(*)=[2000,1050,3000,-1,3000,3000,110,2000,2000]
+nyear(*)=[2000,1050,3000,-1,3000,3000,110,2000,2000,-1]
 torder=intarr(nexp)
-torder(*)=[2,3,4,-1,5,6,7,0,1]
+torder(*)=[2,3,4,-1,5,6,7,0,1,-1]
 check_cont=intarr(nexp)
-check_cont(*)=[1,1,1,-1,1,1,1,0,1]
+check_cont(*)=[1,1,1,-1,1,1,1,0,1,-1]
 xmint=0
 xmaxt=21000
 times=indgen(xmaxt)
@@ -300,11 +318,11 @@ explab=5 ; final simulation that will be labelled
 
 ; plot_times: do we want to plot the timeseries?
 plot_tims=intarr(nexp)
-plot_tims(*)=[1,1,1,0,1,1,0,1,1]
+plot_tims(*)=[1,1,1,0,1,1,0,1,1,0]
 
 ; navy = how many years for averaging means
 navy=intarr(nexp)
-navy(*)=[20,20,20,20,20,20,20,20,20]
+navy(*)=[20,20,20,20,20,20,20,20,20,20]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;No more EXP edits needed beyond here ;;;;;;;;;;;;
@@ -2284,9 +2302,10 @@ if (do_clim_plot eq 1) then begin
 ; bot is tfke and tfks and ScoteseSmoothed and Winghuber
 ; egu is tfke and tfks and ScoteseSmoothed
 ; pap is tfke and ScoteseSmoothed and Winghuber and Judd
+; cmo is tfke and Scotese02
 
-ntype=6
-mytypename=['new','cmp','pro','bot','egu','pap']
+ntype=7
+mytypename=['new','cmp','pro','bot','egu','pap','cmo']
 
 colwin=80
 coljud=200
@@ -2366,6 +2385,15 @@ endif
 endfor
 endif
 
+if (t eq 6) then begin
+; plot scotese02 model points
+for e=0,nexp-1 do begin
+if (e eq ps) then begin
+plots,dates2(n),climav(n,e,v),color=colexp(e),psym=8,symsize=0.5
+endif
+endfor
+endif
+
 ; plot hadcm3l (pe) points
 plots,dates2(n),climav(n,pe,v),color=mycol,psym=8,symsize=0.5
 
@@ -2384,6 +2412,14 @@ endfor ; end n
 if (t eq 1) then begin
 for e=0,nexp-1 do begin
 if (e ne pe) then begin
+oplot,dates2(*),climav(*,e,v),thick=3,color=colexp(e)
+endif
+endfor
+endif
+
+if (t eq 6) then begin
+for e=0,nexp-1 do begin
+if (e eq ps) then begin
 oplot,dates2(*),climav(*,e,v),thick=3,color=colexp(e)
 endif
 endfor
