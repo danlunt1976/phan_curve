@@ -284,11 +284,12 @@ exptail2([9,10,17,18,19,22,23,26,27,28,29,30,33,48],9)='2'
 nexp_g=2
 ppt=intarr(nexp_g)
 ppt(*)=[4,5]
-; which set of simulations to plot and analyse
+; which set of simulations to plot and analyse?
+; pe = final untuned simulations
 pe=ppt(0)
-; tuned simulations
+; pt = tuned simulations
 pt=ppt(1)
-; Scotese02 simulations
+; ps = Scotese02 simulations
 ps=9
 
 
@@ -2417,6 +2418,7 @@ endif
 endfor
 endif
 
+; plot scotese02 runs
 if (t eq 6) then begin
 for e=0,nexp-1 do begin
 if (e eq ps) then begin
@@ -2502,7 +2504,7 @@ plots,-520,12,psym=8,symsize=0.5
 oplot,[-510,-530],[12,12],thick=3
 endif
 
-if (v eq 0 and (t eq 2 or t eq 3 or t eq 4 or t eq 5)) then begin
+if (v eq 0 and (t eq 2 or t eq 3 or t eq 4 or t eq 5 or t eq 6)) then begin
 
 if (t ne 5) then begin
 x1=-300
