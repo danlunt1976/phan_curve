@@ -27,12 +27,12 @@ xancil -> Confguration -> Ancillary files to create -> Ocean dump file
           Dump Files -> Ocean Start Dump -> Input dat file name [file from isla]
 xancil -> Creat Anc Files
 
-This produces a file that, when run back through bath_islands_scr, is offset.
+This produces a file that, when run back through bath_islands_scr_new, is offset.
 Conclusion: xancil works well with the island file.
 Conclusion: isla isn't working correctly.
 
 **Plan:**
-(1) Use bath_islands_scr to identify and modify islands, and modify bath_islands scr so that it writes out a file that is compatible with xancil (same format as output from isla).  Test with standard and simulation 1 and simulation N.
+(1) Use bath_islands_scr_new to identify and modify islands, and modify bath_islands scr so that it writes out a file that is compatible with xancil (same format as output from isla).  Test with standard and simulation 1 and simulation N.
 
 (2) Carry out a continuation of two of Paul's simulations, with modified islands (simulation 1 and simulation N).
 
@@ -42,11 +42,11 @@ WORKFLOW
 (1) mkdir EXP
 (2) cp ~swsvalde/ummodel/data/EXP/expt_archive  EXP and untaz and extract ocean restart.
 (3) cp ~swsvalde/ummodel/data/EXP/inidata/omask_EXP.nc EXP
-(3a) bath_islands_scr tEydeo#da000003850c1+ bath_tEyde.nc islands_tEyde.nc islands_tEyde_ascii
+(3a) bath_islands_scr[_new?] tEydeo#da000003850c1+ bath_tEyde.nc islands_tEyde.nc islands_tEyde_ascii
 (4) isla restart file, consolidate/remove, and output text file [islands_tEyde_isla].
 (5) add one to end points (2nd and 4th elements) [islands_tEyde_isla_corr].
 (6) xancil
-(7) bath_islands_scr tEydeo#da000003850c1+_newislands bath_tEyde_newislands.nc islands_tEyde_newislands.nc islands_tEyde_newislands_ascii
+(7) bath_islands_scr_new tEydeo#da000003850c1+_newislands bath_tEyde_newislands.nc islands_tEyde_newislands.nc islands_tEyde_newislands_ascii
 (8) ferret/xconv  islands_tEyde_newislands.nc to check
 
 
