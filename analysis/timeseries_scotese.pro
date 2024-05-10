@@ -39,13 +39,13 @@ do_readsolar=1 ; read solar forcing and albedo
   do_ice_plot=0 ; prescribed ice sheets
   do_forcings_plot=1 ; prescribed forcings in Wm-2
   do_forctemps_plot=1 ; prescribed forcings in oC
-  do_polamp_plot=0 ;  plot polamp
+  do_polamp_plot=1 ;  plot polamp
   do_clim_plot=1 ;  plot new vs old, EBM, MDC, and resid
                  ;  (requires ff_model) 
   do_scattemp_plot=0
   do_climsens_plot=0
   do_ess_plot=0
-  do_grads_plot=0
+  do_grads_plot=1
 
 do_textfile1=0 ; textfile of proxies for Emily
 do_textfile2=0 ; textfile of proxies for Chris
@@ -105,9 +105,11 @@ endelse
 readfile=intarr(ndates,nexp)
 if (read_all_clims eq 1) then begin
 readfile(*,*)=1
+readfile(*,6)=0 ; tflm for Shufeng no longer stored
 endif else begin
-readfile(*,4:5)=1
-readfile(*,9)=1
+readfile(*,4)=1
+;readfile(*,4:5)=1
+;readfile(*,9)=1 ; add this back if Vadles (2021) needed.
 ;;;;;;;; *******************************
 ; missing tfks files
 ;tfks_missing=[21,49,51]-1
@@ -1122,15 +1124,25 @@ endfor
 
 
 
-nreg=7
+nreg=8
+regname=strarr(nreg)
 xs=intarr(nreg)
 xf=intarr(nreg)
 ys=intarr(nreg)
 yf=intarr(nreg)
-xs(*)=[0,0,0,0,0,0,0]
-xf(*)=[95,95,95,95,95,95,95]
-ys(*)=[0,12,24,36,48,60,0]
-yf(*)=[11,23,35,47,59,72,72]
+regname(*)=['nh-hl','nh-ml','nh-ll','sh-ll','sh-ml','sh-hl','gl','tr']
+xs(*)=[0,0,0,0,0,0,0,0]
+xf(*)=[95,95,95,95,95,95,95,95]
+ys(*)=[0,12,24,37,49,61,0,24]
+yf(*)=[11,23,35,48,60,72,72,48]
+
+
+print,'latitude ranges are: '
+for r=0,nreg-1 do begin
+print,r,ys(r),yf(r),latsedge(ys(r)),latsedge(yf(r)+1)
+endfor
+
+;stop
 
 climtag=strarr(nvar)
 climtag(*)=['a.pd','o.pf']
@@ -1139,8 +1151,13 @@ climname(*)=['temp_mm_1_5m','temp_mm_uo']
 
 climnamelong=strarr(nvar)
 climnamelong(*)=['temp','sst']
+climnamelongx=strarr(nvar*2+1)
+climnamelongx(*)=['temp-tempp','sst-sstp','temp-sst','tempp-sstp','all']
 climnametitle=strarr(nvar)
 climnametitle(*)=['SAT','SST']
+climnametitlex=strarr(nvar*2+1)
+climnametitlex(*)=['SAT vs. SAT-polamp','SST vs. SST-polamp','SAT vs. SST','SAT-polamp vs. SST-polamp','all']
+
 climoff=fltarr(nvar)
 climoff(*)=[-273.15,0]
 
@@ -1257,6 +1274,7 @@ grads=fltarr(nymax,ndates,nexp,nvar)
 climav=fltarr(ndates,nexp,nvar)
 climav_r=fltarr(ndates,nexp,nvar,nreg)
 climnewweight=fltarr(nxmax,nymax)
+polamp=fltarr(ndates,nexp,nvar)
 
 for e=0,nexp-1 do begin
 for n=nstart,ndates-1 do begin
@@ -1296,6 +1314,9 @@ endfor
 climav_r(n,e,v,r)=total(dummy(xs(r):xf(r),ys(r):yf(r),0,0)*climnewweight(xs(r):xf(r),ys(r):yf(r))/total(climnewweight(xs(r):xf(r),ys(r):yf(r))))+climoff(v)
 
 endfor
+
+; regname(*)=['nh-hl','nh-ml','nh-ll','sh-ll','sh-ml','sh-hl','gl','tr']
+polamp(n,e,v)= ( climav_r(n,e,v,7) - (climav_r(n,e,v,0)+climav_r(n,e,v,5))/2.0 )
 
 for j=0,nyc(v)-1 do begin
 grads(j,n,e,v) = mean(clims(0:nxc(v)-1,j,n,e,v),/nan)
@@ -1445,8 +1466,7 @@ print,'t_solar_tun= ',t_solar_tun
 print,'t_area_tun= ',t_area_tun
 print,'t_ice_tun= ',t_ice_tun
 print,'lambda_tun= ',lambda_tun
-print,'sensitivty= ',-1*c_co2/lambda_tun
-
+print,'sensitivity= ',-1*c_co2/lambda_tun
 
 f_co2_tun=t_co2_tun*r_co2
 f_solar_tun=t_solar_tun*r_solar
@@ -1738,6 +1758,12 @@ stageb(*)=-1.0*[0,66.0,145.0,201.3,251.902,298.9,358.9,419.2,443.8,485.4,541.0]
 stagen=strarr(nstage)
 stagen(*)=['Cenozoic','Cretaceous','Jurassic','Triassic','Permian','Carb.','Devonian','Sil.','Ord.','Cambrian']
 
+r_cgmw=r_39
+g_cgmw=g_39
+b_cgmw=b_39
+r_cgmw(0:nstage-1)=[242,127,52,129,240,103,203,179,0,127]
+g_cgmw(0:nstage-1)=[249,198,178,43,64,165,140,225,146,160]
+b_cgmw(0:nstage-1)=[29,78,201,146,40,153,55,182,112,86]
 
 
 if (do_gmst_plot eq 1) then begin
@@ -2265,7 +2291,7 @@ oplot,[x1,x1+dx1],[y1-(5*dy1),y1-(5*dy1)],color=0,thick=3
 
 
 if (t eq 0 or t eq 1) then begin
-xyouts,x1+dx2,y1+(1*dy1),'HadCM3L ['+exproot(pe,0)+']',charsize=cs
+xyouts,x1+dx2,y1+(1*dy1),'HadCM3L ['+exproot(0,pe)+']',charsize=cs
 xyouts,x1+dx2,y1-(4*dy1),color=250,'Residual temp',charsize=cs
 endif
 xyouts,x1+dx2,y1,color=50,'Solar temp',charsize=cs
@@ -2321,7 +2347,6 @@ device,filename='clim_'+climnamelong(v)+'_'+mytypename(t)+'_time.eps',/encapsula
 
 xmin=-550
 xmax=0
-
 
 ymin=yminc(v)
 ymax=ymaxc(v)
@@ -2506,13 +2531,13 @@ endif
 
 if (v eq 0 and (t eq 2 or t eq 3 or t eq 4 or t eq 5 or t eq 6)) then begin
 
-if (t ne 5) then begin
+
 x1=-300
 y1=8
-endif else begin
+if (t eq 5 or t eq 6) then begin
 x1=-230
 y1=10
-endelse
+endif
 dx1=40
 dx2=50
 dy1=1.5
@@ -2523,18 +2548,26 @@ oplot,[x1,x1+dx1],[y1+dy1,y1+dy1],color=0,thick=3
 xyouts,x1+dx2,y1+dy1-dy2,'HadCM3L ['+exproot(0,pe)+']',color=0
 plots,x1+dx1/2.0,y1+dy1,color=mycol,psym=8,symsize=0.5
 ;plots,-520,12,psym=6,symsize=0.5
+
+if (t ne 6) then begin
 oplot,[x1,x1+dx1],[y1,y1],color=colsco,thick=3
 ;plots,x1+dx1/2.0,y1,psym=8,symsize=0.5,color=colsco
+endif
+
+if (t ne 6) then begin
 if (t ne 5) then begin
 xyouts,x1+dx2,y1-dy2,'Scotese et al (2021) [smoothed]',color=colsco
 endif else begin
 xyouts,x1+dx2,y1-dy2,'Scotese et al (2021)',color=colsco
 endelse
+endif
 
+if (t ne 6) then begin
 if (t ne 4) then begin
 oplot,[x1,x1+dx1],[y1-dy1,y1-dy1],color=colwin,thick=3
 ;plots,x1+dx1/2.0,y1-dy1,psym=8,symsize=0.5,color=colwin
 xyouts,x1+dx2,y1-dy1-dy2,'Wing and Huber (2020)',color=colwin
+endif
 endif
 
 if (t eq 3 or t eq 4) then begin
@@ -2549,6 +2582,11 @@ oplot,[x1,x1+dx1],[y1-dy1,y1-dy1],color=colwin,thick=3
 xyouts,x1+dx2,y1-dy1-dy2,'Wing and Huber (2020)',color=colwin
 oplot,[x1,x1+dx1],[y1-2*dy1,y1-2*dy1],color=coljud,thick=3
 xyouts,x1+dx2,y1-2*dy1-dy2,'Judd et al (in press)',color=coljud
+endif
+
+if (t eq 6) then begin
+oplot,[x1,x1+dx1],[y1,y1],color=colexp(ps),thick=3
+xyouts,x1+dx2,y1-dy2,'Valdes et al (2021)',color=colexp(ps)
 endif
 
 
@@ -2768,8 +2806,6 @@ if (do_polamp_plot eq 1) then begin
 
 for v=0,nvar-1 do begin
 
-polamp=(climav_r(*,pe,v,2)+climav_r(*,pe,v,3))/2.0 - (climav_r(*,pe,v,0)+climav_r(*,pe,v,5))/2.0
-
 device,filename='polamp_'+climnamelong(v)+'_time.eps',/encapsulate,/color,set_font='Helvetica',xsize=7,ysize=5,/inches
 
 xmin=-550
@@ -2794,8 +2830,8 @@ xx=ndates-nstart
 mycol=(x)*250.0/(xx-1)
 ;mycol=0
 
-plots,dates2(n),polamp(n),color=mycol,psym=8,symsize=0.5
-;xyouts,dates2(n)+5,polamp(n)+0.05,exproot(n,1)+exptail(n,1),charsize=0.2
+plots,dates2(n),polamp(n,pe,v),color=mycol,psym=8,symsize=0.5
+;xyouts,dates2(n)+5,polamp(n,pe,v)+0.05,exproot(n,1)+exptail(n,1),charsize=0.2
 
 endfor ; end n
 
@@ -2803,19 +2839,28 @@ for n=nstart,ndates-2 do begin
 x=n-nstart
 xx=ndates-nstart
 mycol=(x)*250.0/(xx-1)
-oplot,[dates2(n),dates2[n+1]],[polamp(n),polamp(n+1)],thick=3,color=mycol
+oplot,[dates2(n),dates2[n+1]],[polamp(n,pe,v),polamp(n+1,pe,v)],thick=3,color=mycol
 endfor
 
 
 ;plot,[dates2(0),dates2(nstart-1)],[0,0],linestyle=2
 
-xyouts,-500,yminp(v)+0.8*(ymaxp(v)-yminp(v)),'HadCM3L ['+exproot(pe,0)+']'
+xyouts,-500,yminp(v)+0.8*(ymaxp(v)-yminp(v)),'HadCM3L ['+exproot(0,pe)+']'
 plots,-520,yminp(v)+0.8*(ymaxp(v)-yminp(v)),psym=8,symsize=0.5
+
+
+tvlct,r_cgmw,g_cgmw,b_cgmw
+for n=0,nstage-1 do begin
+polyfill,[stageb(n),stageb(n+1),stageb(n+1),stageb(n)],[ymax,ymax,topbar,topbar],color=n
+endfor
+tvlct,r_39,g_39,b_39
 
 oplot,[xmin,xmax],[topbar,topbar]
 for n=1,nstage-1 do begin
 oplot,[stageb(n),stageb(n)],[topbar,ymax]
 endfor
+
+
 
 for n=0,nstage-1 do begin
 xyouts,(stageb(n)+stageb(n+1))/2.0,topbar+dtopbar,alignment=0.5,stagen(n),charsize=0.7
@@ -2826,20 +2871,39 @@ device,/close
 endfor
 
 
-for v=0,nvar-1 do begin
+for v=0,nvar*2 do begin
 
-polamp=(climav_r(*,pe,v,2)+climav_r(*,pe,v,3))/2.0 - (climav_r(*,pe,v,0)+climav_r(*,pe,v,5))/2.0
+device,filename='polampxtemp_'+climnamelongx(v)+'_scatter.eps',/encapsulate,/color,set_font='Helvetica'
 
-device,filename='polampxtemp_'+climnamelong(v)+'_scatter.eps',/encapsulate,/color,set_font='Helvetica'
-
+if (v eq 0 or v eq 1) then begin
 xmin=yminc(v)
 xmax=ymaxc(v)
-
 ymin=yminp(v)
 ymax=ymaxp(v)
+endif
 
+if (v eq 2) then begin
+xmin=min(yminc(0))
+xmax=max(ymaxc(0))
+ymin=min(yminc(1))
+ymax=max(ymaxc(1))
+endif
 
-plot,climav(*,pe,v),polamp,yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='global mean',psym=2,/nodata,ytitle='meridional gradient [degrees C]',title=climnametitle(v)+' ['+exproot(pe,0)+']',ystyle=1,xstyle=1
+if (v eq 3) then begin
+xmin=min(yminp(0))
+xmax=max(ymaxp(0))
+ymin=min(yminp(1))
+ymax=max(ymaxp(1))
+endif
+
+if (v eq 4) then begin
+xmin=min(yminc(0:nvar-1))
+xmax=max(ymaxc(0:nvar-1))
+ymin=min(yminp(0:nvar-1))
+ymax=max(ymaxp(0:nvar-1))
+endif
+
+plot,climav(*,pe,0),polamp(*,pe,0),yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='global mean',psym=2,/nodata,ytitle='meridional gradient [degrees C]',title=climnametitlex(v)+' ['+exproot(0,pe)+']',ystyle=1,xstyle=1
 
 ;;;;;;;;;;;;;
 for n=nstart,ndates-1 do begin
@@ -2849,8 +2913,24 @@ xx=ndates-nstart
 mycol=(x)*250.0/(xx-1)
 ;mycol=0
 
-plots,climav(n,pe,v),polamp(n),color=mycol,psym=8,symsize=1.5
-;xyouts,climav(n,pe,v)+5,polamp(n)+0.05,exproot(n,1)+exptail(n,1),charsize=0.2
+;climnamelongx(*)=['temp-tempp','sst-sstp','temp-sst','tempp-sstp','all']
+
+if (v eq 0 or v eq 1) then begin
+   plots,climav(n,pe,v),polamp(n,pe,v),color=mycol,psym=8,symsize=1.5
+;xyouts,climav(n,pe,v)+5,polamp(n,pe,v)+0.05,exproot(n,1)+exptail(n,1),charsize=0.2
+endif
+if (v eq 2) then begin
+   plots,climav(n,pe,0),climav(n,pe,1),color=mycol,psym=8,symsize=1.5
+endif
+if (v eq 3) then begin
+   plots,polamp(n,pe,0),polamp(n,pe,1),color=mycol,psym=8,symsize=1.5
+endif
+if (v eq 4) then begin
+   for vv=0,nvar-1 do begin
+   plots,climav(n,pe,vv),polamp(n,pe,vv),color=mycol,psym=8,symsize=((1-vv)+1.0)/2.0
+   endfor
+   oplot,[climav(n,pe,0),climav(n,pe,1)],[polamp(n,pe,0),polamp(n,pe,1)],color=mycol,linestyle=1
+endif
 
 ddy=0.001*(ymax-ymin)
 fy=0.05*(ymax-ymin)
