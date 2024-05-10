@@ -12,7 +12,8 @@ plot_salin=0
 plot_topo=0
 plot_albdiff=0
 plot_smdiff=0
-plot_precip=1
+plot_precip=0
+plot_globe=1
 
 
 
@@ -231,6 +232,17 @@ jobfile="ncl.${exp}.clim_merid.ncl"
 \cp ncl.SKEL.clim_merid.ncl ${jobfile}
 sed -i "s/EXP/${exp}/g" ${jobfile}
 sed -i "s/EXR/${exr}/g" ${jobfile}
+sed -i "s/AGE/${age}/g" ${jobfile}
+sed -i "s/DOPLOT/${doplot}/g" ${jobfile}
+ncl ${jobfile}
+\rm ${jobfile}
+fi
+
+if [ ${plot_globe} -eq 1 ] ; then
+jobfile="ncl.${exp}.globe.ncl"
+\cp ncl.SKEL.clim_globe.ncl ${jobfile}
+sed -i "s/EXR/${exr}/g" ${jobfile}
+sed -i "s/EXP/${exp}/g" ${jobfile}
 sed -i "s/AGE/${age}/g" ${jobfile}
 sed -i "s/DOPLOT/${doplot}/g" ${jobfile}
 ncl ${jobfile}
