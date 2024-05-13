@@ -47,6 +47,8 @@ do_readsolar=1 ; read solar forcing and albedo
   do_ess_plot=0
   do_grads_plot=1
 
+do_ebmaprp=1
+
 do_textfile1=0 ; textfile of proxies for Emily
 do_textfile2=0 ; textfile of proxies for Chris
 do_textfile3=0 ; textfile of fluxes for Emily
@@ -426,12 +428,19 @@ latsedge(ny)=-90.0
 
 
 weight_lat=fltarr(ny)
+weight_hlat=fltarr(ny)
+weight_llat=fltarr(ny)
 for j=0,ny-1 do begin
 weight_lat(j)=-0.5*(sin(latsedge(j+1)*2*!pi/360.0)-sin(latsedge(j)*2*!pi/360.0))
 lats(j)=0.5*(latsedge(j+1)+latsedge(j))
+if (lats(j) gt 60 or lats(j) lt -60) then weight_hlat(j)=weight_lat(j)
+if (lats(j) lt 30 and lats(j) gt -30) then weight_llat(j)=weight_lat(j)
 endfor
 ; Note - weighting above is correct as weighted half for northern
 ;        and southern boxes. 
+weight_hlat(0:ny-1)=weight_hlat(0:ny-1)/total(weight_hlat(0:ny-1))
+weight_llat(0:ny-1)=weight_llat(0:ny-1)/total(weight_llat(0:ny-1))
+
 
 weight=fltarr(nx,ny)
 newweight=fltarr(nx,ny)
@@ -1332,6 +1341,276 @@ endif ; end do_clims
 
 
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;
+; EBM and APRP
+
+if (do_ebmaprp eq 1) then begin
+
+sigma=5.67e-8
+
+nvarebm=8
+varnameebm=strarr(nvarebm)
+;varnameebm=['ts','rlus','rlds','rsus','rsds','rlut','rsut','rsdt'] ; OUT
+;varnameebm=['ts','rlns','rlds','rsns','rsds','rlut','rsut','rsdt'] ; IN
+varnameebm=['temp_mm_srf','longwave_mm_s3_srf','ilr_mm_s3_srf','solar_mm_s3_srf','downSol_Seaice_mm_s3_srf','olr_mm_s3_TOA','upSol_mm_s3_TOA','downSol_mm_TOA']
+
+modvar_2d=fltarr(nxmax,nymax,ndates,nexp,nvarebm)
+
+for e=0,nexp-1 do begin
+for n=nstart,ndates-1 do begin
+if (readfile(n,e) eq 1) then begin
+
+for v=0,nvarebm-1 do begin
+
+thisvarname=varnameebm(v)
+
+filename=root(n,e)+'/'+expnamel(n,e)+'/climate/'+expnamel(n,e)+climtag(0)+'clann.nc'
+print,filename
+id1=ncdf_open(filename)
+ncdf_varget,id1,thisvarname,dummy
+
+modvar_2d(0:nx-1,0:ny-1,n,e,v)=dummy(*,*)
+
+ncdf_close,id1
+
+endfor
+
+modvar_2d(0:nx-1,0:ny-1,n,e,1)=modvar_2d(0:nx-1,0:ny-1,n,e,2)-modvar_2d(0:nx-1,0:ny-1,n,e,1)
+modvar_2d(0:nx-1,0:ny-1,n,e,3)=modvar_2d(0:nx-1,0:ny-1,n,e,4)-modvar_2d(0:nx-1,0:ny-1,n,e,3)
+
+endif
+endfor
+endfor
+
+nder=7
+modvar_2d_der=fltarr(nx,ny,ndates,nexp,nder)
+dervar_2d_name=strarr(nder)
+dervar_2d_name=['Surface albedo','TOA albedo','Surface temperature','Derived surface temperature','Emissivity','Heat transport','TOA inbalance']
+dervar_2d_unit=['[0-1]','[0-1]','[K]','[K]','[0-1]','W/m2','W/m2']
+dervar_2d_shortname=['als','alt','tsm','tsd','emm','htr','inb']
+
+
+offset=fltarr(nder)
+offset(*)=[0,0,-273.15,-273.15,0,0,0]
+
+col_lims=fltarr(2,nder)
+col_lims(0,*)=[0,0,-30,-30,0,-100,-100]
+col_lims(1,*)=[1,1,40,40,1,100,100]
+
+for e=0,nexp-1 do begin
+for n=nstart,ndates-1 do begin
+if (readfile(n,e) eq 1) then begin
+
+
+;dervar_2d_name=['Surface albedo','TOA albedo','Surface temperature','Derived surface temperature','Emissivity','Heat transport','TOA inbalance']
+modvar_2d_der(*,*,n,e,0)=modvar_2d(*,*,n,e,3)/modvar_2d(*,*,n,e,4)
+modvar_2d_der(*,*,n,e,1)=modvar_2d(*,*,n,e,6)/modvar_2d(*,*,n,e,7)
+modvar_2d_der(*,*,n,e,2)=modvar_2d(*,*,n,e,0)
+modvar_2d_der(*,*,n,e,3)=(modvar_2d(*,*,n,e,1)/sigma)^(0.25)
+modvar_2d_der(*,*,n,e,4)=modvar_2d(*,*,n,e,5)/modvar_2d(*,*,n,e,1)
+modvar_2d_der(*,*,n,e,5)=modvar_2d(*,*,n,e,5)+modvar_2d(*,*,n,e,6)-modvar_2d(*,*,n,e,7)
+modvar_2d_der(*,*,n,e,6)=modvar_2d(*,*,n,e,7)-modvar_2d(*,*,n,e,6)-modvar_2d(*,*,n,e,5)
+
+endif
+endfor
+endfor
+
+; make zonal means.
+modvar_2d_zonmean=fltarr(ny,ndates,nexp,nvarebm)
+for e=0,nexp-1 do begin
+for n=nstart,ndates-1 do begin
+if (readfile(n,e) eq 1) then begin
+for v=0,nvarebm-1 do begin
+for y=0,ny-1 do begin
+modvar_2d_zonmean(y,n,e,v)=mean(modvar_2d(*,y,n,e,v))
+endfor
+endfor
+endif
+endfor
+endfor
+
+
+modvar_2d_der_zonmean=fltarr(ny,ndates,nexp,nder)
+for e=0,nexp-1 do begin
+for n=nstart,ndates-1 do begin
+if (readfile(n,e) eq 1) then begin
+for d=0,nder-1 do begin
+for y=0,ny-1 do begin
+modvar_2d_der_zonmean(y,n,e,d)=mean(modvar_2d_der(*,y,n,e,d))
+endfor
+endfor
+endif
+endfor
+endfor
+
+;dervar_2d_name=['Surface albedo','TOA albedo','Surface temperature','Derived surface temperature','Emissivity','Heat transport','TOA inbalance']
+modvar_2d_zonmean_der=fltarr(ny,ndates,nexp,nder)
+for e=0,nexp-1 do begin
+for n=nstart,ndates-1 do begin
+if (readfile(n,e) eq 1) then begin
+modvar_2d_zonmean_der(*,n,e,0)=modvar_2d_zonmean(*,n,e,3)/modvar_2d_zonmean(*,n,e,4)
+modvar_2d_zonmean_der(*,n,e,1)=modvar_2d_zonmean(*,n,e,6)/modvar_2d_zonmean(*,n,e,7)
+modvar_2d_zonmean_der(*,n,e,2)=modvar_2d_zonmean(*,n,e,0)
+modvar_2d_zonmean_der(*,n,e,3)=(modvar_2d_zonmean(*,n,e,1)/sigma)^(0.25)
+modvar_2d_zonmean_der(*,n,e,4)=modvar_2d_zonmean(*,n,e,5)/modvar_2d_zonmean(*,n,e,1)
+modvar_2d_zonmean_der(*,n,e,5)=modvar_2d_zonmean(*,n,e,5)+modvar_2d_zonmean(*,n,e,6)-modvar_2d_zonmean(*,n,e,7)
+modvar_2d_zonmean_der(*,n,e,6)=modvar_2d_zonmean(*,n,e,7)-modvar_2d_zonmean(*,n,e,6)-modvar_2d_zonmean(*,n,e,5)
+endif
+endfor
+endfor
+
+
+tvlct,r_39,g_39,b_39
+
+nebm=12
+my_col=intarr(nebm)
+my_col(*)=[0,0,50,100,150,200,250,50,50,25,25,25]
+my_name=strarr(nebm)
+my_name(*)=['temp change (GCM)','temp change (EBM)','albedo','emmisivity','heat transport','solar','temp change (sum)','albedo (surface)','albedo (non-surface)','albedo (rev)','albedo (rev) (surface)','albedo (rev) (non-surface)']
+my_linstyle=intarr(nebm)
+my_linstyle(*)=[2,0,0,0,0,0,0,1,2,0,1,2]
+ebm_do=intarr(nebm)
+ebm_do(*)=1
+ebm_do([9,10,11])=0
+
+my_tempebm=fltarr(ny,nebm,ndates,nexp)
+
+nnn=0
+
+for e=0,nexp-1 do begin
+for n=nstart,ndates-1 do begin
+if (readfile(n,e) eq 1) then begin
+
+albs1=modvar_2d_zonmean_der(*,n,e,0)
+albt1=modvar_2d_zonmean_der(*,n,e,1)
+emmi1=modvar_2d_zonmean_der(*,n,e,4)
+htra1=modvar_2d_zonmean_der(*,n,e,5)
+sola1=modvar_2d_zonmean(*,n,e,7)
+temp1=modvar_2d_zonmean(*,n,e,0)-273.15
+
+tempebm1=(1.0/(emmi1*sigma)*(sola1*(1-albt1)+htra1))^0.25-273.15
+
+albs2=modvar_2d_zonmean_der(*,nnn,e,0)
+albt2=modvar_2d_zonmean_der(*,nnn,e,1)
+emmi2=modvar_2d_zonmean_der(*,nnn,e,4)
+htra2=modvar_2d_zonmean_der(*,nnn,e,5)
+sola2=modvar_2d_zonmean(*,nnn,e,7)
+temp2=modvar_2d_zonmean(*,nnn,e,0)-273.15
+
+tempebm2=(1.0/(emmi2*sigma)*(sola2*(1-albt2)+htra2))^0.25-273.15
+
+; OK, this is the surface component
+tempebm1albs2=(1.0/(emmi1*sigma)*(sola1*(1-(albt1+(albs2-albs1)))+htra1))^0.25-273.15
+
+tempebm1albt2=(1.0/(emmi1*sigma)*(sola1*(1-albt2)+htra1))^0.25-273.15
+tempebm1emmi2=(1.0/(emmi2*sigma)*(sola1*(1-albt1)+htra1))^0.25-273.15
+tempebm1htra2=(1.0/(emmi1*sigma)*(sola1*(1-albt1)+htra2))^0.25-273.15
+tempebm1sola2=(1.0/(emmi1*sigma)*(sola2*(1-albt1)+htra1))^0.25-273.15
+
+; OK, this is the surface component
+tempebm2albs1=(1.0/(emmi2*sigma)*(sola2*(1-(albt2+(albs1-albs2)))+htra2))^0.25-273.15
+
+tempebm2albt1=(1.0/(emmi2*sigma)*(sola2*(1-albt1)+htra2))^0.25-273.15
+tempebm2emmi1=(1.0/(emmi1*sigma)*(sola2*(1-albt2)+htra2))^0.25-273.15
+tempebm2htra1=(1.0/(emmi2*sigma)*(sola2*(1-albt2)+htra1))^0.25-273.15
+tempebm2sola1=(1.0/(emmi2*sigma)*(sola1*(1-albt2)+htra2))^0.25-273.15
+
+my_tempebm(*,0,n,e)=temp1-temp2
+my_tempebm(*,1,n,e)=tempebm1-tempebm2
+my_tempebm(*,2,n,e)=tempebm2albt1-tempebm2
+my_tempebm(*,3,n,e)=tempebm2emmi1-tempebm2
+my_tempebm(*,4,n,e)=tempebm2htra1-tempebm2
+my_tempebm(*,5,n,e)=tempebm2sola1-tempebm2
+my_tempebm(*,6,n,e)=tempebm2albt1-tempebm2+tempebm2emmi1-tempebm2+tempebm2htra1-tempebm2+tempebm2sola1-tempebm2
+
+my_tempebm(*,7,n,e)=tempebm2albs1-tempebm2
+my_tempebm(*,8,n,e)=tempebm2albt1-tempebm2albs1
+
+; similar to 2
+my_tempebm(*,9,n,e)=-1*(tempebm1albt2-tempebm1)
+
+; similar to 7
+my_tempebm(*,10,n,e)=-1*(tempebm1albs2-tempebm1)
+; similar to 8
+my_tempebm(*,11,n,e)=-1*(tempebm1albt2-tempebm1albs2)
+
+
+
+; Here is the plot of the zonal mean surface and planetary albedo.
+picname='fluxes/alb_lat_'+expnamel(n,e)
+device,filename=picname+'.eps',/encapsulate,set_font='Helvetica',/color
+plot,[0,1],[0,1],yrange=[0,1.0],xrange=[-90,90],ystyle=1,xstyle=1,title='Albedo vs latitude  - '+expnamel(n,e),xtitle='latitude',ytitle='albedo',/nodata
+oplot,lats(0:ny-1),albs1,color=100,linestyle=0,thick=5
+oplot,lats(0:ny-1),albt1,color=200,linestyle=1,thick=5
+xyouts,30,0.025,'surface',color=100
+xyouts,-20,0.32,'planetary',color=200
+device,/close
+
+; Here is the plot of the zonal mean surface and planetary albedo change.
+picname='fluxes/albc_lat_'+expnamel(n,e)
+device,filename=picname+'.eps',/encapsulate,set_font='Helvetica',/color
+plot,[0,1],[0,1],yrange=[-1,1.0],xrange=[-90,90],ystyle=1,xstyle=1,title='Albedo change vs latitude  - '+expnamel(n,e),xtitle='latitude',ytitle='albedo',/nodata
+oplot,lats(0:ny-1),albs1-albs2,color=100,linestyle=0,thick=5
+oplot,lats(0:ny-1),albt1-albt2,color=200,linestyle=1,thick=5
+xyouts,30,0.025,'surface change',color=100
+xyouts,-20,0.32,'planetary change',color=200
+device,/close
+
+; Here is the plot of the zonal mean temp; just a test to make sure
+; the terms add up. 
+picname='fluxes/tmp_lat_'+expnamel(n,e)
+device,filename=picname+'.eps',/encapsulate,set_font='Helvetica',/color
+plot,[0,1],[0,1],yrange=[-50,50],xrange=[-90,90],ystyle=1,xstyle=1,title='Temperature  - '+expnamel(n,e),xtitle='latitude',ytitle='temp',/nodata
+oplot,lats(0:ny-1),temp1,color=0,linestyle=0,thick=5
+oplot,lats(0:ny-1),tempebm1,color=100,linestyle=2,thick=5
+device,/close
+
+
+; And now the beast plot:
+my_yrange=[-20,60]
+divstart=my_yrange(0)+0.95*(my_yrange(1)-my_yrange(0))
+div=0.045*(my_yrange(1)-my_yrange(0))
+
+picname='fluxes/tmp_lat_change_'+expnamel(n,e)
+device,filename=picname+'.eps',/encapsulate,set_font='Helvetica',/color
+plot,[0,1],[0,1],yrange=my_yrange,xrange=[-90,90],ystyle=1,xstyle=1,title='Temperature  - '+expnamel(n,e),xtitle='latitude',ytitle='temp',/nodata
+
+xyouts,30,divstart,'GMT',alignment=1
+xyouts,50,divstart,'AMP',alignment=1
+
+for dd=0,nebm-1 do begin
+if (ebm_do(dd) eq 1) then begin
+
+oplot,lats(0:ny-1),my_tempebm(*,dd,n,e),color=my_col(dd),linestyle=my_linstyle(dd),thick=5
+
+xyouts,-33,divstart-(dd+1)*div,my_name(dd),color=my_col(dd)
+oplot,[-50,-35],[divstart-(dd+1)*div,divstart-(dd+1)*div],color=my_col(dd),linestyle=my_linstyle(dd),thick=5
+
+xyouts,30,divstart-(dd+1)*div,strtrim(string(total(my_tempebm(*,dd,n,e)*weight_lat(*)),format='(F4.1)'),2),color=my_col(dd),alignment=1
+
+xyouts,50,divstart-(dd+1)*div,strtrim(string(total(my_tempebm(*,dd,n,e)*weight_hlat(*))-total(my_tempebm(*,dd,n,e)*weight_llat(*)),format='(F5.1)'),2),color=my_col(dd),alignment=1
+
+endif
+
+endfor ; end dd
+
+
+dd=1
+oplot,[60,90],[total(my_tempebm(*,dd,n,e)*weight_hlat(*)),total(my_tempebm(*,dd,n,e)*weight_hlat(*))],color=0,linestyle=2
+oplot,[-90,-60],[total(my_tempebm(*,dd,n,e)*weight_hlat(*)),total(my_tempebm(*,dd,n,e)*weight_hlat(*))],color=0,linestyle=2
+oplot,[-30,30],[total(my_tempebm(*,dd,n,e)*weight_llat(*)),total(my_tempebm(*,dd,n,e)*weight_llat(*))],color=0,linestyle=2
+oplot,[-90,90],[total(my_tempebm(*,dd,n,e)*weight_lat(*)),total(my_tempebm(*,dd,n,e)*weight_lat(*))],color=0,linestyle=1
+
+device,/close
+
+endif
+endfor
+endfor
+
+endif
+
+
+stop
 
 
 
