@@ -65,6 +65,21 @@ nstart=0
 ;;;;
 
 ;;;;
+; for geological stages
+nstage=10
+stageb=fltarr(nstage+1)
+stageb(*)=-1.0*[0,66.0,145.0,201.3,251.902,298.9,358.9,419.2,443.8,485.4,541.0]
+stagen=strarr(nstage)
+stagen(*)=['Cenozoic','Cretaceous','Jurassic','Triassic','Permian','Carb.','Devonian','Sil.','Ord.','Cambrian']
+r_cgmw=r_39
+g_cgmw=g_39
+b_cgmw=b_39
+r_cgmw(0:nstage-1)=[242,127,52,129,240,103,203,179,0,127]
+g_cgmw(0:nstage-1)=[249,198,178,43,64,165,140,225,146,160]
+b_cgmw(0:nstage-1)=[29,78,201,146,40,153,55,182,112,86]
+;;;;
+
+;;;;
 ; for timeseries to save time
 writing=intarr(ndates,nexp)
 writing(*,*)=0
@@ -1474,6 +1489,12 @@ ebm_do(*)=1
 ebm_do([9,10,11])=0
 
 my_tempebm=fltarr(ny,nebm,ndates,nexp)
+my_tempebmav=fltarr(nebm,ndates,nexp)
+my_tempebmhl=fltarr(nebm,ndates,nexp)
+my_tempebmll=fltarr(nebm,ndates,nexp)
+my_tempebmpa=fltarr(nebm,ndates,nexp)
+
+
 
 nnn=0
 
@@ -1534,6 +1555,13 @@ my_tempebm(*,10,n,e)=-1*(tempebm1albs2-tempebm1)
 ; similar to 8
 my_tempebm(*,11,n,e)=-1*(tempebm1albt2-tempebm1albs2)
 
+for dd=0,nebm-1 do begin
+my_tempebmav(dd,n,e)=total(my_tempebm(*,dd,n,e)*weight_lat(*))
+my_tempebmhl(dd,n,e)=total(my_tempebm(*,dd,n,e)*weight_hlat(*))
+my_tempebmll(dd,n,e)=total(my_tempebm(*,dd,n,e)*weight_llat(*))
+my_tempebmpa(dd,n,e)=total(my_tempebm(*,dd,n,e)*weight_hlat(*))-total(my_tempebm(*,dd,n,e)*weight_llat(*))
+
+endfor
 
 
 ; Here is the plot of the zonal mean surface and planetary albedo.
@@ -1586,9 +1614,9 @@ oplot,lats(0:ny-1),my_tempebm(*,dd,n,e),color=my_col(dd),linestyle=my_linstyle(d
 xyouts,-33,divstart-(dd+1)*div,my_name(dd),color=my_col(dd)
 oplot,[-50,-35],[divstart-(dd+1)*div,divstart-(dd+1)*div],color=my_col(dd),linestyle=my_linstyle(dd),thick=5
 
-xyouts,30,divstart-(dd+1)*div,strtrim(string(total(my_tempebm(*,dd,n,e)*weight_lat(*)),format='(F4.1)'),2),color=my_col(dd),alignment=1
+xyouts,30,divstart-(dd+1)*div,strtrim(string(my_tempebmav(dd,n,e),format='(F4.1)'),2),color=my_col(dd),alignment=1
 
-xyouts,50,divstart-(dd+1)*div,strtrim(string(total(my_tempebm(*,dd,n,e)*weight_hlat(*))-total(my_tempebm(*,dd,n,e)*weight_llat(*)),format='(F5.1)'),2),color=my_col(dd),alignment=1
+xyouts,50,divstart-(dd+1)*div,strtrim(string(my_tempebmpa(dd,n,e),format='(F5.1)'),2),color=my_col(dd),alignment=1
 
 endif
 
@@ -1596,16 +1624,146 @@ endfor ; end dd
 
 
 dd=1
-oplot,[60,90],[total(my_tempebm(*,dd,n,e)*weight_hlat(*)),total(my_tempebm(*,dd,n,e)*weight_hlat(*))],color=0,linestyle=2
-oplot,[-90,-60],[total(my_tempebm(*,dd,n,e)*weight_hlat(*)),total(my_tempebm(*,dd,n,e)*weight_hlat(*))],color=0,linestyle=2
-oplot,[-30,30],[total(my_tempebm(*,dd,n,e)*weight_llat(*)),total(my_tempebm(*,dd,n,e)*weight_llat(*))],color=0,linestyle=2
-oplot,[-90,90],[total(my_tempebm(*,dd,n,e)*weight_lat(*)),total(my_tempebm(*,dd,n,e)*weight_lat(*))],color=0,linestyle=1
+oplot,[60,90],[my_tempebmhl(dd,n,e),my_tempebmhl(dd,n,e)],color=0,linestyle=2
+oplot,[-90,-60],[my_tempebmhl(dd,n,e),my_tempebmhl(dd,n,e)],color=0,linestyle=2
+oplot,[-30,30],[my_tempebmll(dd,n,e),my_tempebmll(dd,n,e)],color=0,linestyle=2
+oplot,[-90,90],[my_tempebmav(dd,n,e),my_tempebmav(dd,n,e)],color=0,linestyle=1
 
 device,/close
 
 endif
 endfor
 endfor
+
+
+; Here is the plot of the contributions to polamp over time:
+
+device,filename='polampcont_time.eps',/encapsulate,/color,set_font='Helvetica',xsize=7,ysize=5,/inches
+
+xmin=-550
+xmax=0
+
+ymin=-10
+ymax=25
+
+
+topbar=ymin+(ymax-ymin)*33.0/35.0
+dtopbar=(ymax-ymin)*0.6/35.0
+
+
+plot,dates2,my_tempebmpa(0,*,pe),yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',psym=2,/nodata,ytitle='Contributions to polar amplification [degrees C]',title='Contributions to polar amplification',ystyle=1,xstyle=1
+
+;;;;;;;;;;;;;
+
+for n=nstart,ndates-1 do begin
+plots,dates2(n),my_tempebmpa(0,n,pe),color=0,psym=8,symsize=0.5
+endfor ; end n
+
+for n=nstart,ndates-2 do begin
+oplot,[dates2(n),dates2[n+1]],[my_tempebmpa(0,n,pe),my_tempebmpa(0,n+1,pe)],thick=3,color=0
+oplot,[dates2(n),dates2[n+1]],[my_tempebmpa(2,n,pe),my_tempebmpa(2,n+1,pe)],thick=3,color=60
+oplot,[dates2(n),dates2[n+1]],[my_tempebmpa(3,n,pe),my_tempebmpa(3,n+1,pe)],thick=3,color=120
+oplot,[dates2(n),dates2[n+1]],[my_tempebmpa(5,n,pe),my_tempebmpa(5,n+1,pe)],thick=3,color=180
+oplot,[dates2(n),dates2[n+1]],[my_tempebmpa(4,n,pe),my_tempebmpa(4,n+1,pe)],thick=3,color=240
+endfor
+
+
+
+xyouts,-500,ymin+0.9*(ymax-ymin),'HadCM3L ['+exproot(0,pe)+']'
+xyouts,-500,ymin+0.85*(ymax-ymin),'Planetary albedo',color=60
+xyouts,-500,ymin+0.8*(ymax-ymin),'Emissivity',color=120
+xyouts,-500,ymin+0.75*(ymax-ymin),'Solar constant',color=180
+xyouts,-500,ymin+0.7*(ymax-ymin),'Heat transport',color=240
+
+
+plots,-520,ymin+0.9*(ymax-ymin),psym=8,symsize=0.5,color=0
+oplot,[-525,-515],[ymin+0.85*(ymax-ymin),ymin+0.85*(ymax-ymin)],color=60
+oplot,[-525,-515],[ymin+0.8*(ymax-ymin),ymin+0.8*(ymax-ymin)],color=120
+oplot,[-525,-515],[ymin+0.75*(ymax-ymin),ymin+0.75*(ymax-ymin)],color=180
+oplot,[-525,-515],[ymin+0.7*(ymax-ymin),ymin+0.7*(ymax-ymin)],color=240
+
+
+tvlct,r_cgmw,g_cgmw,b_cgmw
+for n=0,nstage-1 do begin
+polyfill,[stageb(n),stageb(n+1),stageb(n+1),stageb(n)],[ymax,ymax,topbar,topbar],color=n
+endfor
+tvlct,r_39,g_39,b_39
+
+oplot,[xmin,xmax],[topbar,topbar]
+for n=1,nstage-1 do begin
+oplot,[stageb(n),stageb(n)],[topbar,ymax]
+endfor
+
+for n=0,nstage-1 do begin
+xyouts,(stageb(n)+stageb(n+1))/2.0,topbar+dtopbar,alignment=0.5,stagen(n),charsize=0.7
+endfor
+
+device,/close
+
+
+; Here is the plot of the contributions to GMST over time:
+
+device,filename='gmstcont_time.eps',/encapsulate,/color,set_font='Helvetica',xsize=7,ysize=5,/inches
+
+xmin=-550
+xmax=0
+
+ymin=-5
+ymax=15
+
+
+topbar=ymin+(ymax-ymin)*33.0/35.0
+dtopbar=(ymax-ymin)*0.6/35.0
+
+
+plot,dates2,my_tempebmav(0,*,pe),yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',psym=2,/nodata,ytitle='Contributions to GMST [degrees C]',title='Contributions to GMST',ystyle=1,xstyle=1
+
+;;;;;;;;;;;;;
+
+for n=nstart,ndates-1 do begin
+plots,dates2(n),my_tempebmav(0,n,pe),color=0,psym=8,symsize=0.5
+endfor ; end n
+
+for n=nstart,ndates-2 do begin
+oplot,[dates2(n),dates2[n+1]],[my_tempebmav(0,n,pe),my_tempebmav(0,n+1,pe)],thick=3,color=0
+oplot,[dates2(n),dates2[n+1]],[my_tempebmav(2,n,pe),my_tempebmav(2,n+1,pe)],thick=3,color=60
+oplot,[dates2(n),dates2[n+1]],[my_tempebmav(3,n,pe),my_tempebmav(3,n+1,pe)],thick=3,color=120
+oplot,[dates2(n),dates2[n+1]],[my_tempebmav(5,n,pe),my_tempebmav(5,n+1,pe)],thick=3,color=180
+;oplot,[dates2(n),dates2[n+1]],[my_tempebmav(5,n,pe),my_tempebmav(5,n+1,pe)],thick=3,color=200
+;oplot,[dates2(n),dates2[n+1]],[climav(n,pe,0)-climav(0,pe,0),climav(n+1,pe,0)-climav(0,pe,0)],thick=3,color=250
+
+
+endfor
+
+
+
+xyouts,-500,ymin+0.85*(ymax-ymin),'HadCM3L ['+exproot(0,pe)+']'
+xyouts,-500,ymin+0.8*(ymax-ymin),'Planetary albedo',color=60
+xyouts,-500,ymin+0.75*(ymax-ymin),'Emissivity',color=120
+xyouts,-500,ymin+0.7*(ymax-ymin),'Solar constant',color=180
+
+plots,-520,ymin+0.85*(ymax-ymin),psym=8,symsize=0.5,color=0
+oplot,[-525,-515],[ymin+0.8*(ymax-ymin),ymin+0.8*(ymax-ymin)],color=60
+oplot,[-525,-515],[ymin+0.75*(ymax-ymin),ymin+0.75*(ymax-ymin)],color=120
+oplot,[-525,-515],[ymin+0.7*(ymax-ymin),ymin+0.7*(ymax-ymin)],color=180
+
+
+tvlct,r_cgmw,g_cgmw,b_cgmw
+for n=0,nstage-1 do begin
+polyfill,[stageb(n),stageb(n+1),stageb(n+1),stageb(n)],[ymax,ymax,topbar,topbar],color=n
+endfor
+tvlct,r_39,g_39,b_39
+
+oplot,[xmin,xmax],[topbar,topbar]
+for n=1,nstage-1 do begin
+oplot,[stageb(n),stageb(n)],[topbar,ymax]
+endfor
+
+for n=0,nstage-1 do begin
+xyouts,(stageb(n)+stageb(n+1))/2.0,topbar+dtopbar,alignment=0.5,stagen(n),charsize=0.7
+endfor
+
+device,/close
 
 endif
 
@@ -2031,18 +2189,7 @@ endif ; end do gregory plot
 
 
 
-nstage=10
-stageb=fltarr(nstage+1)
-stageb(*)=-1.0*[0,66.0,145.0,201.3,251.902,298.9,358.9,419.2,443.8,485.4,541.0]
-stagen=strarr(nstage)
-stagen(*)=['Cenozoic','Cretaceous','Jurassic','Triassic','Permian','Carb.','Devonian','Sil.','Ord.','Cambrian']
 
-r_cgmw=r_39
-g_cgmw=g_39
-b_cgmw=b_39
-r_cgmw(0:nstage-1)=[242,127,52,129,240,103,203,179,0,127]
-g_cgmw(0:nstage-1)=[249,198,178,43,64,165,140,225,146,160]
-b_cgmw(0:nstage-1)=[29,78,201,146,40,153,55,182,112,86]
 
 
 if (do_gmst_plot eq 1) then begin
