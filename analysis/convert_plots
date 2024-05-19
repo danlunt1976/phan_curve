@@ -53,7 +53,9 @@
 #done
 #done
 
-for file in gmstcont_time polampcont_time ; do
+#for file in gmstcont_time polampcont_time ; do
+
+for file in seasxtemp_cmmt_scatter seasxtemp_wmmt_scatter ; do
 gs -dSAFER -dEPSCrop -r600 -sDEVICE=pngalpha -o ${file}.png ${file}.eps
 done
 

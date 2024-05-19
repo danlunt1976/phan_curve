@@ -2,7 +2,6 @@ pro time
 
 set_plot,'ps'
 !P.FONT=0
-
 loadct,0
 tvlct,r_0,g_0,b_0,/get
 
@@ -48,6 +47,8 @@ do_readsolar=1 ; read solar forcing and albedo
   do_grads_plot=1
 
 do_ebmaprp=1
+
+do_seas=1
 
 do_textfile1=0 ; textfile of proxies for Emily
 do_textfile2=0 ; textfile of proxies for Chris
@@ -124,9 +125,10 @@ if (read_all_clims eq 1) then begin
 readfile(*,*)=1
 readfile(*,6)=0 ; tflm for Shufeng no longer stored
 endif else begin
-readfile(*,4)=1
+;readfile(*,4)=1
 ;readfile(*,4:5)=1
-;readfile(*,9)=1 ; add this back if Vadles (2021) needed.
+;readfile(*,9)=1 ; add this back if Valdes (2021) needed.
+readfile(*,5)=1
 ;;;;;;;; *******************************
 ; missing tfks files
 ;tfks_missing=[21,49,51]-1
@@ -1094,6 +1096,24 @@ temp_judd(n)=my_line(2)
 endfor
 close,1
 
+line=''
+dum=''
+nrows_judd2=85
+temp_judd2=fltarr(nrows_judd2)
+dates_judd2=fltarr(nrows_judd2)
+close,1
+openr,1,'pal_data/PhanDA_29Feb24.csv'
+readf,1,dum
+for n=0,nrows_judd2-1 do begin
+;print,n
+readf,1,line
+;print,line
+my_line=strsplit(line,',',/EXTRACT,/PRESERVE_NULL)
+temp_judd2(n)=my_line(6)
+dates_judd2(n)=my_line(3)
+endfor
+close,1
+dates_judd2=dates_judd2*(-1.0)
 
 line=''
 close,1
@@ -1208,7 +1228,6 @@ ymaxp=[45,26]
 
 
 
-climweight=fltarr(nxmax,nymax,ndates,nvar)
 climweight_lat=fltarr(nymax,nvar)
 
 for v=0,nvar-1 do begin
@@ -1355,6 +1374,182 @@ endfor
 endif ; end do_clims
 
 
+if (do_seas eq 1) then begin
+
+nmonth=12
+monthname=['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec']
+
+climseas=fltarr(nxmax,nymax,ndates,nexp,nmonth)
+wmmt=fltarr(nxmax,nymax,ndates,nexp)
+cmmt=fltarr(nxmax,nymax,ndates,nexp)
+nthresh=7
+my_thresh=fltarr(nthresh)
+my_thresh(*)=[20,25,30,35,40,45,50]
+colthresh=intarr(nthresh)
+colthresh(*)=[5,45,85,125,165,205,245]
+wmmt_lt=fltarr(ndates,nexp,nthresh)
+cmmt_lt=fltarr(ndates,nexp,nthresh)
+
+
+
+for e=0,nexp-1 do begin
+for n=nstart,ndates-1 do begin
+v=0
+
+if (readfile(n,e) eq 1) then begin
+
+for m=0,nmonth-1 do begin
+
+if (readtype(n,e) eq 1) then begin
+data_filename=root(n,e)+'/'+expnamel(n,e)+'/climate/'+expnamel(n,e)+climtag(v)+'cl'+monthname(m)+'.nc'
+endif
+
+print,readtype(n,e),n,data_filename
+id1=ncdf_open(data_filename)
+ncdf_varget,id1,climname(v),dummy
+ncdf_close,id1
+climseas(*,*,n,e,m)=dummy
+
+endfor
+
+for j=0,ny-1 do begin
+for i=0,nx-1 do begin
+wmmt(i,j,n,e)=max(climseas(i,j,n,e,*))
+cmmt(i,j,n,e)=min(climseas(i,j,n,e,*))
+endfor
+endfor
+
+for t=0,nthresh-1 do begin
+
+mymeanwm=0.0
+mymeancm=0.0
+mycoun=0.0
+for j=0,ny-1 do begin
+for i=0,nx-1 do begin
+if (lats(j) gt -30 and lats(j) lt 30 and masks(i,j,n) eq 1) then begin
+
+mymeanwm=mymeanwm+(wmmt(i,j,n,e) lt (my_thresh(t) +273.15))*weight_lat(j)
+mymeancm=mymeancm+(cmmt(i,j,n,e) lt (my_thresh(t) +273.15))*weight_lat(j)
+mycoun=mycoun+weight_lat(j)
+
+endif
+endfor
+endfor
+
+wmmt_lt(n,e,t)=mymeanwm/mycoun
+cmmt_lt(n,e,t)=mymeancm/mycoun
+
+
+endfor
+
+
+
+
+
+endif ; end if readfile
+
+endfor ; end n
+endfor ; end e
+
+mmtname=strarr(2)
+mmtname(*)=['wmmt','cmmt']
+
+for mmt=0,1 do begin
+
+device,filename='seas_time_'+mmtname(mmt)+'.eps',/encapsulate,/color,set_font='Helvetica',xsize=7,ysize=5,/inches
+
+xmin=-550
+xmax=0
+ymin=0
+ymax=1
+
+topbar=ymin+(ymax-ymin)*33.0/35.0
+dtopbar=(ymax-ymin)*0.6/35.0
+
+
+plot,dates2,wmmt_lt(*,0,0),yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',ytitle='Fraction above threshold',ystyle=1,xstyle=1,/nodata
+
+
+for t=0,nthresh-1 do begin
+if (mmt eq 0) then begin
+oplot,dates2,wmmt_lt(*,pt,t),color=colthresh(t),thick=3
+endif
+if (mmt eq 1) then begin
+oplot,dates2,cmmt_lt(*,pt,t),color=colthresh(t),thick=3
+endif
+endfor
+
+
+oplot,[xmin,xmax],[topbar,topbar]
+for n=1,nstage-1 do begin
+oplot,[stageb(n),stageb(n)],[topbar,ymax]
+endfor
+
+for n=0,nstage-1 do begin
+xyouts,(stageb(n)+stageb(n+1))/2.0,topbar+dtopbar,alignment=0.5,stagen(n),charsize=0.7
+endfor
+
+
+for t=0,nthresh-1 do begin
+oplot,[-500,-480],[0.5-t*0.1,0.5-t*0.1],color=colthresh(t),thick=3
+xyouts,-450,0.5-t*0.1-0.02,strtrim(my_thresh(t),2),color=colthresh(t)
+endfor
+
+
+device,/close
+
+endfor
+
+ymin=0
+ymax=1
+xmin=5
+xmax=35
+
+device,filename='seasxtemp_cmmt_scatter.eps',/encapsulate,/color,set_font='Helvetica'
+
+plot,climav(*,pt,0),cmmt_lt(*,pt,2),yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='global mean',psym=2,/nodata,ytitle='fraction below CMMT threshold',title='GMST versus fraction CMMT',ystyle=1,xstyle=1
+
+for t=0,nthresh-1 do begin
+for n=nstart,ndates-1 do begin
+   plots,climav(n,pt,0),cmmt_lt(n,pt,t),color=colthresh(t),psym=8,symsize=1.5
+endfor
+endfor
+
+dy=0.05
+
+for t=0,nthresh-1 do begin
+oplot,[30,32],[0.5-t*dy,0.5-t*dy],color=colthresh(t),thick=3
+xyouts,33,0.5-t*dy-0.01,strtrim(string(my_thresh(t),format='(F4.1)'),2),color=colthresh(t)
+endfor
+
+device,/close
+
+device,filename='seasxtemp_wmmt_scatter.eps',/encapsulate,/color,set_font='Helvetica'
+
+plot,climav(*,pt,0),wmmt_lt(*,pt,2),yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='global mean',psym=2,/nodata,ytitle='fraction below WMMT threshold',title='GMST versus fraction WMMT',ystyle=1,xstyle=1
+
+for t=0,nthresh-1 do begin
+for n=nstart,ndates-1 do begin
+   plots,climav(n,pt,0),wmmt_lt(n,pt,t),color=colthresh(t),psym=8,symsize=1.5
+endfor
+endfor
+
+for t=0,nthresh-1 do begin
+oplot,[30,32],[0.5-t*dy,0.5-t*dy],color=colthresh(t),thick=3
+xyouts,33,0.5-t*dy-0.01,strtrim(string(my_thresh(t),format='(F4.1)'),2),color=colthresh(t)
+endfor
+
+
+
+device,/close
+
+
+
+
+
+endif ; end do_seas
+
+stop
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; EBM and APRP
@@ -1768,7 +1963,7 @@ device,/close
 endif
 
 
-stop
+;stop
 
 
 
@@ -2756,12 +2951,13 @@ if (do_clim_plot eq 1) then begin
 ; egu is tfke and tfks and ScoteseSmoothed
 ; pap is tfke and ScoteseSmoothed and Winghuber and Judd
 ; cmo is tfke and Scotese02
+; wmt is tfke, tfks, Scotese02, and ScoteseSmoothed and Winghuber and Judd (new)
 
-ntype=7
-mytypename=['new','cmp','pro','bot','egu','pap','cmo']
+ntype=8
+mytypename=['new','cmp','pro','bot','egu','pap','cmo','wmt']
 
 colwin=80
-coljud=200
+coljud=100
 colsco=250
 mycol=0
 mycot=210
@@ -2777,7 +2973,7 @@ xmax=0
 ymin=yminc(v)
 ymax=ymaxc(v)
 
-if ((t eq 2 or t eq 3 or t eq 4 or t eq 5) and v eq 0) then begin
+if ((t eq 2 or t eq 3 or t eq 4 or t eq 5 or t eq 7) and v eq 0) then begin
 ymin=5
 ymax=40
 endif
@@ -2793,7 +2989,7 @@ dtopbar=(ymax-ymin)*0.6/35.0
 
 plot,dates2,climav(*,0,v),yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',psym=2,/nodata,ytitle=climnametitle(v)+' [degrees C]',ystyle=1,xstyle=1
 
-if (t eq 5) then begin
+if (t eq 5 or t eq 7) then begin
 br=240
 co=255
 ;tvlct,r_0,g_0,b_0
@@ -2837,7 +3033,7 @@ endif
 endfor
 endif
 
-if (t eq 6) then begin
+if (t eq 6 or t eq 7) then begin
 ; plot scotese02 model points
 for e=0,nexp-1 do begin
 if (e eq ps) then begin
@@ -2849,7 +3045,7 @@ endif
 ; plot hadcm3l (pe) points
 plots,dates2(n),climav(n,pe,v),color=mycol,psym=8,symsize=0.5
 
-if (t eq 3 or t eq 4) then begin
+if (t eq 3 or t eq 4 or t eq 7) then begin
 ; plot tuned points
 plots,dates2(n),climav(n,pt,v),color=mycot,psym=6,symsize=0.5
 endif
@@ -2870,7 +3066,7 @@ endfor
 endif
 
 ; plot scotese02 runs
-if (t eq 6) then begin
+if (t eq 6 or t eq 7) then begin
 for e=0,nexp-1 do begin
 if (e eq ps) then begin
 oplot,dates2(*),climav(*,e,v),thick=3,color=colexp(e)
@@ -2881,7 +3077,7 @@ endif
 ; plot hadcm3l (pe) curve
 oplot,dates2(*),climav(*,pe,v),thick=3,color=mycol
 
-if (t eq 3 or t eq 4) then begin
+if (t eq 3 or t eq 4 or t eq 7) then begin
 ; plot tuned curve
 oplot,dates2(*),climav(*,pt,v),thick=3,color=mycot
 endif
@@ -2932,11 +3128,19 @@ oplot,dates2,temp_scot1m_interp,color=colsco,thick=3
 ;oplot,dates_wing,temp_wing,color=colwin,thick=3
 endif
 
-if (v eq 0 and t eq 5) then begin
+if (v eq 0 and (t eq 5)) then begin
 ; for paper
 oplot,dates2,temp_scot1m_interp,color=colsco,thick=3
 oplot,dates_wing,temp_wing,color=colwin,thick=3
 oplot,dates_judd,temp_judd,color=coljud,thick=3
+endif
+
+if (v eq 0 and (t eq 7)) then begin
+; for paper
+oplot,dates2,temp_scot1m_interp,color=colsco,thick=3
+oplot,dates_wing,temp_wing,color=colwin,thick=3
+oplot,dates_judd,temp_judd,color=coljud,thick=3,linestyle=1
+oplot,dates_judd2,temp_judd2,color=coljud,thick=3
 endif
 
 
@@ -2955,12 +3159,12 @@ plots,-520,12,psym=8,symsize=0.5
 oplot,[-510,-530],[12,12],thick=3
 endif
 
-if (v eq 0 and (t eq 2 or t eq 3 or t eq 4 or t eq 5 or t eq 6)) then begin
+if (v eq 0 and (t eq 2 or t eq 3 or t eq 4 or t eq 5 or t eq 6 or t eq 7)) then begin
 
 
 x1=-300
 y1=8
-if (t eq 5 or t eq 6) then begin
+if (t eq 5 or t eq 6 or t eq 7) then begin
 x1=-230
 y1=10
 endif
@@ -2996,18 +3200,18 @@ xyouts,x1+dx2,y1-dy1-dy2,'Wing and Huber (2020)',color=colwin
 endif
 endif
 
-if (t eq 3 or t eq 4) then begin
+if (t eq 3 or t eq 4 or t eq 7) then begin
 oplot,[x1,x1+dx1],[y1+2*dy1,y1+2*dy1],color=mycot,thick=3
 ;plots,x1+dx1/2.0,y1,psym=8,symsize=0.5,color=colsco
 xyouts,x1+dx2,y1+2*dy1-dy2,'HadCM3L ['+exproot(0,pt)+']',color=mycot
 plots,x1+dx1/2.0,y1+dy1,color=mycot,psym=8,symsize=0.5
 endif
 
-if (t eq 5) then begin
+if (t eq 5 or t eq 7) then begin
 oplot,[x1,x1+dx1],[y1-dy1,y1-dy1],color=colwin,thick=3
 xyouts,x1+dx2,y1-dy1-dy2,'Wing and Huber (2020)',color=colwin
 oplot,[x1,x1+dx1],[y1-2*dy1,y1-2*dy1],color=coljud,thick=3
-xyouts,x1+dx2,y1-2*dy1-dy2,'Judd et al (in press)',color=coljud
+xyouts,x1+dx2,y1-2*dy1-dy2,'Judd et al (in prep)',color=coljud
 endif
 
 if (t eq 6) then begin
@@ -3015,6 +3219,10 @@ oplot,[x1,x1+dx1],[y1,y1],color=colexp(ps),thick=3
 xyouts,x1+dx2,y1-dy2,'Valdes et al (2021)',color=colexp(ps)
 endif
 
+if (t eq 7) then begin
+oplot,[x1,x1+dx1],[y1-3*dy1,y1-3*dy1],color=colexp(ps),thick=3
+xyouts,x1+dx2,y1-dy2-3*dy1,'Valdes et al (2021)',color=colexp(ps)
+endif
 
 endif
 
@@ -3033,6 +3241,8 @@ device,/close
 
 endfor
 endfor
+
+stop
 
 
 if (do_scattemp_plot eq 1) then begin
