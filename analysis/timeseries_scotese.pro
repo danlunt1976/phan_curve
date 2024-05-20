@@ -1454,6 +1454,14 @@ endfor ; end e
 mmtname=strarr(2)
 mmtname(*)=['wmmt','cmmt']
 
+
+cesmcmmt=fltarr(nthresh)
+cesmwmmt=fltarr(nthresh)
+cesmgmst=fltarr(nthresh)
+cesmwmmt(*)=[0,0,0,0,0.02067,0.1770,0.3702]
+cesmcmmt(*)=[0,0,0.004136,0.05463,0.2409,0.6124,0.9614]
+cesmgmst(*)=35.47
+
 for mmt=0,1 do begin
 
 device,filename='seas_time_'+mmtname(mmt)+'.eps',/encapsulate,/color,set_font='Helvetica',xsize=7,ysize=5,/inches
@@ -1503,7 +1511,7 @@ endfor
 ymin=0
 ymax=1
 xmin=5
-xmax=35
+xmax=40
 
 device,filename='seasxtemp_cmmt_scatter.eps',/encapsulate,/color,set_font='Helvetica'
 
@@ -1513,6 +1521,7 @@ for t=0,nthresh-1 do begin
 for n=nstart,ndates-1 do begin
    plots,climav(n,pt,0),cmmt_lt(n,pt,t),color=colthresh(t),psym=8,symsize=1.5
 endfor
+plots,cesmgmst(t),cesmcmmt(t),color=colthresh(t),psym=2,symsize=1.5
 endfor
 
 dy=0.05
@@ -1532,6 +1541,7 @@ for t=0,nthresh-1 do begin
 for n=nstart,ndates-1 do begin
    plots,climav(n,pt,0),wmmt_lt(n,pt,t),color=colthresh(t),psym=8,symsize=1.5
 endfor
+plots,cesmgmst(t),cesmwmmt(t),color=colthresh(t),psym=2,symsize=1.5
 endfor
 
 for t=0,nthresh-1 do begin
