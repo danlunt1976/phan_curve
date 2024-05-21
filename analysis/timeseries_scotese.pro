@@ -1248,7 +1248,7 @@ ice_mean=fltarr(ndates)
 
 for n=nstart,ndates-1 do begin
 ; read in lsm
-filename=root(0,0)+'/'+expnamel(n,0)+'/inidata/'+expnamel(n,0)+'.qrparm.mask.nc'
+filename=root(n,0)+'/'+expnamel(n,0)+'/inidata/'+expnamel(n,0)+'.qrparm.mask.nc'
 print,'Reading: '+filename
 id1=ncdf_open(filename)
 ncdf_varget,id1,'lsm',dummy
@@ -1261,7 +1261,7 @@ endfor
 
 for n=nstart,ndates-1 do begin
 ; read in ice
-filename=root(0,0)+'/'+expnamel(n,0)+'/inidata/'+expnamel(n,0)+'.qrfrac.type.nc'
+filename=root(n,0)+'/'+expnamel(n,0)+'/inidata/'+expnamel(n,0)+'.qrfrac.type.nc'
 print,'Reading: '+filename
 id1=ncdf_open(filename)
 ncdf_varget,id1,'field1391',dummy
@@ -1287,7 +1287,7 @@ for n=nstart,ndates-1 do begin
 
 for f=0,nflr-1 do begin
 ; read in fluxes
-filename=root(0,0)+'/'+expnamel(n,0)+'/climate/'+expnamel(n,0)+'a.pdclann.nc'
+filename=root(n,0)+'/'+expnamel(n,0)+'/climate/'+expnamel(n,0)+'a.pdclann.nc'
 print,'Reading: '+filename
 id1=ncdf_open(filename)
 ncdf_varget,id1,flname(f),dummy
@@ -1584,10 +1584,11 @@ varnameaprp=['tas1','tas2','cld','cld_c','cld_ga','cld_mu','clr','clr_ga','clr_m
 ; cld = cloud
 ; clr = clear-sky
 ; alf = surface albedo
-; mu = absorption
-; ga = scattering
-; alf_oc = ?
-; alf_clr = ?
+; _mu = absorption
+; _ga = scattering
+; _oc = cloud overcast
+; _clr = clear sky
+; _c = concentration
 modvar_aprp=fltarr(nxmax,nymax,ndates,nexp,nvaraprp)
 modvar_aprp_zonmean=fltarr(nymax,ndates,nexp,nvaraprp)
 
@@ -1596,17 +1597,20 @@ modvar_aprp_zonmean=fltarr(nymax,ndates,nexp,nvaraprp)
 for e=0,nexp-1 do begin
 for n=nstart,ndates-1 do begin
 if (readfile(n,e) eq 1) then begin
-for v=0,nvarebm-1 do begin
 
-thisvarname=varnameebm(v)
 filename=root(n,e)+'/'+expnamel(n,e)+'/climate/'+expnamel(n,e)+climtag(0)+'clann.nc'
 print,filename
 id1=ncdf_open(filename)
+
+for v=0,nvarebm-1 do begin
+
+thisvarname=varnameebm(v)
 ncdf_varget,id1,thisvarname,dummy
 modvar_2d(0:nx-1,0:ny-1,n,e,v)=dummy(*,*)
-ncdf_close,id1
 
 endfor
+
+ncdf_close,id1
 
 modvar_2d(0:nx-1,0:ny-1,n,e,1)=modvar_2d(0:nx-1,0:ny-1,n,e,2)-modvar_2d(0:nx-1,0:ny-1,n,e,1)
 modvar_2d(0:nx-1,0:ny-1,n,e,3)=modvar_2d(0:nx-1,0:ny-1,n,e,4)-modvar_2d(0:nx-1,0:ny-1,n,e,3)
@@ -1621,15 +1625,16 @@ if (do_aprp eq 1) then begin
 for e=0,nexp-1 do begin
 for n=nstart,ndates-1 do begin
 if (readfile(n,e) eq 1) then begin
-for v=0,nvaraprp-1 do begin
 
-thisvarname=varnameaprp(v)
 filename=aprproot+'/'+expnamel(n,e)+'_vs_tfkea.aprp.mm.nc'
 print,filename
 id1=ncdf_open(filename)
+
+for v=0,nvaraprp-1 do begin
+
+thisvarname=varnameaprp(v)
 ncdf_varget,id1,thisvarname,dummy
-dummy[dummy gt 1e10]=0
-ncdf_close,id1
+dummy[where(dummy gt 1e10)]=0.0
 
 for j=0,ny-1 do begin
 for i=0,nx-1 do begin
@@ -1639,11 +1644,16 @@ modvar_aprp_zonmean(j,n,e,v)=mean(modvar_aprp(*,j,n,e,v))
 endfor
 
 endfor ; end v
+
+ncdf_close,id1
+
 endif ; end readfile
 endfor ; end ndates
 endfor ; end exp
 
 endif ; end aprp
+
+;stop
 
 
 nder=7
@@ -1726,16 +1736,19 @@ endfor
 
 tvlct,r_39,g_39,b_39
 
-nebm=14
+nebm=19
 my_col=intarr(nebm)
-my_col(*)=[0,0,50,100,150,200,250,50,50,25,25,25,25,25]
+my_col(*)=[0,0,50,100,150,200,250,50,50,25,25,25,160,180,200,50,50,80,50]
 my_name=strarr(nebm)
-my_name(*)=['temp change (GCM)','temp change (EBM)','albedo','emmisivity','heat transport','solar','temp change (sum)','albedo (surface)','albedo (non-surface)','albedo (rev)','albedo (rev) (surface)','albedo (rev) (non-surface)','albedo (deriv)','albedo (aprp)']
+my_name(*)=['temp change (GCM)','temp change (EBM)','albedo','emmisivity','heat transport','solar','temp change (sum)','albedo (surface)','albedo (non-surface)','albedo (rev)','albedo (rev) (surface)','albedo (rev) (non-surface)','albedo (deriv)','albedo (aprp1)','albedo (aprp2)','albedo (APRP)','cloud (APRP)','clear sky (APRP)','surface albedo (APRP)']
 my_linstyle=intarr(nebm)
-my_linstyle(*)=[2,0,0,0,0,0,0,1,2,0,1,2,2,2]
+my_linstyle(*)=[2,0,0,0,0,0,0,1,2,0,1,2,0,0,0,0,2,1,1]
 ebm_do=intarr(nebm)
 ebm_do(*)=1
-ebm_do([9,10,11,12,13])=0
+ebm_do([9,10,11,12,13,14,15,16,17,18])=0
+aprp_do=intarr(nebm)
+aprp_do(*)=0
+aprp_do([1,2,3,4,5,15,16,17,18])=1
 
 my_tempebm=fltarr(ny,nebm,ndates,nexp)
 my_tempebmav=fltarr(nebm,ndates,nexp)
@@ -1781,6 +1794,7 @@ tempebm1sola2=(1.0/(emmi1*sigma)*(sola2*(1-albt1)+htra1))^0.25-273.15
 tempebm2albs1=(1.0/(emmi2*sigma)*(sola2*(1-(albt2+(albs1-albs2)))+htra2))^0.25-273.15
 
 tempebm2albt1=(1.0/(emmi2*sigma)*(sola2*(1-albt1)+htra2))^0.25-273.15
+
 tempebm2emmi1=(1.0/(emmi1*sigma)*(sola2*(1-albt2)+htra2))^0.25-273.15
 tempebm2htra1=(1.0/(emmi2*sigma)*(sola2*(1-albt2)+htra1))^0.25-273.15
 tempebm2sola1=(1.0/(emmi2*sigma)*(sola1*(1-albt2)+htra2))^0.25-273.15
@@ -1807,14 +1821,32 @@ my_tempebm(*,11,n,e)=-1*(tempebm1albt2-tempebm1albs2)
 ; use a differentition for albedo
 my_tempebm(*,12,n,e)=sola1/4.0*(emmi1*sigma)^(-0.25)*(sola1*(1-albt1) + htra1)^(-0.75)*(albt2-albt1)
 
+; use a differentition for albedo (opposite)
+my_tempebm(*,14,n,e)=sola2/4.0*(emmi2*sigma)^(-0.25)*(sola2*(1-albt2) + htra2)^(-0.75)*(albt2-albt1)
+
 
 ; FOR APRP:
 
 ; varnameaprp=['tas1','tas2','cld','cld_c','cld_ga','cld_mu','clr','clr_ga','clr_mu','alf','alf_clr','alf_oc']
 swnetdiff=modvar_aprp_zonmean(*,n,e,2)+modvar_aprp_zonmean(*,n,e,6)+modvar_aprp_zonmean(*,n,e,9)
+swcld=modvar_aprp_zonmean(*,n,e,2)
+swclr=modvar_aprp_zonmean(*,n,e,6)
+swalf=modvar_aprp_zonmean(*,n,e,9)
 
-; sue aprp and a differentiation for albedo
+
+; uae aprp and a differentiation for albedo
 my_tempebm(*,13,n,e)=0.25*(emmi1*sigma)^(-0.25)*(sola1*(1-albt1) + htra1)^(-0.75)*swnetdiff
+
+; use Seb's method
+tempebm2sw1=(1.0/(emmi2*sigma)*(  (sola2*(1-albt2)+swnetdiff)    + htra2))^0.25-273.1
+tempebm2cld1=(1.0/(emmi2*sigma)*(  (sola2*(1-albt2)+swcld)    + htra2))^0.25-273.15
+tempebm2clr1=(1.0/(emmi2*sigma)*(  (sola2*(1-albt2)+swclr)    + htra2))^0.25-273.15
+tempebm2alf1=(1.0/(emmi2*sigma)*(  (sola2*(1-albt2)+swalf)    + htra2))^0.25-273.15
+
+my_tempebm(*,15,n,e)=tempebm2sw1-tempebm2
+my_tempebm(*,16,n,e)=tempebm2cld1-tempebm2
+my_tempebm(*,17,n,e)=tempebm2clr1-tempebm2
+my_tempebm(*,18,n,e)=tempebm2alf1-tempebm2
 
 
 for dd=0,nebm-1 do begin
@@ -1822,7 +1854,6 @@ my_tempebmav(dd,n,e)=total(my_tempebm(*,dd,n,e)*weight_lat(*))
 my_tempebmhl(dd,n,e)=total(my_tempebm(*,dd,n,e)*weight_hlat(*))
 my_tempebmll(dd,n,e)=total(my_tempebm(*,dd,n,e)*weight_llat(*))
 my_tempebmpa(dd,n,e)=total(my_tempebm(*,dd,n,e)*weight_hlat(*))-total(my_tempebm(*,dd,n,e)*weight_llat(*))
-
 endfor
 
 
@@ -1904,13 +1935,29 @@ picname='fluxes/tmp_lat_change_aprp_'+expnamel(n,e)
 device,filename=picname+'.eps',/encapsulate,set_font='Helvetica',/color
 plot,[0,1],[0,1],yrange=my_yrange,xrange=[-90,90],ystyle=1,xstyle=1,title='Temperature  - '+expnamel(n,e),xtitle='latitude',ytitle='temp',/nodata
 
-oplot,lats(0:ny-1),my_tempebm(*,1,n,e),color=0,linestyle=0,thick=5
-oplot,lats(0:ny-1),my_tempebm(*,2,n,e),color=50,linestyle=0,thick=5
-oplot,lats(0:ny-1),my_tempebm(*,9,n,e),color=75,linestyle=0,thick=5
-oplot,lats(0:ny-1),my_tempebm(*,12,n,e),color=100,linestyle=0,thick=5
-oplot,lats(0:ny-1),my_tempebm(*,13,n,e),color=125,linestyle=0,thick=5
-oplot,lats(0:ny-1),my_tempebm(*,5,n,e),color=200,linestyle=0,thick=5
-oplot,lats(0:ny-1),my_tempebm(*,7,n,e),color=50,linestyle=1,thick=5
+xyouts,30,divstart,'GMT',alignment=1
+xyouts,50,divstart,'AMP',alignment=1
+
+ddd=0
+for dd=0,nebm-1 do begin
+if (aprp_do(dd) eq 1) then begin
+
+oplot,lats(0:ny-1),my_tempebm(*,dd,n,e),color=my_col(dd),linestyle=my_linstyle(dd),thick=5
+xyouts,-33,divstart-(ddd+1)*div,my_name(dd),color=my_col(dd)
+oplot,[-50,-35],[divstart-(ddd+1)*div,divstart-(ddd+1)*div],color=my_col(dd),linestyle=my_linstyle(dd),thick=5
+
+xyouts,30,divstart-(ddd+1)*div,strtrim(string(my_tempebmav(dd,n,e),format='(F4.1)'),2),color=my_col(dd),alignment=1
+xyouts,50,divstart-(ddd+1)*div,strtrim(string(my_tempebmpa(dd,n,e),format='(F5.1)'),2),color=my_col(dd),alignment=1
+
+ddd=ddd+1
+endif
+endfor
+
+dd=1
+oplot,[60,90],[my_tempebmhl(dd,n,e),my_tempebmhl(dd,n,e)],color=0,linestyle=2
+oplot,[-90,-60],[my_tempebmhl(dd,n,e),my_tempebmhl(dd,n,e)],color=0,linestyle=2
+oplot,[-30,30],[my_tempebmll(dd,n,e),my_tempebmll(dd,n,e)],color=0,linestyle=2
+oplot,[-90,90],[my_tempebmav(dd,n,e),my_tempebmav(dd,n,e)],color=0,linestyle=1
 
 device,/close
 
