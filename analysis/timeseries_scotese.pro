@@ -30,25 +30,25 @@ read_all_clims=0 ; if 0 [0=default] then only read in more recent simulations
 do_clims=1 ; read in model output
 do_readbounds=1 ; read in mask and ice
 do_readsolar=1 ; read solar forcing and albedo
-  do_ff_model=1 ; forcing/feedback model               
-  do_temp_plot=1 ; global mean from proxies
+  do_ff_model=0 ; forcing/feedback model               
+  do_temp_plot=0 ; global mean from proxies
   do_co2_plot=0 ; prescribed co2 (requires do_ff_model)
   do_lsm_plot=0 ; prescribed land area
   do_solar_plot=0 ; prescribed solar forcing
   do_ice_plot=0 ; prescribed ice sheets
-  do_forcings_plot=1 ; prescribed forcings in Wm-2
-  do_forctemps_plot=1 ; prescribed forcings in oC
+  do_forcings_plot=0 ; prescribed forcings in Wm-2
+  do_forctemps_plot=0 ; prescribed forcings in oC
   do_polamp_plot=1 ;  plot polamp
-  do_clim_plot=1 ;  plot new vs old, EBM, MDC, and resid
+  do_clim_plot=0 ;  plot new vs old, EBM, MDC, and resid
                  ;  (requires ff_model) 
   do_scattemp_plot=0
   do_climsens_plot=0
   do_ess_plot=0
-  do_grads_plot=1
+  do_grads_plot=0 ; hoffmuller plot
 
-do_ebmaprp=1
-
-do_seas=1
+  do_ebm=1 ; EBM model
+  do_aprp=1 ; APRP
+  do_seas=0
 
 do_textfile1=0 ; textfile of proxies for Emily
 do_textfile2=0 ; textfile of proxies for Chris
@@ -125,10 +125,10 @@ if (read_all_clims eq 1) then begin
 readfile(*,*)=1
 readfile(*,6)=0 ; tflm for Shufeng no longer stored
 endif else begin
-;readfile(*,4)=1
-;readfile(*,4:5)=1
+readfile(*,4)=1 ; just foster runs tfke
+;readfile(*,4:5)=1 ; tfke and tkfs
 ;readfile(*,9)=1 ; add this back if Valdes (2021) needed.
-readfile(*,5)=1
+;readfile(*,5)=1 ; just tuned runs tfks
 ;;;;;;;; *******************************
 ; missing tfks files
 ;tfks_missing=[21,49,51]-1
@@ -1559,38 +1559,51 @@ device,/close
 
 endif ; end do_seas
 
-stop
+;stop
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; EBM and APRP
 
-if (do_ebmaprp eq 1) then begin
+if (do_ebm eq 1) then begin
 
 sigma=5.67e-8
 
+; for ebm
 nvarebm=8
 varnameebm=strarr(nvarebm)
 ;varnameebm=['ts','rlus','rlds','rsus','rsds','rlut','rsut','rsdt'] ; OUT
 ;varnameebm=['ts','rlns','rlds','rsns','rsds','rlut','rsut','rsdt'] ; IN
 varnameebm=['temp_mm_srf','longwave_mm_s3_srf','ilr_mm_s3_srf','solar_mm_s3_srf','downSol_Seaice_mm_s3_srf','olr_mm_s3_TOA','upSol_mm_s3_TOA','downSol_mm_TOA']
-
 modvar_2d=fltarr(nxmax,nymax,ndates,nexp,nvarebm)
+
+; for aprp
+aprproot='/export/silurian/array-01/wb19586/aprp_bridge/tfke_vs_PI'
+nvaraprp=12
+varnameaprp=strarr(nvaraprp)
+varnameaprp=['tas1','tas2','cld','cld_c','cld_ga','cld_mu','clr','clr_ga','clr_mu','alf','alf_clr','alf_oc']
+; cld = cloud
+; clr = clear-sky
+; alf = surface albedo
+; mu = absorption
+; ga = scattering
+; alf_oc = ?
+; alf_clr = ?
+modvar_aprp=fltarr(nxmax,nymax,ndates,nexp,nvaraprp)
+modvar_aprp_zonmean=fltarr(nymax,ndates,nexp,nvaraprp)
+
+
 
 for e=0,nexp-1 do begin
 for n=nstart,ndates-1 do begin
 if (readfile(n,e) eq 1) then begin
-
 for v=0,nvarebm-1 do begin
 
 thisvarname=varnameebm(v)
-
 filename=root(n,e)+'/'+expnamel(n,e)+'/climate/'+expnamel(n,e)+climtag(0)+'clann.nc'
 print,filename
 id1=ncdf_open(filename)
 ncdf_varget,id1,thisvarname,dummy
-
 modvar_2d(0:nx-1,0:ny-1,n,e,v)=dummy(*,*)
-
 ncdf_close,id1
 
 endfor
@@ -1601,6 +1614,37 @@ modvar_2d(0:nx-1,0:ny-1,n,e,3)=modvar_2d(0:nx-1,0:ny-1,n,e,4)-modvar_2d(0:nx-1,0
 endif
 endfor
 endfor
+
+
+if (do_aprp eq 1) then begin
+
+for e=0,nexp-1 do begin
+for n=nstart,ndates-1 do begin
+if (readfile(n,e) eq 1) then begin
+for v=0,nvaraprp-1 do begin
+
+thisvarname=varnameaprp(v)
+filename=aprproot+'/'+expnamel(n,e)+'_vs_tfkea.aprp.mm.nc'
+print,filename
+id1=ncdf_open(filename)
+ncdf_varget,id1,thisvarname,dummy
+dummy[dummy gt 1e10]=0
+ncdf_close,id1
+
+for j=0,ny-1 do begin
+for i=0,nx-1 do begin
+modvar_aprp(i,j,n,e,v)=mean(dummy(i,j,0:11))
+endfor
+modvar_aprp_zonmean(j,n,e,v)=mean(modvar_aprp(*,j,n,e,v))
+endfor
+
+endfor ; end v
+endif ; end readfile
+endfor ; end ndates
+endfor ; end exp
+
+endif ; end aprp
+
 
 nder=7
 modvar_2d_der=fltarr(nx,ny,ndates,nexp,nder)
@@ -1682,16 +1726,16 @@ endfor
 
 tvlct,r_39,g_39,b_39
 
-nebm=12
+nebm=14
 my_col=intarr(nebm)
-my_col(*)=[0,0,50,100,150,200,250,50,50,25,25,25]
+my_col(*)=[0,0,50,100,150,200,250,50,50,25,25,25,25,25]
 my_name=strarr(nebm)
-my_name(*)=['temp change (GCM)','temp change (EBM)','albedo','emmisivity','heat transport','solar','temp change (sum)','albedo (surface)','albedo (non-surface)','albedo (rev)','albedo (rev) (surface)','albedo (rev) (non-surface)']
+my_name(*)=['temp change (GCM)','temp change (EBM)','albedo','emmisivity','heat transport','solar','temp change (sum)','albedo (surface)','albedo (non-surface)','albedo (rev)','albedo (rev) (surface)','albedo (rev) (non-surface)','albedo (deriv)','albedo (aprp)']
 my_linstyle=intarr(nebm)
-my_linstyle(*)=[2,0,0,0,0,0,0,1,2,0,1,2]
+my_linstyle(*)=[2,0,0,0,0,0,0,1,2,0,1,2,2,2]
 ebm_do=intarr(nebm)
 ebm_do(*)=1
-ebm_do([9,10,11])=0
+ebm_do([9,10,11,12,13])=0
 
 my_tempebm=fltarr(ny,nebm,ndates,nexp)
 my_tempebmav=fltarr(nebm,ndates,nexp)
@@ -1759,6 +1803,19 @@ my_tempebm(*,9,n,e)=-1*(tempebm1albt2-tempebm1)
 my_tempebm(*,10,n,e)=-1*(tempebm1albs2-tempebm1)
 ; similar to 8
 my_tempebm(*,11,n,e)=-1*(tempebm1albt2-tempebm1albs2)
+
+; use a differentition for albedo
+my_tempebm(*,12,n,e)=sola1/4.0*(emmi1*sigma)^(-0.25)*(sola1*(1-albt1) + htra1)^(-0.75)*(albt2-albt1)
+
+
+; FOR APRP:
+
+; varnameaprp=['tas1','tas2','cld','cld_c','cld_ga','cld_mu','clr','clr_ga','clr_mu','alf','alf_clr','alf_oc']
+swnetdiff=modvar_aprp_zonmean(*,n,e,2)+modvar_aprp_zonmean(*,n,e,6)+modvar_aprp_zonmean(*,n,e,9)
+
+; sue aprp and a differentiation for albedo
+my_tempebm(*,13,n,e)=0.25*(emmi1*sigma)^(-0.25)*(sola1*(1-albt1) + htra1)^(-0.75)*swnetdiff
+
 
 for dd=0,nebm-1 do begin
 my_tempebmav(dd,n,e)=total(my_tempebm(*,dd,n,e)*weight_lat(*))
@@ -1835,6 +1892,28 @@ oplot,[-30,30],[my_tempebmll(dd,n,e),my_tempebmll(dd,n,e)],color=0,linestyle=2
 oplot,[-90,90],[my_tempebmav(dd,n,e),my_tempebmav(dd,n,e)],color=0,linestyle=1
 
 device,/close
+
+
+
+; And now the beast plot (APRP):
+my_yrange=[-20,60]
+divstart=my_yrange(0)+0.95*(my_yrange(1)-my_yrange(0))
+div=0.045*(my_yrange(1)-my_yrange(0))
+
+picname='fluxes/tmp_lat_change_aprp_'+expnamel(n,e)
+device,filename=picname+'.eps',/encapsulate,set_font='Helvetica',/color
+plot,[0,1],[0,1],yrange=my_yrange,xrange=[-90,90],ystyle=1,xstyle=1,title='Temperature  - '+expnamel(n,e),xtitle='latitude',ytitle='temp',/nodata
+
+oplot,lats(0:ny-1),my_tempebm(*,1,n,e),color=0,linestyle=0,thick=5
+oplot,lats(0:ny-1),my_tempebm(*,2,n,e),color=50,linestyle=0,thick=5
+oplot,lats(0:ny-1),my_tempebm(*,9,n,e),color=75,linestyle=0,thick=5
+oplot,lats(0:ny-1),my_tempebm(*,12,n,e),color=100,linestyle=0,thick=5
+oplot,lats(0:ny-1),my_tempebm(*,13,n,e),color=125,linestyle=0,thick=5
+oplot,lats(0:ny-1),my_tempebm(*,5,n,e),color=200,linestyle=0,thick=5
+oplot,lats(0:ny-1),my_tempebm(*,7,n,e),color=50,linestyle=1,thick=5
+
+device,/close
+
 
 endif
 endfor
@@ -1973,7 +2052,7 @@ device,/close
 endif
 
 
-;stop
+stop
 
 
 
@@ -3354,7 +3433,7 @@ endif
 
 if (do_grads_plot eq 1) then begin
 
-; Grads PLOT
+; Grads hoffmuller PLOT
 
 device,filename='grads_time.eps',/encapsulate,/color,set_font='Helvetica',xsize=7,ysize=5,/inches
 
