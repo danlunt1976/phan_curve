@@ -1738,17 +1738,17 @@ tvlct,r_39,g_39,b_39
 
 nebm=19
 my_col=intarr(nebm)
-my_col(*)=[0,0,50,100,150,200,250,50,50,25,25,25,160,180,200,50,50,80,50]
+my_col(*)=[0,0,50,150,200,250,250,50,50,50,50,50,50,50,50,50,70,90,110]
 my_name=strarr(nebm)
 my_name(*)=['temp change (GCM)','temp change (EBM)','albedo','emmisivity','heat transport','solar','temp change (sum)','albedo (surface)','albedo (non-surface)','albedo (rev)','albedo (rev) (surface)','albedo (rev) (non-surface)','albedo (deriv)','albedo (aprp1)','albedo (aprp2)','albedo (APRP)','cloud (APRP)','clear sky (APRP)','surface albedo (APRP)']
 my_linstyle=intarr(nebm)
-my_linstyle(*)=[2,0,0,0,0,0,0,1,2,0,1,2,0,0,0,0,2,1,1]
+my_linstyle(*)=[2,0,0,0,0,0,0,1,2,0,1,2,0,0,0,0,1,2,1]
 ebm_do=intarr(nebm)
 ebm_do(*)=1
-ebm_do([9,10,11,12,13,14,15,16,17,18])=0
+ebm_do([9:18])=0
 aprp_do=intarr(nebm)
 aprp_do(*)=0
-aprp_do([1,2,3,4,5,15,16,17,18])=1
+aprp_do([1,3,4,5,15,16,17,18])=1
 
 my_tempebm=fltarr(ny,nebm,ndates,nexp)
 my_tempebmav=fltarr(nebm,ndates,nexp)
@@ -1899,18 +1899,20 @@ plot,[0,1],[0,1],yrange=my_yrange,xrange=[-90,90],ystyle=1,xstyle=1,title='Tempe
 xyouts,30,divstart,'GMT',alignment=1
 xyouts,50,divstart,'AMP',alignment=1
 
+ddd=0
 for dd=0,nebm-1 do begin
 if (ebm_do(dd) eq 1) then begin
 
 oplot,lats(0:ny-1),my_tempebm(*,dd,n,e),color=my_col(dd),linestyle=my_linstyle(dd),thick=5
 
-xyouts,-33,divstart-(dd+1)*div,my_name(dd),color=my_col(dd)
-oplot,[-50,-35],[divstart-(dd+1)*div,divstart-(dd+1)*div],color=my_col(dd),linestyle=my_linstyle(dd),thick=5
+xyouts,-33,divstart-(ddd+1)*div,my_name(dd),color=my_col(dd)
+oplot,[-50,-35],[divstart-(ddd+1)*div,divstart-(ddd+1)*div],color=my_col(dd),linestyle=my_linstyle(dd),thick=5
 
-xyouts,30,divstart-(dd+1)*div,strtrim(string(my_tempebmav(dd,n,e),format='(F4.1)'),2),color=my_col(dd),alignment=1
+xyouts,30,divstart-(ddd+1)*div,strtrim(string(my_tempebmav(dd,n,e),format='(F4.1)'),2),color=my_col(dd),alignment=1
 
-xyouts,50,divstart-(dd+1)*div,strtrim(string(my_tempebmpa(dd,n,e),format='(F5.1)'),2),color=my_col(dd),alignment=1
+xyouts,50,divstart-(ddd+1)*div,strtrim(string(my_tempebmpa(dd,n,e),format='(F5.1)'),2),color=my_col(dd),alignment=1
 
+ddd=ddd+1
 endif
 
 endfor ; end dd
@@ -1977,6 +1979,8 @@ xmax=0
 ymin=-10
 ymax=25
 
+mydy=0.025
+myy=0.9
 
 topbar=ymin+(ymax-ymin)*33.0/35.0
 dtopbar=(ymax-ymin)*0.6/35.0
@@ -1989,29 +1993,22 @@ plot,dates2,my_tempebmpa(0,*,pe),yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='M
 for n=nstart,ndates-1 do begin
 plots,dates2(n),my_tempebmpa(0,n,pe),color=0,psym=8,symsize=0.5
 endfor ; end n
+oplot,dates2,my_tempebmpa(0,*,pe),thick=3,color=my_col(0)
+xyouts,-500,ymin+myy*(ymax-ymin),'HadCM3L ['+exproot(0,pe)+']',charsize=0.5
+plots,-520,ymin+myy*(ymax-ymin),psym=8,symsize=0.5,color=0
 
-for n=nstart,ndates-2 do begin
-oplot,[dates2(n),dates2[n+1]],[my_tempebmpa(0,n,pe),my_tempebmpa(0,n+1,pe)],thick=3,color=0
-oplot,[dates2(n),dates2[n+1]],[my_tempebmpa(2,n,pe),my_tempebmpa(2,n+1,pe)],thick=3,color=60
-oplot,[dates2(n),dates2[n+1]],[my_tempebmpa(3,n,pe),my_tempebmpa(3,n+1,pe)],thick=3,color=120
-oplot,[dates2(n),dates2[n+1]],[my_tempebmpa(5,n,pe),my_tempebmpa(5,n+1,pe)],thick=3,color=180
-oplot,[dates2(n),dates2[n+1]],[my_tempebmpa(4,n,pe),my_tempebmpa(4,n+1,pe)],thick=3,color=240
+ddd=0
+for dd=0,nebm-1 do begin
+if (aprp_do(dd) eq 1) then begin
+
+oplot,dates2,my_tempebmpa(dd,*,pe),thick=3,color=my_col(dd),linestyle=my_linstyle(dd)
+
+xyouts,-500,ymin+(myy-mydy*(ddd+1))*(ymax-ymin),my_name(dd),color=my_col(dd),charsize=0.5
+oplot,[-525,-505],[ymin+(myy-mydy*(ddd+1))*(ymax-ymin),ymin+(myy-mydy*(ddd+1))*(ymax-ymin)],color=my_col(dd),linestyle=my_linstyle(dd)
+
+ddd=ddd+1
+endif
 endfor
-
-
-
-xyouts,-500,ymin+0.9*(ymax-ymin),'HadCM3L ['+exproot(0,pe)+']'
-xyouts,-500,ymin+0.85*(ymax-ymin),'Planetary albedo',color=60
-xyouts,-500,ymin+0.8*(ymax-ymin),'Emissivity',color=120
-xyouts,-500,ymin+0.75*(ymax-ymin),'Solar constant',color=180
-xyouts,-500,ymin+0.7*(ymax-ymin),'Heat transport',color=240
-
-
-plots,-520,ymin+0.9*(ymax-ymin),psym=8,symsize=0.5,color=0
-oplot,[-525,-515],[ymin+0.85*(ymax-ymin),ymin+0.85*(ymax-ymin)],color=60
-oplot,[-525,-515],[ymin+0.8*(ymax-ymin),ymin+0.8*(ymax-ymin)],color=120
-oplot,[-525,-515],[ymin+0.75*(ymax-ymin),ymin+0.75*(ymax-ymin)],color=180
-oplot,[-525,-515],[ymin+0.7*(ymax-ymin),ymin+0.7*(ymax-ymin)],color=240
 
 
 tvlct,r_cgmw,g_cgmw,b_cgmw
@@ -2042,6 +2039,8 @@ xmax=0
 ymin=-5
 ymax=15
 
+mydy=0.025
+myy=0.9
 
 topbar=ymin+(ymax-ymin)*33.0/35.0
 dtopbar=(ymax-ymin)*0.6/35.0
@@ -2054,29 +2053,26 @@ plot,dates2,my_tempebmav(0,*,pe),yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='M
 for n=nstart,ndates-1 do begin
 plots,dates2(n),my_tempebmav(0,n,pe),color=0,psym=8,symsize=0.5
 endfor ; end n
+oplot,dates2,my_tempebmav(0,*,pe),thick=3,color=my_col(0)
+xyouts,-500,ymin+myy*(ymax-ymin),'HadCM3L ['+exproot(0,pe)+']',charsize=0.5
+plots,-520,ymin+myy*(ymax-ymin),psym=8,symsize=0.5,color=0
 
-for n=nstart,ndates-2 do begin
-oplot,[dates2(n),dates2[n+1]],[my_tempebmav(0,n,pe),my_tempebmav(0,n+1,pe)],thick=3,color=0
-oplot,[dates2(n),dates2[n+1]],[my_tempebmav(2,n,pe),my_tempebmav(2,n+1,pe)],thick=3,color=60
-oplot,[dates2(n),dates2[n+1]],[my_tempebmav(3,n,pe),my_tempebmav(3,n+1,pe)],thick=3,color=120
-oplot,[dates2(n),dates2[n+1]],[my_tempebmav(5,n,pe),my_tempebmav(5,n+1,pe)],thick=3,color=180
-;oplot,[dates2(n),dates2[n+1]],[my_tempebmav(5,n,pe),my_tempebmav(5,n+1,pe)],thick=3,color=200
-;oplot,[dates2(n),dates2[n+1]],[climav(n,pe,0)-climav(0,pe,0),climav(n+1,pe,0)-climav(0,pe,0)],thick=3,color=250
+ddd=0
+for dd=0,nebm-1 do begin
+if (aprp_do(dd) eq 1) then begin
 
+oplot,dates2,my_tempebmav(dd,*,pe),thick=3,color=my_col(dd),linestyle=my_linstyle(dd)
 
+xyouts,-500,ymin+(myy-mydy*(ddd+1))*(ymax-ymin),my_name(dd),color=my_col(dd),charsize=0.5
+oplot,[-525,-505],[ymin+(myy-mydy*(ddd+1))*(ymax-ymin),ymin+(myy-mydy*(ddd+1))*(ymax-ymin)],color=my_col(dd),linestyle=my_linstyle(dd)
+
+ddd=ddd+1
+endif
 endfor
 
 
 
-xyouts,-500,ymin+0.85*(ymax-ymin),'HadCM3L ['+exproot(0,pe)+']'
-xyouts,-500,ymin+0.8*(ymax-ymin),'Planetary albedo',color=60
-xyouts,-500,ymin+0.75*(ymax-ymin),'Emissivity',color=120
-xyouts,-500,ymin+0.7*(ymax-ymin),'Solar constant',color=180
 
-plots,-520,ymin+0.85*(ymax-ymin),psym=8,symsize=0.5,color=0
-oplot,[-525,-515],[ymin+0.8*(ymax-ymin),ymin+0.8*(ymax-ymin)],color=60
-oplot,[-525,-515],[ymin+0.75*(ymax-ymin),ymin+0.75*(ymax-ymin)],color=120
-oplot,[-525,-515],[ymin+0.7*(ymax-ymin),ymin+0.7*(ymax-ymin)],color=180
 
 
 tvlct,r_cgmw,g_cgmw,b_cgmw
