@@ -1569,11 +1569,11 @@ if (do_ebm eq 1) then begin
 sigma=5.67e-8
 
 ; for ebm
-nvarebm=8
+nvarebm=10
 varnameebm=strarr(nvarebm)
-;varnameebm=['ts','rlus','rlds','rsus','rsds','rlut','rsut','rsdt'] ; OUT
-;varnameebm=['ts','rlns','rlds','rsns','rsds','rlut','rsut','rsdt'] ; IN
-varnameebm=['temp_mm_srf','longwave_mm_s3_srf','ilr_mm_s3_srf','solar_mm_s3_srf','downSol_Seaice_mm_s3_srf','olr_mm_s3_TOA','upSol_mm_s3_TOA','downSol_mm_TOA']
+;varnameebm=['ts','rlus','rlds','rsus','rsds','rlut','rsut','rsdt','sh','lh'] ; OUT
+;varnameebm=['ts','rlns','rlds','rsns','rsds','rlut','rsut','rsdt','sh','lh'] ; IN
+varnameebm=['temp_mm_srf','longwave_mm_s3_srf','ilr_mm_s3_srf','solar_mm_s3_srf','downSol_Seaice_mm_s3_srf','olr_mm_s3_TOA','upSol_mm_s3_TOA','downSol_mm_TOA','sh_mm_hyb','lh_mm_srf']
 modvar_2d=fltarr(nxmax,nymax,ndates,nexp,nvarebm)
 
 ; for aprp
@@ -1656,27 +1656,16 @@ endif ; end aprp
 ;stop
 
 
-nder=7
+nder=8
 modvar_2d_der=fltarr(nx,ny,ndates,nexp,nder)
 dervar_2d_name=strarr(nder)
-dervar_2d_name=['Surface albedo','TOA albedo','Surface temperature','Derived surface temperature','Emissivity','Heat transport','TOA inbalance']
-dervar_2d_unit=['[0-1]','[0-1]','[K]','[K]','[0-1]','W/m2','W/m2']
-dervar_2d_shortname=['als','alt','tsm','tsd','emm','htr','inb']
+dervar_2d_name=['Surface albedo','TOA albedo','Surface temperature','Derived surface temperature','Emissivity','Heat transport','TOA inbalance','Surface inbalance']
 
-
-offset=fltarr(nder)
-offset(*)=[0,0,-273.15,-273.15,0,0,0]
-
-col_lims=fltarr(2,nder)
-col_lims(0,*)=[0,0,-30,-30,0,-100,-100]
-col_lims(1,*)=[1,1,40,40,1,100,100]
 
 for e=0,nexp-1 do begin
 for n=nstart,ndates-1 do begin
 if (readfile(n,e) eq 1) then begin
 
-
-;dervar_2d_name=['Surface albedo','TOA albedo','Surface temperature','Derived surface temperature','Emissivity','Heat transport','TOA inbalance']
 modvar_2d_der(*,*,n,e,0)=modvar_2d(*,*,n,e,3)/modvar_2d(*,*,n,e,4)
 modvar_2d_der(*,*,n,e,1)=modvar_2d(*,*,n,e,6)/modvar_2d(*,*,n,e,7)
 modvar_2d_der(*,*,n,e,2)=modvar_2d(*,*,n,e,0)
@@ -1684,6 +1673,7 @@ modvar_2d_der(*,*,n,e,3)=(modvar_2d(*,*,n,e,1)/sigma)^(0.25)
 modvar_2d_der(*,*,n,e,4)=modvar_2d(*,*,n,e,5)/modvar_2d(*,*,n,e,1)
 modvar_2d_der(*,*,n,e,5)=modvar_2d(*,*,n,e,5)+modvar_2d(*,*,n,e,6)-modvar_2d(*,*,n,e,7)
 modvar_2d_der(*,*,n,e,6)=modvar_2d(*,*,n,e,7)-modvar_2d(*,*,n,e,6)-modvar_2d(*,*,n,e,5)
+modvar_2d_der(*,*,n,e,7)=modvar_2d(*,*,n,e,2)-modvar_2d(*,*,n,e,1)+modvar_2d(*,*,n,e,4)-modvar_2d(*,*,n,e,3)-modvar_2d(*,*,n,e,8)-modvar_2d(*,*,n,e,9)
 
 endif
 endfor
@@ -1717,7 +1707,7 @@ endif
 endfor
 endfor
 
-;dervar_2d_name=['Surface albedo','TOA albedo','Surface temperature','Derived surface temperature','Emissivity','Heat transport','TOA inbalance']
+;dervar_2d_name=['Surface albedo','TOA albedo','Surface temperature','Derived surface temperature','Emissivity','Heat transport','TOA inbalance','Surface inbalance']
 modvar_2d_zonmean_der=fltarr(ny,ndates,nexp,nder)
 for e=0,nexp-1 do begin
 for n=nstart,ndates-1 do begin
@@ -1729,6 +1719,7 @@ modvar_2d_zonmean_der(*,n,e,3)=(modvar_2d_zonmean(*,n,e,1)/sigma)^(0.25)
 modvar_2d_zonmean_der(*,n,e,4)=modvar_2d_zonmean(*,n,e,5)/modvar_2d_zonmean(*,n,e,1)
 modvar_2d_zonmean_der(*,n,e,5)=modvar_2d_zonmean(*,n,e,5)+modvar_2d_zonmean(*,n,e,6)-modvar_2d_zonmean(*,n,e,7)
 modvar_2d_zonmean_der(*,n,e,6)=modvar_2d_zonmean(*,n,e,7)-modvar_2d_zonmean(*,n,e,6)-modvar_2d_zonmean(*,n,e,5)
+modvar_2d_zonmean_der(*,n,e,7)=modvar_2d_zonmean(*,n,e,2)-modvar_2d_zonmean(*,n,e,1)+modvar_2d_zonmean(*,n,e,4)-modvar_2d_zonmean(*,n,e,3)-modvar_2d_zonmean(*,n,e,8)-modvar_2d_zonmean(*,n,e,9)
 endif
 endfor
 endfor
@@ -1736,19 +1727,19 @@ endfor
 
 tvlct,r_39,g_39,b_39
 
-nebm=19
+nebm=21
 my_col=intarr(nebm)
-my_col(*)=[0,0,50,150,200,250,250,50,50,50,50,50,50,50,50,50,70,90,110]
+my_col(*)=[0,0,50,150,200,250,250,50,50,50,50,50,50,50,50,50,70,90,110,200,200]
 my_name=strarr(nebm)
-my_name(*)=['temp change (GCM)','temp change (EBM)','albedo','emmisivity','heat transport','solar','temp change (sum)','albedo (surface)','albedo (non-surface)','albedo (rev)','albedo (rev) (surface)','albedo (rev) (non-surface)','albedo (deriv)','albedo (aprp1)','albedo (aprp2)','albedo (APRP)','cloud (APRP)','clear sky (APRP)','surface albedo (APRP)']
+my_name(*)=['temp change (GCM)','temp change (EBM)','albedo','emmisivity','heat transport','solar','temp change (sum)','albedo (surface)','albedo (non-surface)','albedo (rev)','albedo (rev) (surface)','albedo (rev) (non-surface)','albedo (deriv)','albedo (aprp1)','albedo (aprp2)','albedo (APRP)','cloud (APRP)','clear sky (APRP)','surface albedo (APRP)','atmos heat transport','ocean heat transport']
 my_linstyle=intarr(nebm)
-my_linstyle(*)=[2,0,0,0,0,0,0,1,2,0,1,2,0,0,0,0,1,2,1]
+my_linstyle(*)=[2,0,0,0,0,0,0,1,2,0,1,2,0,0,0,0,1,2,1,1,2]
 ebm_do=intarr(nebm)
-ebm_do(*)=1
-ebm_do([9:18])=0
+ebm_do(*)=0
+ebm_do([0:8])=1
 aprp_do=intarr(nebm)
 aprp_do(*)=0
-aprp_do([1,3,4,5,15,16,17,18])=1
+aprp_do([1,3,4,5,15,16,17,18,19,20])=1
 
 my_tempebm=fltarr(ny,nebm,ndates,nexp)
 my_tempebmav=fltarr(nebm,ndates,nexp)
@@ -1768,6 +1759,8 @@ albs1=modvar_2d_zonmean_der(*,n,e,0)
 albt1=modvar_2d_zonmean_der(*,n,e,1)
 emmi1=modvar_2d_zonmean_der(*,n,e,4)
 htra1=modvar_2d_zonmean_der(*,n,e,5)
+otra1=-1*modvar_2d_zonmean_der(*,n,e,7)
+atra1=htra1-otra1
 sola1=modvar_2d_zonmean(*,n,e,7)
 temp1=modvar_2d_zonmean(*,n,e,0)-273.15
 
@@ -1777,6 +1770,8 @@ albs2=modvar_2d_zonmean_der(*,nnn,e,0)
 albt2=modvar_2d_zonmean_der(*,nnn,e,1)
 emmi2=modvar_2d_zonmean_der(*,nnn,e,4)
 htra2=modvar_2d_zonmean_der(*,nnn,e,5)
+otra2=-1*modvar_2d_zonmean_der(*,nnn,e,7)
+atra2=htra2-otra2
 sola2=modvar_2d_zonmean(*,nnn,e,7)
 temp2=modvar_2d_zonmean(*,nnn,e,0)-273.15
 
@@ -1799,11 +1794,20 @@ tempebm2emmi1=(1.0/(emmi1*sigma)*(sola2*(1-albt2)+htra2))^0.25-273.15
 tempebm2htra1=(1.0/(emmi2*sigma)*(sola2*(1-albt2)+htra1))^0.25-273.15
 tempebm2sola1=(1.0/(emmi2*sigma)*(sola1*(1-albt2)+htra2))^0.25-273.15
 
+tempebm2otra1=(1.0/(emmi2*sigma)*(sola2*(1-albt2)+(otra1 + atra2)))^0.25-273.15
+tempebm2atra1=(1.0/(emmi2*sigma)*(sola2*(1-albt2)+(otra2 + atra1)))^0.25-273.15
+
+
 my_tempebm(*,0,n,e)=temp1-temp2
 my_tempebm(*,1,n,e)=tempebm1-tempebm2
 my_tempebm(*,2,n,e)=tempebm2albt1-tempebm2
 my_tempebm(*,3,n,e)=tempebm2emmi1-tempebm2
 my_tempebm(*,4,n,e)=tempebm2htra1-tempebm2
+
+my_tempebm(*,19,n,e)=tempebm2otra1-tempebm2
+my_tempebm(*,20,n,e)=tempebm2atra1-tempebm2
+
+
 my_tempebm(*,5,n,e)=tempebm2sola1-tempebm2
 my_tempebm(*,6,n,e)=tempebm2albt1-tempebm2+tempebm2emmi1-tempebm2+tempebm2htra1-tempebm2+tempebm2sola1-tempebm2
 
@@ -1875,6 +1879,20 @@ oplot,lats(0:ny-1),albs1-albs2,color=100,linestyle=0,thick=5
 oplot,lats(0:ny-1),albt1-albt2,color=200,linestyle=1,thick=5
 xyouts,30,0.025,'surface change',color=100
 xyouts,-20,0.32,'planetary change',color=200
+device,/close
+
+; Here is the plot of the heat transports
+picname='fluxes/htra_lat_'+expnamel(n,e)
+device,filename=picname+'.eps',/encapsulate,set_font='Helvetica',/color
+plot,[0,1],[0,1],yrange=[-200,200],xrange=[-90,90],ystyle=1,xstyle=1,title='Heat transport vs latitude  - '+expnamel(n,e),xtitle='latitude',ytitle='heat transport',/nodata
+oplot,[-90,90],[0,0],color=0
+oplot,lats(0:ny-1),htra1,color=100,linestyle=0,thick=5
+oplot,lats(0:ny-1),atra1,color=150,linestyle=2,thick=5
+oplot,lats(0:ny-1),otra1,color=200,linestyle=2,thick=5
+xyouts,-50,50,'total heat transport',color=100
+xyouts,-50,30,'atmospheric heat transport',color=150
+xyouts,-50,10,'ocean heat transport',color=200
+
 device,/close
 
 ; Here is the plot of the zonal mean temp; just a test to make sure
