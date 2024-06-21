@@ -30,16 +30,16 @@ read_all_clims=0 ; if 0 [0=default] then only read in more recent simulations
 do_clims=1 ; read in model output
 do_readbounds=1 ; read in mask and ice
 do_readsolar=1 ; read solar forcing and albedo
-  do_ff_model=0 ; forcing/feedback model               
+  do_ff_model=1 ; forcing/feedback model               
   do_temp_plot=0 ; global mean from proxies
   do_co2_plot=0 ; prescribed co2 (requires do_ff_model)
   do_lsm_plot=0 ; prescribed land area
   do_solar_plot=0 ; prescribed solar forcing
   do_ice_plot=0 ; prescribed ice sheets
   do_forcings_plot=0 ; prescribed forcings in Wm-2
-  do_forctemps_plot=0 ; prescribed forcings in oC
+  do_forctemps_plot=1 ; prescribed forcings in oC
   do_polamp_plot=1 ;  plot polamp
-  do_clim_plot=0 ;  plot new vs old, EBM, MDC, and resid
+  do_clim_plot=1 ;  plot new vs old, EBM, MDC, and resid
                  ;  (requires ff_model) 
   do_scattemp_plot=0
   do_climsens_plot=0
@@ -1740,6 +1740,10 @@ ebm_do([0:8])=1
 aprp_do=intarr(nebm)
 aprp_do(*)=0
 aprp_do([1,3,4,5,15,16,17,18,19,20])=1
+aprp_docum=intarr(nebm)
+aprp_docum(*)=0
+aprp_docum([3,5,16,17,18,19,20])=1
+
 
 my_tempebm=fltarr(ny,nebm,ndates,nexp)
 my_tempebmav=fltarr(nebm,ndates,nexp)
@@ -2047,6 +2051,64 @@ endfor
 device,/close
 
 
+; Here is the plot of the contributions to polamp over time (PERCENT VERSION):
+
+device,filename='polampcont_time_percent.eps',/encapsulate,/color,set_font='Helvetica',xsize=7,ysize=5,/inches
+
+xmin=-550
+xmax=0
+
+ymin=-80
+ymax=130
+
+mydy=0.025
+myy=0.9
+
+topbar=ymin+(ymax-ymin)*33.0/35.0
+dtopbar=(ymax-ymin)*0.6/35.0
+
+
+plot,dates2,my_tempebmpa(0,*,pe),yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',psym=2,/nodata,ytitle='Contributions to polar amplification [%]',title='Contributions to polar amplification',ystyle=1,xstyle=1
+
+;;;;;;;;;;;;;
+
+oplot,[dates2(0),dates2(ndates-1)],[100,100],thick=3,color=my_col(0)
+
+ddd=0
+for dd=0,nebm-1 do begin
+
+if (aprp_docum(dd) eq 1) then begin
+
+plotthis=where(my_tempebmpa(1,*,pe) gt 5.0)
+
+oplot,dates2(plotthis),100*my_tempebmpa(dd,plotthis,pe)/my_tempebmpa(1,plotthis,pe),thick=3,color=my_col(dd),linestyle=my_linstyle(dd)
+
+xyouts,-500,ymin+(myy-mydy*(ddd+1))*(ymax-ymin),my_name(dd),color=my_col(dd),charsize=0.5
+oplot,[-525,-505],[ymin+(myy-mydy*(ddd+1))*(ymax-ymin),ymin+(myy-mydy*(ddd+1))*(ymax-ymin)],color=my_col(dd),linestyle=my_linstyle(dd)
+
+ddd=ddd+1
+endif
+endfor
+
+
+tvlct,r_cgmw,g_cgmw,b_cgmw
+for n=0,nstage-1 do begin
+polyfill,[stageb(n),stageb(n+1),stageb(n+1),stageb(n)],[ymax,ymax,topbar,topbar],color=n
+endfor
+tvlct,r_39,g_39,b_39
+
+oplot,[xmin,xmax],[topbar,topbar]
+for n=1,nstage-1 do begin
+oplot,[stageb(n),stageb(n)],[topbar,ymax]
+endfor
+
+for n=0,nstage-1 do begin
+xyouts,(stageb(n)+stageb(n+1))/2.0,topbar+dtopbar,alignment=0.5,stagen(n),charsize=0.7
+endfor
+
+device,/close
+
+
 ; Here is the plot of the contributions to GMST over time:
 
 device,filename='gmstcont_time.eps',/encapsulate,/color,set_font='Helvetica',xsize=7,ysize=5,/inches
@@ -2110,10 +2172,70 @@ endfor
 
 device,/close
 
+
+; Here is the plot of the contributions to GMST over time (PERCENT VERSION):
+
+device,filename='gmstcont_time_percent.eps',/encapsulate,/color,set_font='Helvetica',xsize=7,ysize=5,/inches
+
+xmin=-550
+xmax=0
+
+ymin=-20
+ymax=100
+
+mydy=0.025
+myy=0.9
+
+topbar=ymin+(ymax-ymin)*33.0/35.0
+dtopbar=(ymax-ymin)*0.6/35.0
+
+
+plot,dates2,my_tempebmav(0,*,pe),yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',psym=2,/nodata,ytitle='Contributions to GMST [%]',title='Contributions to GMST',ystyle=1,xstyle=1
+
+;;;;;;;;;;;;;
+
+oplot,[dates2(0),dates2(ndates-1)],[100,100],thick=3,color=my_col(0)
+
+ddd=0
+
+for dd=0,nebm-1 do begin
+if (aprp_docum(dd) eq 1 and dd ne 5) then begin
+
+plotthis=where(my_tempebmav(1,*,pe) gt 1.0)
+
+oplot,dates2(plotthis),100*my_tempebmav(dd,plotthis,pe)/(my_tempebmav(1,plotthis,pe)-my_tempebmav(5,plotthis,pe)),thick=3,color=my_col(dd),linestyle=my_linstyle(dd)
+
+xyouts,-500,ymin+(myy-mydy*(ddd+1))*(ymax-ymin),my_name(dd),color=my_col(dd),charsize=0.5
+oplot,[-525,-505],[ymin+(myy-mydy*(ddd+1))*(ymax-ymin),ymin+(myy-mydy*(ddd+1))*(ymax-ymin)],color=my_col(dd),linestyle=my_linstyle(dd)
+
+ddd=ddd+1
+endif
+endfor
+
+
+
+
+tvlct,r_cgmw,g_cgmw,b_cgmw
+for n=0,nstage-1 do begin
+polyfill,[stageb(n),stageb(n+1),stageb(n+1),stageb(n)],[ymax,ymax,topbar,topbar],color=n
+endfor
+tvlct,r_39,g_39,b_39
+
+oplot,[xmin,xmax],[topbar,topbar]
+for n=1,nstage-1 do begin
+oplot,[stageb(n),stageb(n)],[topbar,ymax]
+endfor
+
+for n=0,nstage-1 do begin
+xyouts,(stageb(n)+stageb(n+1))/2.0,topbar+dtopbar,alignment=0.5,stagen(n),charsize=0.7
+endfor
+
+device,/close
+
 endif
 
 
-stop
+;stop
 
 
 
@@ -3072,7 +3194,11 @@ xyouts,x1+dx2,y1-(3*dy1),color=200,'Ice sheet temp',charsize=cs
 ;xyouts,x1+dx2,y1-(4*dy1),color=250,'Residual temp',charsize=cs
 xyouts,x1+dx2,y1-(5*dy1),color=0,'All temps',charsize=cs
 
-
+tvlct,r_cgmw,g_cgmw,b_cgmw
+for n=0,nstage-1 do begin
+polyfill,[stageb(n),stageb(n+1),stageb(n+1),stageb(n)],[ymax,ymax,topbar,topbar],color=n
+endfor
+tvlct,r_39,g_39,b_39
 
 oplot,[xmin,xmax],[topbar,topbar]
 for n=1,nstage-1 do begin
@@ -3107,7 +3233,8 @@ ntype=8
 mytypename=['new','cmp','pro','bot','egu','pap','cmo','wmt']
 
 colwin=80
-coljud=100
+;coljud=100
+coljud=200
 colsco=250
 mycol=0
 mycot=210
@@ -3377,6 +3504,12 @@ endif
 endif
 
 
+tvlct,r_cgmw,g_cgmw,b_cgmw
+for n=0,nstage-1 do begin
+polyfill,[stageb(n),stageb(n+1),stageb(n+1),stageb(n)],[ymax,ymax,topbar,topbar],color=n
+endfor
+tvlct,r_39,g_39,b_39
+
 oplot,[xmin,xmax],[topbar,topbar]
 for n=1,nstage-1 do begin
 oplot,[stageb(n),stageb(n)],[topbar,ymax]
@@ -3392,7 +3525,7 @@ device,/close
 endfor
 endfor
 
-stop
+;stop
 
 
 if (do_scattemp_plot eq 1) then begin
@@ -3654,7 +3787,7 @@ endfor
 
 device,/close
 
-endfor
+endfor ; end v 
 
 
 for v=0,nvar*2 do begin
@@ -3718,6 +3851,20 @@ if (v eq 4) then begin
    oplot,[climav(n,pe,0),climav(n,pe,1)],[polamp(n,pe,0),polamp(n,pe,1)],color=mycol,linestyle=1
 endif
 
+endfor ; end n
+
+if (v eq 0 or v eq 1) then begin
+print,'FOR PAPER, r for '+climnamelongx(v)+' : '+strtrim(correlate(climav(nstart:ndates-1,pe,v),polamp(nstart:ndates-1,pe,v)),2)
+endif
+if (v eq 2) then begin
+print,'FOR PAPER, r for '+climnamelongx(v)+' : '+strtrim(correlate(climav(nstart:ndates-1,pe,0),climav(nstart:ndates-1,pe,1)),2)
+endif
+if (v eq 3) then begin
+print,'FOR PAPER, r for '+climnamelongx(v)+' : '+strtrim(correlate(polamp(nstart:ndates-1,pe,0),polamp(nstart:ndates-1,pe,1)),2)
+endif
+
+
+
 ddy=0.001*(ymax-ymin)
 fy=0.05*(ymax-ymin)
 sy=ymin+0.3*(ymax-ymin)
@@ -3749,19 +3896,17 @@ plots,+sx1,sy-5*fy,color=mycol,psym=8,symsize=1.5
 xyouts,+sx2,sy-5*fy-ddy,color=0,'500 Ma'
 endif
 
-endfor ; end n
-
-
 
 
 device,/close
 
-endfor
+endfor ; end v (2*nvar)
 
 
 
 endif
 
+stop
 
 if (do_ess_plot eq 1) then begin
 
