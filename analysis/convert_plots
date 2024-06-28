@@ -53,10 +53,15 @@
 #done
 #done
 
-#for file in gmstcont_time polampcont_time ; do
+#for file in gmstcont_time polampcont_time gmstcont_time_percent polampcont_time_percent ; do
 
-for file in seasxtemp_cmmt_scatter seasxtemp_wmmt_scatter ; do
+#for file in seasxtemp_cmmt_scatter seasxtemp_wmmt_scatter ; do
+
+for file in fluxes/tmp_lat_change_aprp_tFkee ; do
+
 gs -dSAFER -dEPSCrop -r600 -sDEVICE=pngalpha -o ${file}.png ${file}.eps
 done
+
+
 
 exit
