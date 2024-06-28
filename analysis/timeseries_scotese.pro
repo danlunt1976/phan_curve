@@ -2079,9 +2079,16 @@ for dd=0,nebm-1 do begin
 
 if (aprp_docum(dd) eq 1) then begin
 
-plotthis=where(my_tempebmpa(1,*,pe) gt 5.0)
+plotthis=where(abs(my_tempebmpa(1,*,pe)) gt 5.0)
 
 oplot,dates2(plotthis),100*my_tempebmpa(dd,plotthis,pe)/my_tempebmpa(1,plotthis,pe),thick=3,color=my_col(dd),linestyle=my_linstyle(dd)
+
+
+for n=nstart,ndates-1 do begin
+if (abs(my_tempebmpa(1,n,pe)) gt 5.0) then begin
+plots,dates2(n),100*my_tempebmpa(dd,n,pe)/my_tempebmpa(1,n,pe),color=my_col(dd),psym=8,symsize=0.5
+endif
+endfor ; end n 
 
 xyouts,-500,ymin+(myy-mydy*(ddd+1))*(ymax-ymin),my_name(dd),color=my_col(dd),charsize=0.5
 oplot,[-525,-505],[ymin+(myy-mydy*(ddd+1))*(ymax-ymin),ymin+(myy-mydy*(ddd+1))*(ymax-ymin)],color=my_col(dd),linestyle=my_linstyle(dd)
@@ -2180,7 +2187,7 @@ device,filename='gmstcont_time_percent.eps',/encapsulate,/color,set_font='Helvet
 xmin=-550
 xmax=0
 
-ymin=-20
+ymin=-50
 ymax=100
 
 mydy=0.025
@@ -2190,7 +2197,7 @@ topbar=ymin+(ymax-ymin)*33.0/35.0
 dtopbar=(ymax-ymin)*0.6/35.0
 
 
-plot,dates2,my_tempebmav(0,*,pe),yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',psym=2,/nodata,ytitle='Contributions to GMST [%]',title='Contributions to GMST',ystyle=1,xstyle=1
+plot,dates2,my_tempebmav(0,*,pe),yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',psym=2,/nodata,ytitle='Contributions to non-solar GMST [%]',title='Contributions to non-solar GMST',ystyle=1,xstyle=1
 
 ;;;;;;;;;;;;;
 
@@ -2201,9 +2208,14 @@ ddd=0
 for dd=0,nebm-1 do begin
 if (aprp_docum(dd) eq 1 and dd ne 5) then begin
 
-plotthis=where(my_tempebmav(1,*,pe) gt 1.0)
+plotthis=where(abs(my_tempebmav(1,*,pe)-my_tempebmav(5,*,pe)) gt 2.0)
+oplot,dates2(plotthis),100*(my_tempebmav(dd,plotthis,pe))/(my_tempebmav(1,plotthis,pe)-my_tempebmav(5,plotthis,pe)),thick=3,color=my_col(dd),linestyle=my_linstyle(dd)
 
-oplot,dates2(plotthis),100*my_tempebmav(dd,plotthis,pe)/(my_tempebmav(1,plotthis,pe)-my_tempebmav(5,plotthis,pe)),thick=3,color=my_col(dd),linestyle=my_linstyle(dd)
+for n=nstart,ndates-1 do begin
+if (abs(my_tempebmav(1,n,pe)-my_tempebmav(5,n,pe)) gt 2.0) then begin
+plots,dates2(n),100*(my_tempebmav(dd,n,pe))/(my_tempebmav(1,n,pe)-my_tempebmav(5,n,pe)),color=my_col(dd),psym=8,symsize=0.5
+endif
+endfor ; end n 
 
 xyouts,-500,ymin+(myy-mydy*(ddd+1))*(ymax-ymin),my_name(dd),color=my_col(dd),charsize=0.5
 oplot,[-525,-505],[ymin+(myy-mydy*(ddd+1))*(ymax-ymin),ymin+(myy-mydy*(ddd+1))*(ymax-ymin)],color=my_col(dd),linestyle=my_linstyle(dd)
