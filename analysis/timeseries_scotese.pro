@@ -1612,7 +1612,9 @@ endfor
 
 ncdf_close,id1
 
+; convert long net (1) and down (2) to up (1).
 modvar_2d(0:nx-1,0:ny-1,n,e,1)=modvar_2d(0:nx-1,0:ny-1,n,e,2)-modvar_2d(0:nx-1,0:ny-1,n,e,1)
+; convert short net (3) and down (4) to up (3).
 modvar_2d(0:nx-1,0:ny-1,n,e,3)=modvar_2d(0:nx-1,0:ny-1,n,e,4)-modvar_2d(0:nx-1,0:ny-1,n,e,3)
 
 endif
@@ -1727,19 +1729,19 @@ endfor
 
 tvlct,r_39,g_39,b_39
 
-nebm=21
+nebm=23
 my_col=intarr(nebm)
-my_col(*)=[0,0,50,150,200,250,250,50,50,50,50,50,50,50,50,50,70,90,110,200,200]
+my_col(*)=[0,0,50,150,200,250,250,50,50,50,50,50,50,50,50,50,70,90,110,200,200,50,250]
 my_name=strarr(nebm)
-my_name(*)=['temp change (GCM)','temp change (EBM)','albedo','emmisivity','heat transport','solar','temp change (sum)','albedo (surface)','albedo (non-surface)','albedo (rev)','albedo (rev) (surface)','albedo (rev) (non-surface)','albedo (deriv)','albedo (aprp1)','albedo (aprp2)','albedo (APRP)','cloud (APRP)','clear sky (APRP)','surface albedo (APRP)','atmos heat transport','ocean heat transport']
+my_name(*)=['temp change (GCM)','temp change (EBM)','albedo','emmisivity','heat transport','solar','temp change (sum ebm)','albedo (surface)','albedo (non-surface)','albedo (rev)','albedo (rev) (surface)','albedo (rev) (non-surface)','albedo (deriv)','albedo (aprp1)','albedo (aprp2)','albedo (APRP)','cloud (APRP)','clear sky (APRP)','surface albedo (APRP)','atmos heat transport','ocean heat transport','temp change (sum aprp)','temp change (sum aprp all terms)']
 my_linstyle=intarr(nebm)
-my_linstyle(*)=[2,0,0,0,0,0,0,1,2,0,1,2,0,0,0,0,1,2,1,1,2]
+my_linstyle(*)=[2,0,0,0,0,0,0,1,2,0,1,2,0,0,0,0,1,2,1,1,2,1,1]
 ebm_do=intarr(nebm)
 ebm_do(*)=0
 ebm_do([0:8])=1
 aprp_do=intarr(nebm)
 aprp_do(*)=0
-aprp_do([1,3,4,5,15,16,17,18,19,20])=1
+aprp_do([1,3,4,5,15,16,17,18,19,20,22])=1
 aprp_docum=intarr(nebm)
 aprp_docum(*)=0
 aprp_docum([3,5,16,17,18,19,20])=1
@@ -1813,6 +1815,8 @@ my_tempebm(*,20,n,e)=tempebm2atra1-tempebm2
 
 
 my_tempebm(*,5,n,e)=tempebm2sola1-tempebm2
+
+; sum of the ebm terms
 my_tempebm(*,6,n,e)=tempebm2albt1-tempebm2+tempebm2emmi1-tempebm2+tempebm2htra1-tempebm2+tempebm2sola1-tempebm2
 
 my_tempebm(*,7,n,e)=tempebm2albs1-tempebm2
@@ -1842,7 +1846,7 @@ swclr=modvar_aprp_zonmean(*,n,e,6)
 swalf=modvar_aprp_zonmean(*,n,e,9)
 
 
-; uae aprp and a differentiation for albedo
+; use aprp and a differentiation for albedo
 my_tempebm(*,13,n,e)=0.25*(emmi1*sigma)^(-0.25)*(sola1*(1-albt1) + htra1)^(-0.75)*swnetdiff
 
 ; use Seb's method
@@ -1856,6 +1860,11 @@ my_tempebm(*,16,n,e)=tempebm2cld1-tempebm2
 my_tempebm(*,17,n,e)=tempebm2clr1-tempebm2
 my_tempebm(*,18,n,e)=tempebm2alf1-tempebm2
 
+; sum of aprp terms
+my_tempebm(*,21,n,e)=tempebm2sw1-tempebm2+tempebm2emmi1-tempebm2+tempebm2htra1-tempebm2+tempebm2sola1-tempebm2
+
+; sum of all aprp and HT terms
+my_tempebm(*,22,n,e)=(tempebm2cld1-tempebm2+tempebm2clr1-tempebm2+tempebm2alf1-tempebm2)+tempebm2emmi1-tempebm2+(tempebm2otra1-tempebm2+tempebm2atra1-tempebm2)+tempebm2sola1-tempebm2
 
 for dd=0,nebm-1 do begin
 my_tempebmav(dd,n,e)=total(my_tempebm(*,dd,n,e)*weight_lat(*))
@@ -1864,6 +1873,7 @@ my_tempebmll(dd,n,e)=total(my_tempebm(*,dd,n,e)*weight_llat(*))
 my_tempebmpa(dd,n,e)=total(my_tempebm(*,dd,n,e)*weight_hlat(*))-total(my_tempebm(*,dd,n,e)*weight_llat(*))
 endfor
 
+print,'SWCLD: ',expnamel(n,e),total(swcld*weight_llat(*))
 
 ; Here is the plot of the zonal mean surface and planetary albedo.
 picname='fluxes/alb_lat_'+expnamel(n,e)
@@ -1903,11 +1913,33 @@ device,/close
 ; the terms add up. 
 picname='fluxes/tmp_lat_'+expnamel(n,e)
 device,filename=picname+'.eps',/encapsulate,set_font='Helvetica',/color
-plot,[0,1],[0,1],yrange=[-50,50],xrange=[-90,90],ystyle=1,xstyle=1,title='Temperature  - '+expnamel(n,e),xtitle='latitude',ytitle='temp',/nodata
+plot,[0,1],[0,1],yrange=[-50,50],xrange=[-90,90],ystyle=1,xstyle=1,title='Temperature - '+expnamel(n,e),xtitle='latitude',ytitle='temp',/nodata
 oplot,lats(0:ny-1),temp1,color=0,linestyle=0,thick=5
 oplot,lats(0:ny-1),tempebm1,color=100,linestyle=2,thick=5
+xyouts,-50,-20,'temperature (GCM)',color=0
+xyouts,-50,-30,'temperature (EBM)',color=100
 device,/close
 
+
+; Here is the plot of the zonal mean temp change; just a test to make sure
+; the terms add up. 
+picname='fluxes/tmpdelta_lat_'+expnamel(n,e)
+device,filename=picname+'.eps',/encapsulate,set_font='Helvetica',/color
+plot,[0,1],[0,1],yrange=[-30,50],xrange=[-90,90],ystyle=1,xstyle=1,title='Temperature change - '+expnamel(n,e),xtitle='latitude',ytitle='temp',/nodata
+oplot,lats(0:ny-1),my_tempebm(*,0,n,e),color=0,linestyle=0,thick=5
+oplot,lats(0:ny-1),my_tempebm(*,1,n,e),color=50,linestyle=2,thick=5
+oplot,lats(0:ny-1),my_tempebm(*,6,n,e),color=100,linestyle=1,thick=5
+oplot,lats(0:ny-1),my_tempebm(*,21,n,e),color=150,linestyle=1,thick=5
+oplot,lats(0:ny-1),my_tempebm(*,22,n,e),color=200,linestyle=1,thick=5
+xyouts,-50,-5,'temperature change (GCM)',color=0
+xyouts,-50,-10,'temperature change (EBM)',color=50
+xyouts,-50,-15,'temperature change sum of terms (EBM)',color=100
+xyouts,-50,-20,'temperature change sum of terms (APRP)',color=150
+xyouts,-50,-25,'temperature change sum of all terms (APRP)',color=200
+
+
+
+device,/close
 
 ; And now the beast plot:
 my_yrange=[-20,60]
@@ -3918,7 +3950,7 @@ endfor ; end v (2*nvar)
 
 endif
 
-stop
+;stop
 
 if (do_ess_plot eq 1) then begin
 
