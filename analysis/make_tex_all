@@ -1,14 +1,20 @@
 plot_tempdiff=0
-plot_albedosdiff=1
+plot_albedosdiff=0
 plot_streamabs=0
 plot_mixed=0
 plot_uv=0
-plot_merid=0
+plot_merid=1
 plot_wind=0
 plot_temp=0
 plot_salin=0
 plot_topo=0
 
+exptype=tfks
+exp1a=${exptype}
+exp1b=`sed 's/./\U&/4' <<< "${exp1a}"`
+exp1c=`sed 's/./\U&/3' <<< "${exp1a}"`
+exp1d=`sed 's/./\U&/3' <<< "${exp1b}"`
+exp1e=`sed 's/./\U&/2' <<< "${exp1a}"`
 
 
 if [ ${plot_topo} -eq 1 ] ; then
@@ -104,13 +110,18 @@ fi
 
 
 if [ ${plot_mixed} -eq 1 ] ; then
-for exp in teye tfgw ; do
+for exp in ${exptype} ; do
 
 filename="Figure_mixed_${exp}"
 jobfile=${filename}.tex
-\cp Figure_VAR_${exp}_SKEL.tex ${jobfile}
+\cp Figure_VAR_EXP_SKEL.tex ${jobfile}
 sed -i "s/EXT//g" ${jobfile}
 sed -i "s/VAR/mixed/g" ${jobfile}
+sed -i "s/EXPxxxx/${exp1a}/g" ${jobfile}
+sed -i "s/EXPxxxX/${exp1b}/g" ${jobfile}
+sed -i "s/EXPxxXx/${exp1c}/g" ${jobfile}
+sed -i "s/EXPxxXX/${exp1d}/g" ${jobfile}
+sed -i "s/EXPxXxx/${exp1e}/g" ${jobfile}
 pdflatex ${jobfile}
 \rm ${filename}.log
 \rm ${filename}.aux
