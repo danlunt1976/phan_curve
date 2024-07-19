@@ -29,16 +29,17 @@ read_all_clims=0 ; if 0 [0=default] then only read in more recent simulations
            ;   (e.g. tfke,tfks), for speed
 do_clims=1 ; read in model output
 do_readbounds=1 ; read in mask and ice
+do_ocean=0 ; read in ocean
 do_readsolar=1 ; read solar forcing and albedo
   do_ff_model=1 ; forcing/feedback model               
   do_temp_plot=0 ; global mean from proxies
-  do_co2_plot=0 ; prescribed co2 (requires do_ff_model)
+  do_co2_plot=1 ; prescribed co2 (requires do_ff_model)
   do_lsm_plot=0 ; prescribed land area
-  do_solar_plot=0 ; prescribed solar forcing
+  do_solar_plot=1 ; prescribed solar forcing
   do_ice_plot=0 ; prescribed ice sheets
   do_forcings_plot=0 ; prescribed forcings in Wm-2
-  do_forctemps_plot=1 ; prescribed forcings in oC
-  do_polamp_plot=1 ;  plot polamp
+  do_forctemps_plot=0 ; prescribed forcings in oC
+  do_polamp_plot=0 ;  plot polamp
   do_clim_plot=1 ;  plot new vs old, EBM, MDC, and resid
                  ;  (requires ff_model) 
   do_scattemp_plot=0
@@ -46,8 +47,8 @@ do_readsolar=1 ; read solar forcing and albedo
   do_ess_plot=0
   do_grads_plot=0 ; hoffmuller plot
 
-  do_ebm=1 ; EBM model
-  do_aprp=1 ; APRP
+  do_ebm=0 ; EBM model
+  do_aprp=0 ; APRP
   do_seas=0
 
 do_textfile1=0 ; textfile of proxies for Emily
@@ -55,7 +56,7 @@ do_textfile2=0 ; textfile of proxies for Chris
 do_textfile3=0 ; textfile of fluxes for Emily
 do_textfile4=0 ; textfile of forcings for Emily
 
-check_names=1 ; check names
+check_names=0 ; check names
 
 ;;;;
 ; Total number of time snapshots
@@ -125,8 +126,8 @@ if (read_all_clims eq 1) then begin
 readfile(*,*)=1
 readfile(*,6)=0 ; tflm for Shufeng no longer stored
 endif else begin
-readfile(*,4)=1 ; just foster runs tfke
-;readfile(*,4:5)=1 ; tfke and tkfs
+;readfile(*,4)=1 ; just foster runs tfke
+readfile(*,4:5)=1 ; tfke and tkfs
 ;readfile(*,9)=1 ; add this back if Valdes (2021) needed.
 ;readfile(*,5)=1 ; just tuned runs tfks
 ;;;;;;;; *******************************
@@ -136,6 +137,14 @@ readfile(*,4)=1 ; just foster runs tfke
 ;;;;;;;; *******************************
 endelse
 
+ ; does ocean data exist for this simulation?
+readfile_o=intarr(ndates,nexp)
+if (read_all_clims eq 1) then begin
+readfile_o(*,*)=1
+readfile_o(*,6)=0 ; tflm for Shufeng no longer stored
+endif else begin
+readfile_o(*,4:5)=1 ; tfke and tkfs
+endelse
 
 
 readtype=intarr(ndates,nexp) ; um_climates [0] or ummodel [1] for clims
@@ -1373,6 +1382,133 @@ endfor
 
 endif ; end do_clims
 
+
+if (do_ocean eq 1) then begin
+
+mixed=fltarr(nxmax,nymax,ndates,nexp)
+mixed_zonmean=fltarr(nymax,ndates,nexp)
+mixed_zonmax=fltarr(nymax,ndates,nexp)
+mixed_zonmax2=fltarr(nymax,ndates,nexp)
+
+for e=0,nexp-1 do begin
+for n=nstart,ndates-1 do begin
+
+if (readfile_o(n,e) eq 1) then begin
+
+if (readtype(n,e) eq 1) then begin
+data_filename=root(n,e)+'/'+expnamel(n,e)+'/climate/'+expnamel(n,e)+'o.pfclann.nc'
+endif
+if (readtype(n,e) eq 0) then begin
+data_filename=root(n,e)+'/'+expnamel(n,e)+'/'+expnamel(n,e)+'o.pfclann.nc'
+endif
+
+print,readtype(n,e),n,data_filename
+id1=ncdf_open(data_filename)
+ncdf_varget,id1,'mixLyrDpth_mm_uo',dummy
+ncdf_close,id1
+mixed(0:nxmax-1,0:nymax-1,n,e)=dummy
+
+ntv=5
+for j=0,nymax-1 do begin
+mixed_zonmean(j,n,e)=mean(mixed(*,j,n,e))
+mixed_zonmax(j,n,e)=max(mixed(*,j,n,e))
+sorted_indices=reverse(sort(mixed(*,j,n,e)))
+top_5_values=mixed[sorted_indices(0:ntv-1),j,n,e]
+mixed_zonmax2(j,n,e)=mean(top_5_values)
+endfor
+
+endif 
+
+endfor
+endfor
+
+nnn=3
+nnname=strarr(nnn)
+nnname(*)=['mean','max','max2']
+noc=2
+oce=intarr(noc)
+oce(*)=[pe,pt]
+
+
+for nn=0,nnn-1 do begin
+for e=0,nexp-1 do begin
+
+if (readfile_o(0,e) eq 1) then begin
+
+device,filename='mixed_time_'+exproot(0,e)+'_'+nnname(nn)+'.eps',/encapsulate,/color,set_font='Helvetica',xsize=7,ysize=5,/inches
+
+xmin=-550
+xmax=0
+
+ymin=-90
+ymax=110
+
+topbar=ymin+(ymax-ymin)*33.0/35.0
+dtopbar=(ymax-ymin)*0.6/35.0
+
+
+plot,lats,dates2,yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',psym=2,/nodata,ytitle='latitude',title='Deep water formation',ystyle=1,xstyle=1
+
+;;;;;;;;;;;;;
+
+tvlct,r_39,g_39,b_39
+
+if (nn eq 0) then begin
+nnmax=150
+nndel=2
+nnnlev=nnmax/nndel
+nnlevs=[0.001,nndel*findgen(nnnlev)+nndel,1000]
+print,nnlevs
+contour,transpose(reverse(mixed_zonmean(*,*,e))),dates2,lats,/over,/fill,levels=nnlevs
+endif
+
+if (nn eq 1) then begin
+nnmax=400
+nndel=10
+nnnlev=nnmax/nndel
+nnlevs=[0.001,nndel*findgen(nnnlev)+nndel,1000]
+print,nnlevs
+contour,transpose(reverse(mixed_zonmax(*,*,e))),dates2,lats,/over,/fill,levels=nnlevs
+endif
+
+if (nn eq 2) then begin
+nnmax=400
+nndel=10
+nnnlev=nnmax/nndel
+nnlevs=[0.001,nndel*findgen(nnnlev)+nndel,1000]
+print,nnlevs
+contour,transpose(reverse(mixed_zonmax2(*,*,e))),dates2,lats,/over,/fill,levels=nnlevs
+endif
+
+
+
+tvlct,r_cgmw,g_cgmw,b_cgmw
+for n=0,nstage-1 do begin
+polyfill,[stageb(n),stageb(n+1),stageb(n+1),stageb(n)],[ymax,ymax,topbar,topbar],color=n
+endfor
+tvlct,r_39,g_39,b_39
+
+oplot,[xmin,xmax],[topbar,topbar]
+for n=1,nstage-1 do begin
+oplot,[stageb(n),stageb(n)],[topbar,ymax]
+endfor
+
+for n=0,nstage-1 do begin
+xyouts,(stageb(n)+stageb(n+1))/2.0,topbar+dtopbar,alignment=0.5,stagen(n),charsize=0.7
+endfor
+
+device,/close
+
+endif
+
+endfor
+endfor
+
+
+
+endif ; end do_ocean
+
+;stop
 
 if (do_seas eq 1) then begin
 
@@ -2837,6 +2973,12 @@ oplot,dates_judd,temp_judd,color=200,thick=3
 endif
 
 
+tvlct,r_cgmw,g_cgmw,b_cgmw
+for n=0,nstage-1 do begin
+polyfill,[stageb(n),stageb(n+1),stageb(n+1),stageb(n)],[ymax,ymax,topbar,topbar],color=n
+endfor
+tvlct,r_39,g_39,b_39
+
 oplot,[xmin,xmax],[topbar,topbar]
 for n=1,nstage-1 do begin
 oplot,[stageb(n),stageb(n)],[topbar,ymax]
@@ -2873,7 +3015,7 @@ endif
 
 if (p eq 3) then begin
 oplot,[x1,x1+dx1],[y1+dy1,y1+dy1],color=200,thick=3
-xyouts,x1+dx2,y1+dy1-dy2,'Judd et al (in press)',color=200
+xyouts,x1+dx2,y1+dy1-dy2,'Judd et al (in review)',color=200
 endif
 
 
@@ -2918,6 +3060,12 @@ if (t eq 2) then begin
 oplot,dates2,co2_inf_1m,color=0,thick=5
 plots,dates2,co2_inf_1m,color=0,psym=8,symsize=0.5
 endif
+
+tvlct,r_cgmw,g_cgmw,b_cgmw
+for n=0,nstage-1 do begin
+polyfill,[stageb(n),stageb(n+1),stageb(n+1),stageb(n)],[ymax,ymax,topbar,topbar],color=n
+endfor
+tvlct,r_39,g_39,b_39
 
 oplot,[xmin,xmax],[topbar,topbar]
 for n=1,nstage-1 do begin
@@ -2979,9 +3127,11 @@ device,filename='solar_time_'+strtrim(dd,2)+'.eps',/encapsulate,/color,set_font=
 xmin=-550
 xmax=0
 
-
 ymin=1280
 ymax=1380
+
+topbar=ymin+(ymax-ymin)*33.0/35.0
+dtopbar=(ymax-ymin)*0.6/35.0
 
 plot,dates2,solar,yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',ytitle='S0 [W/m2]',ystyle=1,xstyle=1,/nodata
 
@@ -2992,6 +3142,21 @@ plots,dates2,solar,psym=8,symsize=0.5,color=0
 if (dd eq 1) then begin
 oplot,dates2,flsol_mean(*,0)*4,color=250
 endif
+
+tvlct,r_cgmw,g_cgmw,b_cgmw
+for n=0,nstage-1 do begin
+polyfill,[stageb(n),stageb(n+1),stageb(n+1),stageb(n)],[ymax,ymax,topbar,topbar],color=n
+endfor
+tvlct,r_39,g_39,b_39
+
+oplot,[xmin,xmax],[topbar,topbar]
+for n=1,nstage-1 do begin
+oplot,[stageb(n),stageb(n)],[topbar,ymax]
+endfor
+
+for n=0,nstage-1 do begin
+xyouts,(stageb(n)+stageb(n+1))/2.0,topbar+dtopbar,alignment=0.5,stagen(n),charsize=0.7
+endfor
 
 device,/close
 
@@ -3271,14 +3436,16 @@ if (do_clim_plot eq 1) then begin
 ; egu is tfke and tfks and ScoteseSmoothed
 ; pap is tfke and ScoteseSmoothed and Winghuber and Judd
 ; cmo is tfke and Scotese02
-; wmt is tfke, tfks, Scotese02, and ScoteseSmoothed and Winghuber and Judd (new)
+; wmt is tfke, tfks, Scotese02, and ScoteseSmoothed and Winghuber and
+; Judd (new)
+; geo is tfke, tfks, and ScoteseSmoothed and Winghuber and Judd (new)
 
-ntype=8
-mytypename=['new','cmp','pro','bot','egu','pap','cmo','wmt']
+ntype=9
+mytypename=['new','cmp','pro','bot','egu','pap','cmo','wmt','geo']
 
 colwin=80
 ;coljud=100
-coljud=200
+coljud=170
 colsco=250
 mycol=0
 mycot=210
@@ -3294,7 +3461,7 @@ xmax=0
 ymin=yminc(v)
 ymax=ymaxc(v)
 
-if ((t eq 2 or t eq 3 or t eq 4 or t eq 5 or t eq 7) and v eq 0) then begin
+if ((t eq 2 or t eq 3 or t eq 4 or t eq 5 or t eq 7 or t eq 8) and v eq 0) then begin
 ymin=5
 ymax=40
 endif
@@ -3310,7 +3477,7 @@ dtopbar=(ymax-ymin)*0.6/35.0
 
 plot,dates2,climav(*,0,v),yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',psym=2,/nodata,ytitle=climnametitle(v)+' [degrees C]',ystyle=1,xstyle=1
 
-if (t eq 5 or t eq 7) then begin
+if (t eq 5 or t eq 7 or t eq 8) then begin
 br=240
 co=255
 ;tvlct,r_0,g_0,b_0
@@ -3366,7 +3533,7 @@ endif
 ; plot hadcm3l (pe) points
 plots,dates2(n),climav(n,pe,v),color=mycol,psym=8,symsize=0.5
 
-if (t eq 3 or t eq 4 or t eq 7) then begin
+if (t eq 3 or t eq 4 or t eq 7 or t eq 8) then begin
 ; plot tuned points
 plots,dates2(n),climav(n,pt,v),color=mycot,psym=6,symsize=0.5
 endif
@@ -3398,7 +3565,7 @@ endif
 ; plot hadcm3l (pe) curve
 oplot,dates2(*),climav(*,pe,v),thick=3,color=mycol
 
-if (t eq 3 or t eq 4 or t eq 7) then begin
+if (t eq 3 or t eq 4 or t eq 7 or t eq 8) then begin
 ; plot tuned curve
 oplot,dates2(*),climav(*,pt,v),thick=3,color=mycot
 endif
@@ -3456,11 +3623,13 @@ oplot,dates_wing,temp_wing,color=colwin,thick=3
 oplot,dates_judd,temp_judd,color=coljud,thick=3
 endif
 
-if (v eq 0 and (t eq 7)) then begin
+if (v eq 0 and (t eq 7 or t eq 8)) then begin
 ; for paper
 oplot,dates2,temp_scot1m_interp,color=colsco,thick=3
 oplot,dates_wing,temp_wing,color=colwin,thick=3
+if (t eq 7) then begin
 oplot,dates_judd,temp_judd,color=coljud,thick=3,linestyle=1
+endif
 oplot,dates_judd2,temp_judd2,color=coljud,thick=3
 endif
 
@@ -3480,12 +3649,12 @@ plots,-520,12,psym=8,symsize=0.5
 oplot,[-510,-530],[12,12],thick=3
 endif
 
-if (v eq 0 and (t eq 2 or t eq 3 or t eq 4 or t eq 5 or t eq 6 or t eq 7)) then begin
+if (v eq 0 and (t eq 2 or t eq 3 or t eq 4 or t eq 5 or t eq 6 or t eq 7 or t eq 8)) then begin
 
 
 x1=-300
 y1=8
-if (t eq 5 or t eq 6 or t eq 7) then begin
+if (t eq 5 or t eq 6 or t eq 7 or t eq 8) then begin
 x1=-230
 y1=10
 endif
@@ -3521,14 +3690,14 @@ xyouts,x1+dx2,y1-dy1-dy2,'Wing and Huber (2020)',color=colwin
 endif
 endif
 
-if (t eq 3 or t eq 4 or t eq 7) then begin
+if (t eq 3 or t eq 4 or t eq 7 or t eq 8) then begin
 oplot,[x1,x1+dx1],[y1+2*dy1,y1+2*dy1],color=mycot,thick=3
 ;plots,x1+dx1/2.0,y1,psym=8,symsize=0.5,color=colsco
 xyouts,x1+dx2,y1+2*dy1-dy2,'HadCM3L ['+exproot(0,pt)+']',color=mycot
 plots,x1+dx1/2.0,y1+dy1,color=mycot,psym=8,symsize=0.5
 endif
 
-if (t eq 5 or t eq 7) then begin
+if (t eq 5 or t eq 7 or t eq 8) then begin
 oplot,[x1,x1+dx1],[y1-dy1,y1-dy1],color=colwin,thick=3
 xyouts,x1+dx2,y1-dy1-dy2,'Wing and Huber (2020)',color=colwin
 oplot,[x1,x1+dx1],[y1-2*dy1,y1-2*dy1],color=coljud,thick=3
@@ -4217,7 +4386,7 @@ close,1
 
 endif
 
-
+if (do_clims eq 1) then begin
 ;;;;;
 ; Numbers for paper:
 print,'** FOR PAPER**  HIGHEST MODEL TEMP IS: '+strtrim(max(climav(nstart:ndates-1,pe,0),ind),2)
@@ -4226,6 +4395,7 @@ print,'** FOR PAPER**  LOWEST MODEL TEMP IS: '+strtrim(min(climav(nstart:ndates-
 print,dates2(ind)
 print,'** FOR PAPER**  MEAN MODEL TEMP IS: '+strtrim(mean(climav(nstart:ndates-1,pe,0)),2)
 print,'** FOR PAPER**  MODERN MODEL TEMP IS: '+strtrim(climav(nstart,pe,0),2)
+endif
 
 
 stop

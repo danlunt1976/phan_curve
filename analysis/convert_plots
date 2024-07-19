@@ -57,7 +57,16 @@
 
 #for file in seasxtemp_cmmt_scatter seasxtemp_wmmt_scatter ; do
 
-for file in fluxes/tmp_lat_change_aprp_tFkee ; do
+#for file in fluxes/tmp_lat_change_aprp_tFkee ; do
+
+#for file in temp_scotese_time_04 ; do
+
+#for file in co2_time_2 solar_time_0  ; do
+
+#for file in clim_temp_geo_time ; do
+
+
+for file in ../Figure_polampsat ; do
 
 gs -dSAFER -dEPSCrop -r600 -sDEVICE=pngalpha -o ${file}.png ${file}.eps
 done

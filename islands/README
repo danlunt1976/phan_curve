@@ -1,3 +1,6 @@
+N.B. I moved the individual island folders to the RDSF.
+
+
 In Scotese runs, modern barotropic streamfunction looks very odd -  massive values over Antarctica (teyda).
 /home/bridge/swsvalde/ummodel/data/teyda/climate/teydao.pfclann.nc
 streamfn_mm_uo
