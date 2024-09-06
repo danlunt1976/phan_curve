@@ -27,20 +27,22 @@ do_greg_plot=0 ; , make gregory plots (requires do_greg and do_clims)
 ;means
 read_all_clims=0 ; if 0 [0=default] then only read in more recent simulations 
            ;   (e.g. tfke,tfks), for speed
-do_clims=1 ; read in model output
+do_clims=0 ; read in model output
 do_readbounds=1 ; read in mask and ice
-do_ocean=0 ; read in ocean
-do_readsolar=1 ; read solar forcing and albedo
-  do_ff_model=1 ; forcing/feedback model               
+  do_readmask=1 ; read in lsm
+  do_readice=0 ; read ice
+do_ocean=1 ; read in ocean
+do_readsolar=0 ; read solar forcing and albedo
+  do_ff_model=0 ; forcing/feedback model               
   do_temp_plot=0 ; global mean from proxies
-  do_co2_plot=1 ; prescribed co2 (requires do_ff_model)
+  do_co2_plot=0 ; prescribed co2 (requires do_ff_model)
   do_lsm_plot=0 ; prescribed land area
-  do_solar_plot=1 ; prescribed solar forcing
+  do_solar_plot=0 ; prescribed solar forcing
   do_ice_plot=0 ; prescribed ice sheets
   do_forcings_plot=0 ; prescribed forcings in Wm-2
   do_forctemps_plot=0 ; prescribed forcings in oC
   do_polamp_plot=0 ;  plot polamp
-  do_clim_plot=1 ;  plot new vs old, EBM, MDC, and resid
+  do_clim_plot=0 ;  plot new vs old, EBM, MDC, and resid
                  ;  (requires ff_model) 
   do_scattemp_plot=0
   do_climsens_plot=0
@@ -1250,24 +1252,30 @@ endfor
 
 if (do_readbounds eq 1) then begin
 
+if (do_readmask eq 1) then begin
 masks=fltarr(nx,ny,ndates)
 masks_mean=fltarr(ndates)
-ice=fltarr(nx,ny,ndates)
-ice_mean=fltarr(ndates)
-
 for n=nstart,ndates-1 do begin
 ; read in lsm
 filename=root(n,0)+'/'+expnamel(n,0)+'/inidata/'+expnamel(n,0)+'.qrparm.mask.nc'
 print,'Reading: '+filename
 id1=ncdf_open(filename)
 ncdf_varget,id1,'lsm',dummy
+if (n eq nstart) then begin
+ncdf_varget,id1,'longitude',lons_atm
+ncdf_varget,id1,'latitude',lats_atm
+endif
 masks(*,*,n)=dummy
 ncdf_close,id1
 for j=0,ny-1 do begin
 masks_mean(n)=masks_mean(n)+weight_lat(j)*mean(masks(*,j,n))
 endfor
 endfor
+endif
 
+if (do_readice eq 1) then begin
+ice=fltarr(nx,ny,ndates)
+ice_mean=fltarr(ndates)
 for n=nstart,ndates-1 do begin
 ; read in ice
 filename=root(n,0)+'/'+expnamel(n,0)+'/inidata/'+expnamel(n,0)+'.qrfrac.type.nc'
@@ -1282,6 +1290,7 @@ for j=0,ny-1 do begin
 ice_mean(n)=ice_mean(n)+weight_lat(j)*mean(ice(*,j,n))
 endfor
 endfor
+endif
 
 endif
 
@@ -1385,6 +1394,8 @@ endif ; end do_clims
 
 if (do_ocean eq 1) then begin
 
+; the zonmean just looks liek the ocen are, because mld is zero over land!
+
 mixed=fltarr(nxmax,nymax,ndates,nexp)
 mixed_zonmean=fltarr(nymax,ndates,nexp)
 mixed_zonmax=fltarr(nymax,ndates,nexp)
@@ -1405,7 +1416,15 @@ endif
 print,readtype(n,e),n,data_filename
 id1=ncdf_open(data_filename)
 ncdf_varget,id1,'mixLyrDpth_mm_uo',dummy
+;print,'i am here',e,n
+if (e eq 4 and n eq nstart) then begin
+;print,'and here'
+;stop
+ncdf_varget,id1,'latitude',lats_ocn
+ncdf_varget,id1,'longitude',lons_ocn
+endif
 ncdf_close,id1
+;mixed(0:nxmax-1,0:nymax-1,n,e)=reverse(dummy)
 mixed(0:nxmax-1,0:nymax-1,n,e)=dummy
 
 ntv=5
@@ -1413,8 +1432,8 @@ for j=0,nymax-1 do begin
 mixed_zonmean(j,n,e)=mean(mixed(*,j,n,e))
 mixed_zonmax(j,n,e)=max(mixed(*,j,n,e))
 sorted_indices=reverse(sort(mixed(*,j,n,e)))
-top_5_values=mixed[sorted_indices(0:ntv-1),j,n,e]
-mixed_zonmax2(j,n,e)=mean(top_5_values)
+top_ntv_values=mixed[sorted_indices(0:ntv-1),j,n,e]
+mixed_zonmax2(j,n,e)=mean(top_ntv_values)
 endfor
 
 endif 
@@ -1503,7 +1522,6 @@ endif
 
 endfor
 endfor
-
 
 
 endif ; end do_ocean
