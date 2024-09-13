@@ -16,8 +16,8 @@ my_var_2=g2->Merid_Global(0,:,:)
 g1=addfile(exp_dir+"/"+expname+"/merid_ocn/"+expname+"o.meridclann.nc","r")
 my_var_1=g1->Merid_Global(0,:,:)
 
+; to blank out continous ocean 
 do j=0,72
-print(max(my_lsm(j,:)))
 if (max(my_lsm(j,:)) .eq. 0) then
   my_var_2(:,j)=my_var_2@_FillValue
   my_var_1(:,j)=my_var_1@_FillValue

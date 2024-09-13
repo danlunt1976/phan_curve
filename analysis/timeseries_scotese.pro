@@ -32,7 +32,8 @@ do_clims=0 ; read in model output
 do_readbounds=1 ; read in mask and ice
   do_readmask=1 ; read in lsm
   do_readice=0 ; read ice
-do_ocean=1 ; read in ocean
+do_ocean=0 ; read in ocean mld
+do_merid=1 ; read in ocean streamfucntion 
 do_readsolar=0 ; read solar forcing and albedo
   do_ff_model=0 ; forcing/feedback model               
   do_temp_plot=0 ; global mean from proxies
@@ -1659,15 +1660,45 @@ endfor ; for e
 
 endfor ; for nnname
 
-
-
-
-
-
-
 endif ; end do_ocean
 
-;stop
+
+if (do_merid eq 1) then begin
+
+nym=72
+nzm=21
+
+merid=fltarr(nym,nzm,ndates,nexp)
+merid_lat=fltarr(nym,ndates,nexp)
+
+for e=0,nexp-1 do begin
+for n=nstart,ndates-1 do begin
+if (readfile_o(n,e) eq 1) then begin
+
+data_filename=root(n,e)+'/'+expnamel(n,e)+'/merid_ocn/'+expnamel(n,e)+'o.meridclann.nc'
+
+print,readtype(n,e),n,data_filename
+id1=ncdf_open(data_filename)
+ncdf_varget,id1,'Merid_Global',dummy
+ncdf_varget,id1,'latitude',lats_merid
+ncdf_varget,id1,'depth',depths_merid
+ncdf_close,id1
+;mixed(0:nxmax-1,0:nymax-1,n,e)=reverse(dummy)
+merid(0:nym-1,0:nzm-1,n,e)=dummy
+
+endif
+endfor
+endfor
+
+
+
+
+
+
+
+endif
+
+stop
 
 if (do_seas eq 1) then begin
 
