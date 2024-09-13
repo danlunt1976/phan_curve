@@ -9,7 +9,9 @@ plot_temp=0
 plot_salin=0
 plot_topo=0
 
-exptype=tfke
+#exptype=tfke
+exptype=tfks
+
 exp1a=${exptype}
 exp1b=`sed 's/./\U&/4' <<< "${exp1a}"`
 exp1c=`sed 's/./\U&/3' <<< "${exp1a}"`

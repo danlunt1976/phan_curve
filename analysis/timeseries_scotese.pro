@@ -1253,6 +1253,7 @@ endfor
 if (do_readbounds eq 1) then begin
 
 if (do_readmask eq 1) then begin
+
 masks=fltarr(nx,ny,ndates)
 masks_mean=fltarr(ndates)
 for n=nstart,ndates-1 do begin
@@ -1271,6 +1272,27 @@ for j=0,ny-1 do begin
 masks_mean(n)=masks_mean(n)+weight_lat(j)*mean(masks(*,j,n))
 endfor
 endfor
+
+maskso=fltarr(nx,ny,ndates)
+maskso_mean=fltarr(ndates)
+for n=nstart,ndates-1 do begin
+; read in lsm
+filename=root(n,0)+'/'+expnamel(n,0)+'/inidata/'+expnamel(n,0)+'.qrparm.omask.nc'
+print,'Reading: '+filename
+id1=ncdf_open(filename)
+ncdf_varget,id1,'lsm',dummy
+if (n eq nstart) then begin
+ncdf_varget,id1,'longitude',lons_ocnm
+ncdf_varget,id1,'latitude',lats_ocnm
+endif
+maskso(*,*,n)=1.0-dummy
+ncdf_close,id1
+for j=0,ny-1 do begin
+maskso_mean(n)=maskso_mean(n)+weight_lat(j)*mean(maskso(*,j,n))
+endfor
+endfor
+
+
 endif
 
 if (do_readice eq 1) then begin
@@ -1394,12 +1416,14 @@ endif ; end do_clims
 
 if (do_ocean eq 1) then begin
 
-; the zonmean just looks liek the ocen are, because mld is zero over land!
+; the zonmean just looks like the ocean, because mld is zero over land!
 
 mixed=fltarr(nxmax,nymax,ndates,nexp)
 mixed_zonmean=fltarr(nymax,ndates,nexp)
 mixed_zonmax=fltarr(nymax,ndates,nexp)
 mixed_zonmax2=fltarr(nymax,ndates,nexp)
+mixed_zonmean2=fltarr(nymax,ndates,nexp)
+
 
 for e=0,nexp-1 do begin
 for n=nstart,ndates-1 do begin
@@ -1429,11 +1453,22 @@ mixed(0:nxmax-1,0:nymax-1,n,e)=dummy
 
 ntv=5
 for j=0,nymax-1 do begin
+
 mixed_zonmean(j,n,e)=mean(mixed(*,j,n,e))
+
 mixed_zonmax(j,n,e)=max(mixed(*,j,n,e))
+
 sorted_indices=reverse(sort(mixed(*,j,n,e)))
 top_ntv_values=mixed[sorted_indices(0:ntv-1),j,n,e]
 mixed_zonmax2(j,n,e)=mean(top_ntv_values)
+
+my_msk=mean(maskso(*,j,n))
+if (my_msk ne 0) then begin
+mixed_zonmean2(j,n,e)=mean(mixed(*,j,n,e))/mean(maskso(*,j,n))
+endif else begin
+mixed_zonmean2(j,n,e)=0.0
+endelse
+
 endfor
 
 endif 
@@ -1441,9 +1476,9 @@ endif
 endfor
 endfor
 
-nnn=3
+nnn=4
 nnname=strarr(nnn)
-nnname(*)=['mean','max','max2']
+nnname(*)=['mean','max','max2','mean2']
 noc=2
 oce=intarr(noc)
 oce(*)=[pe,pt]
@@ -1466,7 +1501,7 @@ topbar=ymin+(ymax-ymin)*33.0/35.0
 dtopbar=(ymax-ymin)*0.6/35.0
 
 
-plot,lats,dates2,yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',psym=2,/nodata,ytitle='latitude',title='Deep water formation',ystyle=1,xstyle=1
+plot,lats,dates2,yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',psym=2,/nodata,ytitle='latitude',title='Deep water formation',ystyle=1,xstyle=1,position=[0.1,0.1,0.9,0.9]
 
 ;;;;;;;;;;;;;
 
@@ -1498,6 +1533,32 @@ nnlevs=[0.001,nndel*findgen(nnnlev)+nndel,1000]
 print,nnlevs
 contour,transpose(reverse(mixed_zonmax2(*,*,e))),dates2,lats,/over,/fill,levels=nnlevs
 endif
+
+if (nn eq 3) then begin
+nnmax=150
+nndel=5
+nnnlev=nnmax/nndel
+nnlevs=[0.001,nndel*findgen(nnnlev)+nndel,1000]
+print,nnlevs
+contour,transpose(reverse(mixed_zonmean2(*,*,e))),dates2,lats,/over,/fill,levels=nnlevs
+endif
+
+; plot the colour bar
+my_cbymin=-50
+my_cbymax=50
+my_cbxmin=10
+my_cbxmax=30
+
+ncb=100
+my_cb=fltarr(2,ncb)
+my_cb(0,*)=findgen(ncb)*(nnmax-0)/(ncb-1.0)
+my_cb(1,*)=my_cb(0,*)
+my_cby=findgen(ncb)*(my_cbymax-my_cbymin)/(ncb-1.0)+my_cbymin
+my_cbx=[my_cbxmin,my_cbxmax]
+contour,my_cb,my_cbx,my_cby,/over,/fill,levels=nnlevs,/noclip;,position=[20,40,-50,50]
+xyouts,my_cbxmax+10,my_cbymin,'0',charsize=0.7
+xyouts,my_cbxmax+10,my_cbymax-5,strtrim(nnmax,2),charsize=0.7
+xyouts,my_cbxmin,my_cbymax+5,'MLD (metres)',charsize=0.5
 
 
 
@@ -3858,9 +3919,12 @@ endif
 
 if (do_grads_plot eq 1) then begin
 
-; Grads hoffmuller PLOT
+; Grads Hoffmuller plot
 
-device,filename='grads_time.eps',/encapsulate,/color,set_font='Helvetica',xsize=7,ysize=5,/inches
+for e=0,nexp-1 do begin
+if (readfile(0,e) eq 1) then begin
+
+device,filename='grads_time_'+exproot(0,e)+'.eps',/encapsulate,/color,set_font='Helvetica',xsize=7,ysize=5,/inches
 
 nbar=100
 nlevv=21
@@ -3882,7 +3946,7 @@ dtopbar=(ymax-ymin)*0.6/35.0
 
 ;plot,dates2,climsens(*),yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',psym=2,/nodata,ytitle='Zonal mean temperature [degrees C]',ystyle=1,xstyle=1
 
-contour,transpose(grads(*,*,pe,0)-273.15),dates2,lats,yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',ytitle='Latitude',ystyle=1,xstyle=1,/cell_fill,levels=mylevsv,position=[0.1,0.25,0.95,0.95]
+contour,transpose(grads(*,*,e,0)-273.15),dates2,lats,yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',ytitle='Latitude',ystyle=1,xstyle=1,/cell_fill,levels=mylevsv,position=[0.1,0.25,0.95,0.95]
 
 oplot,[xmin,xmax],[topbar,topbar]
 for n=1,nstage-1 do begin
@@ -3897,6 +3961,9 @@ contour,mybarv,mybarv(*,0),[0,1],levels=mylevsv,/fill,position=[0.15,0.1,0.95,0.
 xyouts,0.5,-1.5,'Zonal mean temperature [degrees C]',align=0.5
 
 device,/close
+
+endif
+endfor 
 
 endif
 
