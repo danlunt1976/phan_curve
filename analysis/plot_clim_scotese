@@ -4,8 +4,8 @@
 plot_tempdiff=0
 plot_streamabs=0
 plot_uv=0
-plot_mixed=1
-plot_merid=0
+plot_mixed=0
+plot_merid=1
 plot_wind=0
 plot_temp=0
 plot_salin=0

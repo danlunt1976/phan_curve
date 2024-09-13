@@ -2,6 +2,7 @@ pro time
 
 set_plot,'ps'
 !P.FONT=0
+
 loadct,0
 tvlct,r_0,g_0,b_0,/get
 
@@ -1424,7 +1425,6 @@ mixed_zonmax=fltarr(nymax,ndates,nexp)
 mixed_zonmax2=fltarr(nymax,ndates,nexp)
 mixed_zonmean2=fltarr(nymax,ndates,nexp)
 
-
 for e=0,nexp-1 do begin
 for n=nstart,ndates-1 do begin
 
@@ -1469,24 +1469,27 @@ endif else begin
 mixed_zonmean2(j,n,e)=0.0
 endelse
 
-endfor
+endfor ; end j lats
+endif ; end if readfile
 
-endif 
-
-endfor
-endfor
+endfor ; end n
+endfor ; end e
 
 nnn=4
 nnname=strarr(nnn)
 nnname(*)=['mean','max','max2','mean2']
+mixed_time_nh=fltarr(ndates,nexp,nnn)
+mixed_time_sh=fltarr(ndates,nexp,nnn)
+
 noc=2
 oce=intarr(noc)
 oce(*)=[pe,pt]
 
 
-for nn=0,nnn-1 do begin
-for e=0,nexp-1 do begin
 
+for nn=0,nnn-1 do begin
+
+for e=0,nexp-1 do begin
 if (readfile_o(0,e) eq 1) then begin
 
 device,filename='mixed_time_'+exproot(0,e)+'_'+nnname(nn)+'.eps',/encapsulate,/color,set_font='Helvetica',xsize=7,ysize=5,/inches
@@ -1513,7 +1516,7 @@ nndel=2
 nnnlev=nnmax/nndel
 nnlevs=[0.001,nndel*findgen(nnnlev)+nndel,1000]
 print,nnlevs
-contour,transpose(reverse(mixed_zonmean(*,*,e))),dates2,lats,/over,/fill,levels=nnlevs
+thisdata=mixed_zonmean(*,*,e)
 endif
 
 if (nn eq 1) then begin
@@ -1522,7 +1525,7 @@ nndel=10
 nnnlev=nnmax/nndel
 nnlevs=[0.001,nndel*findgen(nnnlev)+nndel,1000]
 print,nnlevs
-contour,transpose(reverse(mixed_zonmax(*,*,e))),dates2,lats,/over,/fill,levels=nnlevs
+thisdata=mixed_zonmax(*,*,e)
 endif
 
 if (nn eq 2) then begin
@@ -1531,7 +1534,7 @@ nndel=10
 nnnlev=nnmax/nndel
 nnlevs=[0.001,nndel*findgen(nnnlev)+nndel,1000]
 print,nnlevs
-contour,transpose(reverse(mixed_zonmax2(*,*,e))),dates2,lats,/over,/fill,levels=nnlevs
+thisdata=mixed_zonmax2(*,*,e)
 endif
 
 if (nn eq 3) then begin
@@ -1540,8 +1543,10 @@ nndel=5
 nnnlev=nnmax/nndel
 nnlevs=[0.001,nndel*findgen(nnnlev)+nndel,1000]
 print,nnlevs
-contour,transpose(reverse(mixed_zonmean2(*,*,e))),dates2,lats,/over,/fill,levels=nnlevs
+thisdata=mixed_zonmean2(*,*,e)
 endif
+
+contour,transpose(reverse(thisdata)),dates2,lats,/over,/fill,levels=nnlevs
 
 ; plot the colour bar
 my_cbymin=-50
@@ -1579,10 +1584,85 @@ endfor
 
 device,/close
 
-endif
 
+;nmxl=12 ; up to (not including) 60 degrees N/S
+nmxl=17 ; up to (including) 50 degrees N/S
+
+for n=nstart,ndates-1 do begin
+
+ntv2=5
+; ntv2=1 ; for max
+
+sortvect=thisdata(ny-nmxl:ny-1,n)
+sorted_indices=reverse(sort(sortvect))
+top_ntv2_values=sortvect[sorted_indices(0:ntv2-1)]
+mixed_time_nh(n,e,nn)=mean(top_ntv2_values)
+
+sortvect=thisdata(0:nmxl-1,n)
+sorted_indices=reverse(sort(sortvect))
+top_ntv2_values=sortvect[sorted_indices(0:ntv2-1)]
+mixed_time_sh(n,e,nn)=mean(top_ntv2_values)
+
+;mixed_time_nh(n,e,nn)=mean(thisdata(ny-nmxl:ny-1,n))
+;mixed_time_sh(n,e,nn)=mean(thisdata(0:nmxl-1,n))
+;mixed_time_nh(n,e,nn)=max(thisdata(ny-nmxl:ny-1,n))
+;mixed_time_sh(n,e,nn)=max(thisdata(0:nmxl-1,n))
+
+endfor ; end nstart to ndates
+
+device,filename='mixednhsh_time_'+exproot(0,e)+'_'+nnname(nn)+'.eps',/encapsulate,/color,set_font='Helvetica',xsize=7,ysize=5,/inches
+
+xmin=-550
+xmax=0
+
+ymin=0
+ymax=nnmax*1.5
+
+topbar=ymin+(ymax-ymin)*33.0/35.0
+dtopbar=(ymax-ymin)*0.6/35.0
+
+plot,dates2,mixed_time_nh(*,e,nn),yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',ytitle='mixed layer depth',ystyle=1,xstyle=1,color=0,/nodata,YTICKFORMAT='(F6.0)'
+oplot,dates2,mixed_time_nh(*,e,nn),color=70,thick=5
+plots,dates2,mixed_time_sh(*,e,nn),color=180,thick=5
+
+
+tvlct,r_cgmw,g_cgmw,b_cgmw
+for n=0,nstage-1 do begin
+polyfill,[stageb(n),stageb(n+1),stageb(n+1),stageb(n)],[ymax,ymax,topbar,topbar],color=n
 endfor
+tvlct,r_39,g_39,b_39
+
+oplot,[xmin,xmax],[topbar,topbar]
+for n=1,nstage-1 do begin
+oplot,[stageb(n),stageb(n)],[topbar,ymax]
 endfor
+
+for n=0,nstage-1 do begin
+xyouts,(stageb(n)+stageb(n+1))/2.0,topbar+dtopbar,alignment=0.5,stagen(n),charsize=0.7
+endfor
+
+corr1=-50
+myy=ymin+(ymax-ymin)*0.9
+dy1=(ymax-ymin)/200
+dy2=(ymax-ymin)/20
+oplot,[-150,-120]+corr1,[myy,myy],color=70,thick=5
+xyouts,-100+corr1,myy-dy1,'Northern Hemisphere', charsize=0.7
+oplot,[-150,-120]+corr1,[myy-dy2,myy-dy2], color=180,thick=5
+xyouts,-100+corr1,myy-dy2-dy1,'Southern Hemisphere', charsize=0.7
+
+
+device,/close
+
+endif ; if readfile(0,e)
+
+endfor ; for e
+
+endfor ; for nnname
+
+
+
+
+
 
 
 endif ; end do_ocean
