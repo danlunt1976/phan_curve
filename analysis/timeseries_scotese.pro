@@ -1,5 +1,14 @@
 pro time
 
+; *****************
+; TO DO:
+
+; cross-plots of e.g. log(co2) (or total forcing) with temp, merid
+; gradient, log(CO2) with precip, circulation etc.
+; hoffmuller plots of temp, precip, circulation
+
+; *****************
+
 set_plot,'ps'
 !P.FONT=0
 
@@ -32,8 +41,8 @@ do_clims=0 ; read in model output
 do_readbounds=1 ; read in mask and ice
   do_readmask=1 ; read in lsm
   do_readice=0 ; read ice
-do_ocean=0 ; read in ocean mld
-do_merid=1 ; read in ocean streamfucntion 
+do_ocean=1 ; read in ocean mld
+do_merid=1 ; read in ocean streamfunction 
 do_readsolar=0 ; read solar forcing and albedo
   do_ff_model=0 ; forcing/feedback model               
   do_temp_plot=0 ; global mean from proxies
@@ -1683,20 +1692,103 @@ ncdf_varget,id1,'Merid_Global',dummy
 ncdf_varget,id1,'latitude',lats_merid
 ncdf_varget,id1,'depth',depths_merid
 ncdf_close,id1
-;mixed(0:nxmax-1,0:nymax-1,n,e)=reverse(dummy)
+
+print,lats_ocnm
+print,lats_merid
+
 merid(0:nym-1,0:nzm-1,n,e)=dummy
+for j=0,nym-1 do begin
+for zz=0,nzm-1 do begin
+if (merid(j,zz,n,e) lt -99998.0) then begin
+merid(j,zz,n,e)=!VALUES.F_NAN
+endif
+endfor
+endfor
+
+; NOTE FOR NEXT TIME:
+; Now need to mask out data if have zonally continous ocean
+
+stop
+
+for j=0,nym-1 do begin
+merid_lat(j,n,e)=max(abs(merid(j,10:nzm-1,n,e)))
+endfor ; end j lats
 
 endif
 endfor
 endfor
 
 
+for e=0,nexp-1 do begin
+if (readfile_o(0,e) eq 1) then begin
+
+device,filename='merid_time_'+exproot(0,e)+'.eps',/encapsulate,/color,set_font='Helvetica',xsize=7,ysize=5,/inches
+
+xmin=-550
+xmax=0
+
+ymin=-90
+ymax=110
+
+topbar=ymin+(ymax-ymin)*33.0/35.0
+dtopbar=(ymax-ymin)*0.6/35.0
+
+
+plot,lats,dates2,yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',psym=2,/nodata,ytitle='latitude',title='Overturning Streamfunction',ystyle=1,xstyle=1,position=[0.1,0.1,0.9,0.9]
+
+;;;;;;;;;;;;;
+
+tvlct,r_39,g_39,b_39
+
+nnmax=30
+nndel=1
+nnnlev=nnmax/nndel
+nnlevs=[0.001,nndel*findgen(nnnlev)+nndel,1000]
+print,nnlevs
+thisdata=merid_lat(*,*,e)
+
+contour,transpose(reverse(thisdata)),dates2,lats_merid,/over,/fill,levels=nnlevs
+
+; plot the colour bar
+my_cbymin=-50
+my_cbymax=50
+my_cbxmin=10
+my_cbxmax=30
+
+ncb=100
+my_cb=fltarr(2,ncb)
+my_cb(0,*)=findgen(ncb)*(nnmax-0)/(ncb-1.0)
+my_cb(1,*)=my_cb(0,*)
+my_cby=findgen(ncb)*(my_cbymax-my_cbymin)/(ncb-1.0)+my_cbymin
+my_cbx=[my_cbxmin,my_cbxmax]
+contour,my_cb,my_cbx,my_cby,/over,/fill,levels=nnlevs,/noclip;,position=[20,40,-50,50]
+xyouts,my_cbxmax+10,my_cbymin,'0',charsize=0.7
+xyouts,my_cbxmax+10,my_cbymax-5,strtrim(nnmax,2),charsize=0.7
+xyouts,my_cbxmin,my_cbymax+5,'abs(merid) [Sv]',charsize=0.5
 
 
 
+tvlct,r_cgmw,g_cgmw,b_cgmw
+for n=0,nstage-1 do begin
+polyfill,[stageb(n),stageb(n+1),stageb(n+1),stageb(n)],[ymax,ymax,topbar,topbar],color=n
+endfor
+tvlct,r_39,g_39,b_39
 
+oplot,[xmin,xmax],[topbar,topbar]
+for n=1,nstage-1 do begin
+oplot,[stageb(n),stageb(n)],[topbar,ymax]
+endfor
+
+for n=0,nstage-1 do begin
+xyouts,(stageb(n)+stageb(n+1))/2.0,topbar+dtopbar,alignment=0.5,stagen(n),charsize=0.7
+endfor
+
+device,/close
 
 endif
+endfor
+
+endif ; end do_merid
 
 stop
 
