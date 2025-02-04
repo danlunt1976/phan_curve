@@ -1,0 +1,33 @@
+#!/bin/ksh
+
+# probably a good idea to run an ssh-agent before running this script 
+#  so you don't have to put in your password lots of times...
+
+#exptype1=tfks
+#year=000003000
+tail=''
+
+exptype1=texz
+year=000005850
+tail='1'
+
+restartroot="/home/bridge/ggdjl/ClimateOutput/scotese_restarts/${exptype1}${tail}"
+
+exp1a=${exptype1}
+exp1b=`sed 's/./\U&/4' <<< "${exp1a}"`
+exp1c=`sed 's/./\U&/3' <<< "${exp1a}"`
+exp1d=`sed 's/./\U&/3' <<< "${exp1b}"`
+exp1e=`sed 's/./\U&/2' <<< "${exp1a}"`
+
+expids1="${exp1a} ${exp1b} ${exp1c} ${exp1d} ${exp1e}"
+
+for exp in ${expids1} ; do
+
+scp ${restartroot}/${exp}??\#da${year}c1+.gz ggdjl@bc4login.acrc.bris.ac.uk:/mnt/storage/home/ggdjl/dump2hold/dumps_deeptime_djl/${exptype1}${tail}/
+
+
+done
+
+
+
+exit

@@ -1,0 +1,21 @@
+#!/bin/ksh
+
+exptype1=tflm
+
+exp1a=${exptype1}
+exp1b=`sed 's/./\U&/4' <<< "${exp1a}"`
+exp1c=`sed 's/./\U&/3' <<< "${exp1a}"`
+exp1d=`sed 's/./\U&/3' <<< "${exp1b}"`
+exp1e=`sed 's/./\U&/2' <<< "${exp1a}"`
+
+
+eval $(ssh-agent) ; ssh-add ~/.ssh/id_rsa_puma
+
+ssh 192.171.169.138 "cd umui_jobs ; tar cvf ${exptype1}.tar ${exp1a}? ${exp1b}? ${exp1c}? ${exp1d}? ${exp1e}?"
+
+scp 192.171.169.138:umui_jobs/${exptype1}.tar .
+scp ./${exptype1}.tar ggdjl@bc4login.acrc.bris.ac.uk:umui_jobs/
+\rm ./${exptype1}.tar
+ssh ggdjl@bc4login.acrc.bris.ac.uk "cd umui_jobs ; tar xvf ${exptype1}.tar"
+
+exit
