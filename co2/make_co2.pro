@@ -8,12 +8,16 @@ nco2=2
 ; 0 = foster
 ; 1 = rae
 
-nco2f=5
+nco2f=6
 ; 0 = foster
 ; 1 = foster | rae
 ; 2 = foster blended rae
 ; 3 = foster rae rae
 ; 4 = inferred
+; 5 = mean forcing of foster blended rae
+
+dowrite=intarr(nco2f)
+dowrite(*)=[0,0,0,0,0,1]
 
 ntim=2
 ; 0 = orig
@@ -179,30 +183,62 @@ close,1
 
 for i=0,ns-1 do begin
 co2s(i,4,t)=co2_inf_1m(i)
-co2m(i,4,t)=co2s(i,4,t)*44.01/28970000.0
+co2m(i,4,t)=co2s(i,2,t)*44.01/28970000.0
 endfor
 
 endif
 
+
+; Inferred
+if (t eq 1) then begin
+
+co2_const= exp(mean(alog(co2s(*,4,1))))
+
+
+for i=0,ns-1 do begin
+co2s(i,5,t)=co2_const
+co2m(i,5,t)=co2s(i,5,t)*44.01/28970000.0
+endfor
+
+endif
+
+
 ; write the files
+
+if (dowrite(0) eq 1) then begin
 openw,1,'co2_all_02_djl'+extname(t)+'.dat'
 for i=0,ns-1 do begin
 PRINTf,1,cage(i,t),ages(i,t),co2s(i,0,t),co2m(i,0,t), FORMAT = '(1x,a,1x,2f10.2,1x,E12.5)'
 endfor
 close,1
+endif
 
+if (dowrite(3) eq 1) then begin
 openw,1,'co2_all_03'+extname(t)+'.dat'
 for i=0,ns-1 do begin
 PRINTf,1,cage(i,t),ages(i,t),co2s(i,3,t),co2m(i,3,t), FORMAT = '(1x,a,1x,2f10.2,1x,E12.5)'
 endfor
 close,1
+endif
 
+if (dowrite(4) eq 1) then begin
 if (t eq 1) then begin
 openw,1,'co2_all_04'+extname(t)+'.dat'
 for i=0,ns-1 do begin
 PRINTf,1,cage(i,t),ages(i,t),co2s(i,4,t),co2m(i,4,t), FORMAT = '(1x,a,1x,2f10.2,1x,E12.5)'
 endfor
 close,1
+endif
+endif
+
+if (dowrite(5) eq 1) then begin
+if (t eq 1) then begin
+openw,1,'co2_all_05'+extname(t)+'.dat'
+for i=0,ns-1 do begin
+PRINTf,1,cage(i,t),ages(i,t),co2s(i,5,t),co2m(i,5,t), FORMAT = '(1x,a,1x,2f10.2,1x,E12.5)'
+endfor
+close,1
+endif
 endif
 
 
@@ -271,7 +307,15 @@ for s=0,ns-1 do begin
 if (t ne 0 or p ne 2) then begin; don't plot if old times and paper plot
 plots,ages(s,t)*(-1),co2s(s,3,t),color=250,psym=4,symsize=2*timfact(t),NOCLIP=myclip(p),thick=mythick(p)
 endif
+
+if (t ne 0 and p eq 0) then begin; only plto on all plot
+plots,ages(s,t)*(-1),co2s(s,5,t),color=200,psym=4,symsize=2*timfact(t),NOCLIP=myclip(p),thick=mythick(p)
+endif
+
+
 endfor
+
+
 
 endfor
 
