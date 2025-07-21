@@ -37,23 +37,24 @@ do_greg_plot=0 ; , make gregory plots (requires do_greg and do_clims)
 ;means
 read_all_clims=0 ; if 0 [0=default] then only read in more recent simulations 
            ;   (e.g. tfke,tfks), for speed
-do_clims=0 ; read in model output
+do_clims=1 ; read in model output
 do_readbounds=1 ; read in mask and ice
   do_readmask=1 ; read in lsm
-  do_readice=0 ; read ice
-do_ocean=1 ; read in ocean mld
-do_merid=1 ; read in ocean streamfunction 
-do_readsolar=0 ; read solar forcing and albedo
-  do_ff_model=0 ; forcing/feedback model               
+  do_readice=1 ; read ice
+do_ocean=0 ; read in ocean mld
+do_merid=0 ; read in ocean streamfunction 
+do_readsolar=1 ; read solar forcing and albedo
+  do_ff_model=1 ; forcing/feedback model (requires do_clims, do_readbounds, do_readsolar?)     
   do_temp_plot=0 ; global mean from proxies
   do_co2_plot=0 ; prescribed co2 (requires do_ff_model)
+  do_co2_const=0 ; constant co2 (requires do_ff_model)
   do_lsm_plot=0 ; prescribed land area
   do_solar_plot=0 ; prescribed solar forcing
   do_ice_plot=0 ; prescribed ice sheets
   do_forcings_plot=0 ; prescribed forcings in Wm-2
   do_forctemps_plot=0 ; prescribed forcings in oC
   do_polamp_plot=0 ;  plot polamp
-  do_clim_plot=0 ;  plot new vs old, EBM, MDC, and resid
+  do_clim_plot=1 ;  plot new vs old, EBM, MDC, and resid
                  ;  (requires ff_model) 
   do_scattemp_plot=0
   do_climsens_plot=0
@@ -2941,7 +2942,7 @@ close,1
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;
-endif
+endif ; end do ff_model
 
 
 
