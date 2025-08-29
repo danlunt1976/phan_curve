@@ -9,6 +9,9 @@ pro time
 
 ; *****************
 
+;my_home='/home/bridge/'
+my_home='/home/'
+  
 set_plot,'ps'
 !P.FONT=0
 
@@ -415,17 +418,17 @@ for n=nstart,ndates-1 do begin
 for e=0,nexp-1 do begin
 
 if (locdata(n,e) eq 0) then begin
-roottim(n,e)='/home/bridge/ggdjl/ummodel/data'
+roottim(n,e)=my_home+'ggdjl/ummodel/data'
 endif
 if (locdata(n,e) eq 1) then begin
-roottim(n,e)='/home/bridge/ggdjl/um_climates'
+roottim(n,e)=my_home+'ggdjl/um_climates'
 endif
 
 if (readtype(n,e) eq 1) then begin
-root(n,e)='/home/bridge/ggdjl/ummodel/data'
+root(n,e)=my_home+'ggdjl/ummodel/data'
 endif
 if (readtype(n,e) eq 0) then begin
-root(n,e)='/home/bridge/ggdjl/um_climates'
+root(n,e)=my_home+'ggdjl/um_climates'
 endif
 
 endfor
@@ -523,7 +526,7 @@ my_date=''
 my_name=''
 
 close,1
-openr,1,'/home/bridge/swsvalde/ummodel/scripts/html_list/movies/scotese_04.dat'
+openr,1,my_home+'swsvalde/ummodel/scripts/html_list/movies/scotese_04.dat'
 readf,1,my_line
 readf,1,dum
 readf,1,my_date
@@ -1791,7 +1794,7 @@ endfor
 
 endif ; end do_merid
 
-stop
+;stop
 
 if (do_seas eq 1) then begin
 
