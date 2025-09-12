@@ -4,8 +4,8 @@ pro time
 ; TO DO:
 
 ; cross-plots of e.g. log(co2) (or total forcing) with temp, merid
-; gradient, log(CO2) with precip, circulation etc.
-; hoffmuller plots of temp, precip, circulation
+;   gradient, log(CO2) with precip, circulation etc.
+; hoffmuller plots of temp, precip, lsm
 
 ; *****************
 
@@ -24,49 +24,56 @@ tvlct,r_39,g_39,b_39,/get
 Aaa = FINDGEN(17) * (!PI*2/16.)  
 USERSYM, COS(Aaa), SIN(Aaa), /FILL 
 
-; times
-read_all_times=0 ; if 0 [1=default] then only read in more recent simulations 
-           ;   (e.g. tfke,tfks), for testing or gmst
+; timeseries
 do_times=0 ; read/write timeseries files
-do_timeseries_plot=0 ; plot global mean SST timeseries of each simulation
-do_gmst_plot=0 ; plot last navy years of SST through phanerozoic
+  read_all_times=0   ; if 0 [1=default] then only read in more recent
+                     ; simulations (e.g. tfke,tfks), for testing or gmst
+  do_timeseries_plot=0 ; plot global mean SST timeseries of each simulation
+  do_gmst_plot=0 ; plot last navy years of SST through phanerozoic
 
 ; gregory plots
-read_all_greg=0 ; if 0 [0=default] then only read in more recent simulations 
-           ;   (e.g. tfke,tfks), for speed
 do_greg=0 ; read gregory data
-do_greg_plot=0 ; , make gregory plots (requires do_greg and do_clims)
+  read_all_greg=0         ; if 0 [0=default] then only read in more recent simulations 
+           ;   (e.g. tfke,tfks), for speed
+  do_greg_plot=0 ; , make gregory plots (requires do_greg and do_clims)
 
 ;means
-read_all_clims=0 ; if 0 [0=default] then only read in more recent simulations 
+do_clims=1 ; read in model temperature output
+  read_all_clims=0        ; if 0 [0=default] then only read in more recent simulations 
            ;   (e.g. tfke,tfks), for speed
-do_clims=1 ; read in model output
 do_readbounds=1 ; read in mask and ice
-  do_readmask=1 ; read in lsm
-  do_readice=1 ; read ice
-do_ocean=0 ; read in ocean mld
-do_merid=0 ; read in ocean streamfunction 
-do_readsolar=1 ; read solar forcing and albedo
-  do_ff_model=1 ; forcing/feedback model (requires do_clims, do_readbounds, do_readsolar?)     
-  do_temp_plot=0 ; global mean from proxies
-  do_co2_plot=0 ; prescribed co2 (requires do_ff_model)
-  do_co2_const=0 ; constant co2 (requires do_ff_model)
-  do_lsm_plot=0 ; prescribed land area
-  do_solar_plot=0 ; prescribed solar forcing
-  do_ice_plot=0 ; prescribed ice sheets
-  do_forcings_plot=0 ; prescribed forcings in Wm-2
-  do_forctemps_plot=0 ; prescribed forcings in oC
-  do_polamp_plot=0 ;  plot polamp
-  do_clim_plot=1 ;  plot new vs old, EBM, MDC, and resid
-                 ;  (requires ff_model) 
-  do_scattemp_plot=0
-  do_climsens_plot=0
-  do_ess_plot=0
-  do_grads_plot=0 ; hoffmuller plot
+  do_readlsm=1 ; read in lsm
+    do_lsm_plot=0               ; prescribed land area
+  do_readice=1                  ; read ice
+    do_ice_plot=0 ; prescribed ice sheets
 
-  do_ebm=0 ; EBM model
-  do_aprp=0 ; APRP
-  do_seas=0
+do_solar_plot=0 ; prescribed solar forcing (from .dat file)
+do_ocean=1                    ; read in ocean mld
+do_merid=0 ; read in ocean streamfunction 
+do_precip=1 ; read in model precip output
+
+do_temp_plot=0 ; global mean from proxies
+
+do_readsolar=0                  ; read solar forcing and albedo
+  do_ff_model=0 ; forcing/feedback model (requires do_clims, do_readbounds, do_readsolar?)     
+    do_co2_plot=0 ; prescribed co2 (requires do_ff_model)
+    do_co2_const=0 ; constant co2 (requires do_ff_model)
+
+    do_forcings_plot=0 ; prescribed forcings in Wm-2
+    do_forctemps_plot=0 ; prescribed forcings in oC
+ 
+    do_clim_plot=0 ;  plot new vs old, ff, MDC, and resid
+                 ;  (requires ff_model) 
+
+do_polamp_plot=0 ;  plot polamp
+do_scattemp_plot=0
+do_climsens_plot=0
+do_ess_plot=0
+do_hoff_plots=1 ; hoffmuller plot
+
+do_ebm=0 ; EBM model
+do_aprp=0 ; APRP
+do_seas=0 ; wmmt, cmmt
 
 do_textfile1=0 ; textfile of proxies for Emily
 do_textfile2=0 ; textfile of proxies for Chris
@@ -978,6 +985,7 @@ endfor
 endif ; end do gregory
 
 
+; READ IN PROXIES
 
 line=''
 dum=''
@@ -1168,6 +1176,8 @@ temp_scot_interp=interpol(temp_scot,dates_scot,dates2)
 temp_scot1m_interp=interpol(temp_scot1m,dates_scot1m,dates2)
 temp_wing_interp=interpol(temp_wing,dates_wing,dates2)
 
+
+
 line=''
 close,1
 openr,1,'solar_all.dat'
@@ -1267,10 +1277,12 @@ endfor
 
 if (do_readbounds eq 1) then begin
 
-if (do_readmask eq 1) then begin
+if (do_readlsm eq 1) then begin
 
 masks=fltarr(nx,ny,ndates)
 masks_mean=fltarr(ndates)
+masks_zon=fltarr(ny,ndates)
+
 for n=nstart,ndates-1 do begin
 ; read in lsm
 filename=root(n,0)+'/'+expnamel(n,0)+'/inidata/'+expnamel(n,0)+'.qrparm.mask.nc'
@@ -1284,7 +1296,8 @@ endif
 masks(*,*,n)=dummy
 ncdf_close,id1
 for j=0,ny-1 do begin
-masks_mean(n)=masks_mean(n)+weight_lat(j)*mean(masks(*,j,n))
+  masks_zon(j,n)=mean(masks(*,j,n))
+  masks_mean(n)=masks_mean(n)+weight_lat(j)*mean(masks(*,j,n))
 endfor
 endfor
 
@@ -1327,9 +1340,9 @@ for j=0,ny-1 do begin
 ice_mean(n)=ice_mean(n)+weight_lat(j)*mean(ice(*,j,n))
 endfor
 endfor
-endif
+endif ; end do_readice
 
-endif
+endif ; end do_readbounds
 
 ; read solar
 
@@ -1429,6 +1442,46 @@ endfor
 endif ; end do_clims
 
 
+
+if (do_precip eq 1) then begin
+
+precip=fltarr(nx,ny,ndates,nexp)
+precip_zon=fltarr(ny,ndates,nexp)
+precip_gbl=fltarr(ndates,nexp)
+
+for e=0,nexp-1 do begin
+for n=nstart,ndates-1 do begin
+
+if (readfile(n,e) eq 1) then begin
+
+if (readtype(n,e) eq 1) then begin
+data_filename=root(n,e)+'/'+expnamel(n,e)+'/climate/'+expnamel(n,e)+'a.pdclann.nc'
+endif
+if (readtype(n,e) eq 0) then begin
+data_filename=root(n,e)+'/'+expnamel(n,e)+'/'+expnamel(n,e)+'a.pdclann.nc'
+endif
+
+print,readtype(n,e),n,data_filename
+id1=ncdf_open(data_filename)
+ncdf_varget,id1,'precip_mm_srf',dummy
+ncdf_close,id1
+precip(0:nx-1,0:ny-1,n,e)=dummy*86400
+
+for j=0,ny-1 do begin
+precip_zon(j,n,e)=mean(precip(*,j,n,e))
+endfor
+precip_gbl(n,e)=total(weight_lat(*)*precip_zon(*,n,e))
+
+endif
+endfor
+endfor
+
+endif ; end do_precip
+
+
+
+
+
 if (do_ocean eq 1) then begin
 
 ; the zonmean just looks like the ocean, because mld is zero over land!
@@ -1462,7 +1515,7 @@ ncdf_varget,id1,'latitude',lats_ocn
 ncdf_varget,id1,'longitude',lons_ocn
 endif
 ncdf_close,id1
-;mixed(0:nxmax-1,0:nymax-1,n,e)=reverse(dummy)
+;mixed(0:nxmax-1,0:nymax-1,n,e)=reverse(dummy) ; CHECK!!!!
 mixed(0:nxmax-1,0:nymax-1,n,e)=dummy
 
 ntv=5
@@ -1517,8 +1570,7 @@ ymax=110
 topbar=ymin+(ymax-ymin)*33.0/35.0
 dtopbar=(ymax-ymin)*0.6/35.0
 
-
-plot,lats,dates2,yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',psym=2,/nodata,ytitle='latitude',title='Deep water formation',ystyle=1,xstyle=1,position=[0.1,0.1,0.9,0.9]
+plot,lats,dates2,yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',psym=2,/nodata,ytitle='Latitude',ystyle=1,xstyle=1,position=[0.1,0.25,0.95,0.95]
 
 ;;;;;;;;;;;;;
 
@@ -1562,24 +1614,23 @@ endif
 
 contour,transpose(reverse(thisdata)),dates2,lats,/over,/fill,levels=nnlevs
 
-; plot the colour bar
-my_cbymin=-50
-my_cbymax=50
-my_cbxmin=10
-my_cbxmax=30
+nlevv=nnnlev+2
+maxv=nnmax
+minv=0
+xlab='Mixed layer depth [m]'
+mytickv=[0,nnmax]
 
-ncb=100
-my_cb=fltarr(2,ncb)
-my_cb(0,*)=findgen(ncb)*(nnmax-0)/(ncb-1.0)
-my_cb(1,*)=my_cb(0,*)
-my_cby=findgen(ncb)*(my_cbymax-my_cbymin)/(ncb-1.0)+my_cbymin
-my_cbx=[my_cbxmin,my_cbxmax]
-contour,my_cb,my_cbx,my_cby,/over,/fill,levels=nnlevs,/noclip;,position=[20,40,-50,50]
-xyouts,my_cbxmax+10,my_cbymin,'0',charsize=0.7
-xyouts,my_cbxmax+10,my_cbymax-5,strtrim(nnmax,2),charsize=0.7
-xyouts,my_cbxmin,my_cbymax+5,'MLD (metres)',charsize=0.5
+a=size(mytickv)
+myxticks=a(1)-1
 
+nbar=100
+mybarv=fltarr(nbar,2)
+mybarv(*,0)=minv+(maxv-minv)*findgen(nbar)/(nbar-1.0)
+mybarv(*,1)=mybarv(*,0)
+mylevsv=minv+(maxv-minv)*findgen(nlevv)/(nlevv-1.0)
 
+topbar=ymin+(ymax-ymin)*33.0/35.0
+dtopbar=(ymax-ymin)*0.6/35.0
 
 tvlct,r_cgmw,g_cgmw,b_cgmw
 for n=0,nstage-1 do begin
@@ -1595,6 +1646,9 @@ endfor
 for n=0,nstage-1 do begin
 xyouts,(stageb(n)+stageb(n+1))/2.0,topbar+dtopbar,alignment=0.5,stagen(n),charsize=0.7
 endfor
+
+contour,mybarv,mybarv(*,0),[0,1],levels=mylevsv,/fill,position=[0.15,0.1,0.95,0.15],/noerase,xstyle=1,xrange=[minv,maxv],ystyle=4,xtickv=mytickv,xticks=myxticks
+xyouts,minv+0.5*(maxv-minv),-1.5,xlab,align=0.5
 
 device,/close
 
@@ -3255,8 +3309,7 @@ if (p eq 3) then begin
 ; Plot Judd in orange
 oplot,dates_judd,temp_judd,color=200,thick=3
 ;oplot,dates2,temp_judd_interp,color=225,thick=3,linestyle=1
-
-endif
+endif 
 
 
 tvlct,r_cgmw,g_cgmw,b_cgmw
@@ -3309,7 +3362,7 @@ device,/close
 
 endfor
 
-endif ; end if temp plot
+endif ; end if do_temp_plot
 
 
 if (do_co2_plot eq 1) then begin
@@ -4024,6 +4077,57 @@ device,/close
 endfor
 endfor
 
+
+; plot the residual
+
+v=0
+
+device,filename='resid_'+climnamelong(v)+'_time.eps',/encapsulate,/color,set_font='Helvetica'
+
+xmin=-550
+xmax=0
+ymin=yminr(v)
+ymax=ymaxr(v)
+
+topbar=ymin+(ymax-ymin)*33.0/35.0
+dtopbar=(ymax-ymin)*0.6/35.0
+
+plot,dates2,climav(*,1,v),yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',psym=2,/nodata,ytitle='Temperature [degrees C]',title=climnametitle(v)+' residual',ystyle=1,xstyle=1
+
+;;;;;;;;;;;;;
+for n=nstart,ndates-1 do begin
+
+x=n-nstart
+xx=ndates-nstart
+;mycol=(x)*250.0/(xx-1)
+mycol=0
+
+plots,dates2(n),resid(n),color=mycol,psym=8,symsize=0.5
+;xyouts,dates2(n)+5,resid(n)+0.05,exproot(n,1)+exptail(n,1),charsize=0.2
+
+endfor ; end n
+
+oplot,dates2(*),resid,thick=3
+
+oplot,[dates2(0),dates2(nstart-1)],[0,0],linestyle=2
+
+xyouts,-500,-2.5,'HadCM3L ['+exproot(0,pe)+']'
+plots,-520,-2.5,psym=8,symsize=0.5
+
+oplot,[xmin,xmax],[topbar,topbar]
+for n=1,nstage-1 do begin
+oplot,[stageb(n),stageb(n)],[topbar,ymax]
+endfor
+
+for n=0,nstage-1 do begin
+xyouts,(stageb(n)+stageb(n+1))/2.0,topbar+dtopbar,alignment=0.5,stagen(n),charsize=0.7
+endfor
+
+
+device,/close
+
+endif ; end do_clim_plot
+
 ;stop
 
 
@@ -4054,8 +4158,7 @@ plots,myxx,myyy-mydy,psym=8,color=mycot,symsize=0.5
 xyouts,myxx+mydx,myyy-mydy2,'Untuned'
 xyouts,myxx+mydx,myyy-mydy-mydy2,'Tuned',color=mycot
 
-
-endif
+endif ; end scattemp plot
 
 
 
@@ -4068,7 +4171,6 @@ tempdiff=fltarr(ndates)
 co2diff=fltarr(ndates)
 co2forcing=fltarr(ndates)
 climsens=fltarr(ndates)
-
 
 tempdiff(*)=climav(*,pt,0)-climav(*,pe,0)
 co2diff(*)=co2_inf_1m-co2
@@ -4122,38 +4224,81 @@ endfor
 
 device,/close
 
-endif
+endif ; end climsensplot
 
-if (do_grads_plot eq 1) then begin
 
-; Grads Hoffmuller plot
+if (do_hoff_plots eq 1) then begin
+
+; Temp grads Hoffmuller plot
 
 for e=0,nexp-1 do begin
 if (readfile(0,e) eq 1) then begin
 
-device,filename='grads_time_'+exproot(0,e)+'.eps',/encapsulate,/color,set_font='Helvetica',xsize=7,ysize=5,/inches
+   nhoff=3
+   hoffnames=strarr(nhoff)
+   hoffnames(*)='x'
+   if (do_clims eq 1) then hoffnames(0)='temp'
+   if (do_precip eq 1) then hoffnames(1)='prec'
+   if (do_readlsm eq 1) then hoffnames(2)='mask'
+   
+for v=0,nhoff-1 do begin
+if (hoffnames(v) ne 'x') then begin
+   
+device,filename='grads_time_'+hoffnames(v)+'_'+exproot(0,e)+'.eps',/encapsulate,/color,set_font='Helvetica',xsize=7,ysize=5,/inches
 
+xmin=-550
+xmax=0
+ymin=-90
+ymax=110
 nbar=100
+
+if (hoffnames(v) eq 'temp') then begin
 nlevv=21
 maxv=40
 minv=-40
+myvar=grads(*,*,e,0)-273.15
+xlab='Zonal mean temperature [degrees C]'
+mytickv=[-40,-32,-24,-16,-8,0,8,16,24,32,40]
+endif
+
+if (hoffnames(v) eq 'prec') then begin
+nlevv=11
+maxv=10
+minv=0
+myvar=precip_zon(*,*,e)
+xlab='Zonal mean precipitation [mm/day]'
+mytickv=[0,2,4,6,8,10]
+endif
+
+if (hoffnames(v) eq 'mask') then begin
+nlevv=11
+maxv=1
+minv=0
+myvar=masks_zon(*,*)
+xlab='Land-sea mask 0-1]'
+mytickv=[0,0.2,0.4,0.6,0.8,1]
+endif
+
+a=size(mytickv)
+myxticks=a(1)-1
+
 mybarv=fltarr(nbar,2)
 mybarv(*,0)=minv+(maxv-minv)*findgen(nbar)/(nbar-1.0)
 mybarv(*,1)=mybarv(*,0)
 mylevsv=minv+(maxv-minv)*findgen(nlevv)/(nlevv-1.0)
 
-xmin=-550
-xmax=0
-
-ymin=-90
-ymax=90
-
 topbar=ymin+(ymax-ymin)*33.0/35.0
 dtopbar=(ymax-ymin)*0.6/35.0
 
-;plot,dates2,climsens(*),yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',psym=2,/nodata,ytitle='Zonal mean temperature [degrees C]',ystyle=1,xstyle=1
 
-contour,transpose(grads(*,*,e,0)-273.15),dates2,lats,yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',ytitle='Latitude',ystyle=1,xstyle=1,/cell_fill,levels=mylevsv,position=[0.1,0.25,0.95,0.95]
+contour,transpose(myvar),dates2,lats,yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',ytitle='Latitude',ystyle=1,xstyle=1,/cell_fill,levels=mylevsv,position=[0.1,0.25,0.95,0.95]
+
+
+tvlct,r_cgmw,g_cgmw,b_cgmw
+for n=0,nstage-1 do begin
+polyfill,[stageb(n),stageb(n+1),stageb(n+1),stageb(n)],[ymax,ymax,topbar,topbar],color=n
+endfor
+tvlct,r_39,g_39,b_39
 
 oplot,[xmin,xmax],[topbar,topbar]
 for n=1,nstage-1 do begin
@@ -4164,66 +4309,30 @@ for n=0,nstage-1 do begin
 xyouts,(stageb(n)+stageb(n+1))/2.0,topbar+dtopbar,alignment=0.5,stagen(n),charsize=0.7
 endfor
 
-contour,mybarv,mybarv(*,0),[0,1],levels=mylevsv,/fill,position=[0.15,0.1,0.95,0.15],/noerase,xstyle=1,xrange=[minv,maxv],ystyle=4,xtickv=[-40,-32,-24,-16,-8,0,8,16,24,32,40],xticks=10
-xyouts,0.5,-1.5,'Zonal mean temperature [degrees C]',align=0.5
+;oplot,[xmin,xmax],[topbar,topbar]
+;for n=1,nstage-1 do begin
+;oplot,[stageb(n),stageb(n)],[topbar,ymax]
+;endfor
+
+;for n=0,nstage-1 do begin
+;xyouts,(stageb(n)+stageb(n+1))/2.0,topbar+dtopbar,alignment=0.5,stagen(n),charsize=0.7
+;endfor
+
+
+contour,mybarv,mybarv(*,0),[0,1],levels=mylevsv,/fill,position=[0.15,0.1,0.95,0.15],/noerase,xstyle=1,xrange=[minv,maxv],ystyle=4,xtickv=mytickv,xticks=myxticks
+xyouts,minv+0.5*(maxv-minv),-1.5,xlab,align=0.5
 
 device,/close
 
-endif
-endfor 
+endif ; end if hoffnames
+endfor ; end v
 
-endif
+endif ; end if readfile
+endfor ; end e
 
-
-; plot the residual
-
-v=0
-
-device,filename='resid_'+climnamelong(v)+'_time.eps',/encapsulate,/color,set_font='Helvetica'
-
-xmin=-550
-xmax=0
-ymin=yminr(v)
-ymax=ymaxr(v)
-
-topbar=ymin+(ymax-ymin)*33.0/35.0
-dtopbar=(ymax-ymin)*0.6/35.0
-
-plot,dates2,climav(*,1,v),yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',psym=2,/nodata,ytitle='Temperature [degrees C]',title=climnametitle(v)+' residual',ystyle=1,xstyle=1
-
-;;;;;;;;;;;;;
-for n=nstart,ndates-1 do begin
-
-x=n-nstart
-xx=ndates-nstart
-;mycol=(x)*250.0/(xx-1)
-mycol=0
-
-plots,dates2(n),resid(n),color=mycol,psym=8,symsize=0.5
-;xyouts,dates2(n)+5,resid(n)+0.05,exproot(n,1)+exptail(n,1),charsize=0.2
-
-endfor ; end n
-
-oplot,dates2(*),resid,thick=3
-
-oplot,[dates2(0),dates2(nstart-1)],[0,0],linestyle=2
-
-xyouts,-500,-2.5,'HadCM3L ['+exproot(0,pe)+']'
-plots,-520,-2.5,psym=8,symsize=0.5
-
-oplot,[xmin,xmax],[topbar,topbar]
-for n=1,nstage-1 do begin
-oplot,[stageb(n),stageb(n)],[topbar,ymax]
-endfor
-
-for n=0,nstage-1 do begin
-xyouts,(stageb(n)+stageb(n+1))/2.0,topbar+dtopbar,alignment=0.5,stagen(n),charsize=0.7
-endfor
+endif ; end hoffplot
 
 
-device,/close
-
-endif
 
 
 if (do_polamp_plot eq 1) then begin
@@ -4409,7 +4518,7 @@ endfor ; end v (2*nvar)
 
 
 
-endif
+endif ; end if do_polamp_plot
 
 ;stop
 
