@@ -83,14 +83,6 @@ do_textfile4=0 ; textfile of forcings for Emily
 check_names=0 ; check names
 
 ;;;;
-; Total number of time snapshots
-ndates=109
-nexp=10
-tmax=4000
-nstart=0
-;;;;
-
-;;;;
 ; for geological stages
 nstage=10
 stageb=fltarr(nstage+1)
@@ -103,6 +95,20 @@ b_cgmw=b_39
 r_cgmw(0:nstage-1)=[242,127,52,129,240,103,203,179,0,127]
 g_cgmw(0:nstage-1)=[249,198,178,43,64,165,140,225,146,160]
 b_cgmw(0:nstage-1)=[29,78,201,146,40,153,55,182,112,86]
+;;;;
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;No NEXP edits needed before here ;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; *CHANGE WITH NEXP CHANGE*
+;;;;
+; Total number of time snapshots
+ndates=109
+nexp=11
+tmax=4000
+nstart=0
 ;;;;
 
 ;;;;
@@ -152,7 +158,8 @@ readfile(*,6)=0 ; tflm for Shufeng no longer stored
 endif else begin
 ;readfile(*,4)=1 ; just foster runs tfke
 readfile(*,4:5)=1 ; tfke and tkfs
-;readfile(*,9)=1 ; add this back if Valdes (2021) needed.
+readfile(*,9)=1   ; add this back if Valdes (2021) Scotese_02 needed.
+readfile(*,10)=1   ; add this back if Scotese_noco2 needed.
 ;readfile(*,5)=1 ; just tuned runs tfks
 ;;;;;;;; *******************************
 ; missing tfks files
@@ -168,9 +175,12 @@ readfile_o(*,*)=1
 readfile_o(*,6)=0 ; tflm for Shufeng no longer stored
 endif else begin
 readfile_o(*,4:5)=1 ; tfke and tkfs
+readfile_o(*,9)=1   ; Scotese_02
+readfile_o(*,10)=1 ; Scotese_noco2
 endelse
 
 
+; *CHANGE WITH NEXP CHANGE*
 readtype=intarr(ndates,nexp) ; um_climates [0] or ummodel [1] for clims
 readtype(*,0)=1
 readtype(*,1)=1
@@ -182,13 +192,13 @@ readtype(*,6)=0
 readtype(*,7)=1
 readtype(*,8)=1
 readtype(*,9)=1
-
-
+readtype(*,10)=1
 ;;;;;;;; *******************************
 ;readtype([20,48,50],5)=0
 ;;;;;;;; *******************************
 
-locdata=intarr(ndates,nexp) ; um_climates [1] or ummodel [0] for timeseries
+; *CHANGE WITH NEXP CHANGE*
+locdata=intarr(ndates,nexp)     ; um_climates [1] or ummodel [0] for timeseries
 locdata(*,0)=0
 locdata(*,1)=0
 locdata(*,2)=0
@@ -202,9 +212,10 @@ locdata(*,6)=1
 locdata(*,7)=0
 locdata(*,8)=0
 locdata(*,9)=0
+locdata(*,10)=0
 
 
-
+; *CHANGE WITH NEXP CHANGE*
 co2file=strarr(nexp)
 co2file(0)='co2_all_02'
 co2file(1)='co2_all_02'
@@ -216,8 +227,10 @@ co2file(6)='co2_all_04_nt'
 co2file(7)='co2_all_02'
 co2file(8)='co2_all_02'
 co2file(9)='co2_all_xx'
+co2file(10)='co2_all_xx'
 
 
+; *CHANGE WITH NEXP CHANGE*
 colexp=intarr(nexp)
 colexp(0)=50
 colexp(1)=100
@@ -229,6 +242,7 @@ colexp(6)=220
 colexp(7)=130
 colexp(8)=80
 colexp(9)=180
+colexp(10)=220
 
 
 ndepth=3
@@ -242,6 +256,8 @@ my_missing(*,*,*,*)=1
 exproot=strarr(ndates,nexp)
 exptail=strarr(ndates,nexp)
 exptail2=strarr(ndates,nexp)
+
+; *CHANGE WITH NEXP CHANGE*
 
 ; Paul's teye 
 exproot(0:25,0)=['teye']
@@ -318,6 +334,14 @@ exproot(52:77,9)=['teXp']
 exproot(78:103,9)=['teXP']
 exproot(104:108,9)=['texq']
 
+; Paul's Scotese_noco2a
+exproot(0:25,10)=['texx']
+exproot(26:51,10)=['texX']
+exproot(52:77,10)=['teXx']
+exproot(78:103,10)=['teXX']
+exproot(104:108,10)=['tExx']
+
+; *CHANGE WITH NEXP CHANGE*
 for e=1,nexp-1 do begin
 exptail(*,e)=exptail(*,0)
 endfor
@@ -334,6 +358,7 @@ exptail2(*,8)='1'
 exptail2(*,9)=''
 exptail2([0,6,7,8,11,12,13,14,20,21,24,25,31,32,34,35,36,37,38,39,40,41,42,43,44,45,46,47],9)='1'
 exptail2([9,10,17,18,19,22,23,26,27,28,29,30,33,48],9)='2'
+exptail2(*,10)=''
 
 nexp_g=2
 ppt=intarr(nexp_g)
@@ -347,6 +372,7 @@ pt=ppt(1)
 ps=9
 
 
+; *CHANGE WITH NEXP CHANGE*
 varname=strarr(ndates,nexp)
 varname(*,0)='temp_ym_dpth'
 varname(*,1)='temp_ym_dpth'
@@ -358,29 +384,33 @@ varname(*,6)='temp_ym_dpth'
 varname(*,7)='temp_ym_dpth'
 varname(*,8)='temp_ym_dpth'
 varname(*,9)='temp_ym_dpth'
+varname(*,10)='temp_ym_dpth'
 
 
+; *CHANGE WITH NEXP CHANGE*
 nyear=intarr(nexp)
-nyear(*)=[2000,1050,3000,-1,3000,3000,110,2000,2000,-1]
+nyear(*)=[2000,1050,3000,-1,3000,3000,110,2000,2000,-1,-1]
 torder=intarr(nexp)
-torder(*)=[2,3,4,-1,5,6,7,0,1,-1]
+torder(*)=[2,3,4,-1,5,6,7,0,1,-1,-1]
 check_cont=intarr(nexp)
-check_cont(*)=[1,1,1,-1,1,1,1,0,1,-1]
+check_cont(*)=[1,1,1,-1,1,1,1,0,1,-1,-1]
 xmint=0
 xmaxt=21000
 times=indgen(xmaxt)
 explab=5 ; final simulation that will be labelled
 
+; *CHANGE WITH NEXP CHANGE*
 ; plot_times: do we want to plot the timeseries?
 plot_tims=intarr(nexp)
-plot_tims(*)=[1,1,1,0,1,1,0,1,1,0]
+plot_tims(*)=[1,1,1,0,1,1,0,1,1,0,0]
 
+; *CHANGE WITH NEXP CHANGE*
 ; navy = how many years for averaging means
 navy=intarr(nexp)
-navy(*)=[20,20,20,20,20,20,20,20,20,20]
+navy(*)=[20,20,20,20,20,20,20,20,20,20,20]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;No more EXP edits needed beyond here ;;;;;;;;;;;;
+;;;;;;;;;;;;;No more NEXP edits needed beyond here ;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 nexp2=total(torder ne -1)
