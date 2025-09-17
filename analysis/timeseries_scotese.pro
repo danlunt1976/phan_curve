@@ -1312,6 +1312,7 @@ if (do_readlsm eq 1) then begin
 masks=fltarr(nx,ny,ndates)
 masks_mean=fltarr(ndates)
 masks_zon=fltarr(ny,ndates)
+masks_zon_tmean=fltarr(ny,ndates)
 
 for n=nstart,ndates-1 do begin
 ; read in lsm
@@ -1329,6 +1330,9 @@ for j=0,ny-1 do begin
   masks_zon(j,n)=mean(masks(*,j,n))
   masks_mean(n)=masks_mean(n)+weight_lat(j)*mean(masks(*,j,n))
 endfor
+endfor ; end n
+for j=0,ny-1 do begin
+masks_zon_tmean(j,*)=mean(masks_zon(j,*))
 endfor
 
 maskso=fltarr(nx,ny,ndates)
@@ -1412,6 +1416,7 @@ if (do_clims eq 1) then begin
 
 clims=fltarr(nxmax,nymax,ndates,nexp,nvar)
 grads=fltarr(nymax,ndates,nexp,nvar)
+grads_tmean=fltarr(nymax,ndates,nexp,nvar)
 climav=fltarr(ndates,nexp,nvar)
 climav_r=fltarr(ndates,nexp,nvar,nreg)
 climnewweight=fltarr(nxmax,nymax)
@@ -1454,7 +1459,7 @@ endfor
 endfor
 climav_r(n,e,v,r)=total(dummy(xs(r):xf(r),ys(r):yf(r),0,0)*climnewweight(xs(r):xf(r),ys(r):yf(r))/total(climnewweight(xs(r):xf(r),ys(r):yf(r))))+climoff(v)
 
-endfor
+endfor ; end nreg
 
 ; regname(*)=['nh-hl','nh-ml','nh-ll','sh-ll','sh-ml','sh-hl','gl','tr']
 polamp(n,e,v)= ( climav_r(n,e,v,7) - (climav_r(n,e,v,0)+climav_r(n,e,v,5))/2.0 )
@@ -1463,11 +1468,18 @@ for j=0,nyc(v)-1 do begin
 grads(j,n,e,v) = mean(clims(0:nxc(v)-1,j,n,e,v),/nan)
 endfor
 
-endif
+endif ; end readfile
 
+endfor ; end nvar 
+endfor ; end n
+
+for v=0,nvar-1 do begin
+for j=0,ny-1 do begin
+grads_tmean(j,*,e,v)=mean(grads(j,*,e,v))
 endfor
 endfor
-endfor
+
+endfor ; end exp 
 
 endif ; end do_clims
 
@@ -1477,6 +1489,7 @@ if (do_precip eq 1) then begin
 
 precip=fltarr(nx,ny,ndates,nexp)
 precip_zon=fltarr(ny,ndates,nexp)
+precip_zon_tmean=fltarr(ny,ndates,nexp)
 precip_gbl=fltarr(ndates,nexp)
 
 for e=0,nexp-1 do begin
@@ -1503,7 +1516,11 @@ endfor
 precip_gbl(n,e)=total(weight_lat(*)*precip_zon(*,n,e))
 
 endif
+endfor ; end n
+for j=0,ny-1 do begin
+precip_zon_tmean(j,*,e)=mean(precip_zon(j,*,e))
 endfor
+
 endfor
 
 endif ; end do_precip
@@ -4262,27 +4279,35 @@ if (do_hoff_plots eq 1) then begin
 ; Temp grads Hoffmuller plot
 
 for e=0,nexp-1 do begin
-if (readfile(0,e) eq 1) then begin
+if (readfile(0,e) eq 1) then begin ; strictly only for temp and precip and mask
 
-   nhoff=3
+   nhoff=4
    hoffnames=strarr(nhoff)
    hoffnames(*)='x'
    if (do_clims eq 1) then hoffnames(0)='temp'
    if (do_precip eq 1) then hoffnames(1)='prec'
    if (do_readlsm eq 1) then hoffnames(2)='mask'
+   if (do_ocean eq 1) then hoffnames(2)='mixd'
    
 for v=0,nhoff-1 do begin
 if (hoffnames(v) ne 'x') then begin
    
-device,filename='grads_time_'+hoffnames(v)+'_'+exproot(0,e)+'.eps',/encapsulate,/color,set_font='Helvetica',xsize=7,ysize=5,/inches
-
 xmin=-550
 xmax=0
 ymin=-90
 ymax=110
 nbar=100
 
+nbb=2
+bbname=strarr(nbb)
+bbname(*)=['abs','anom']
+
+for bb=0,1 do begin
+
+device,filename='grads_time_'+hoffnames(v)+'_'+exproot(0,e)+'_'+bbname(bb)+'.eps',/encapsulate,/color,set_font='Helvetica',xsize=7,ysize=5,/inches
+   
 if (hoffnames(v) eq 'temp') then begin
+if (bb eq 0) then begin
 nlevv=21
 maxv=40
 minv=-40
@@ -4290,8 +4315,18 @@ myvar=grads(*,*,e,0)-273.15
 xlab='Zonal mean temperature [degrees C]'
 mytickv=[-40,-32,-24,-16,-8,0,8,16,24,32,40]
 endif
+if (bb eq 1) then begin
+nlevv=11
+maxv=10
+minv=-10
+myvar=grads(*,*,e,0)-grads_tmean(*,*,e,0)
+xlab='Zonal mean temperature anomaly [degrees C]'
+mytickv=[-10,0,10]
+endif
+endif
 
 if (hoffnames(v) eq 'prec') then begin
+if (bb eq 0) then begin
 nlevv=11
 maxv=10
 minv=0
@@ -4299,15 +4334,54 @@ myvar=precip_zon(*,*,e)
 xlab='Zonal mean precipitation [mm/day]'
 mytickv=[0,2,4,6,8,10]
 endif
+if (bb eq 1) then begin
+nlevv=11
+maxv=2
+minv=-2
+myvar=precip_zon(*,*,e)-precip_zon_tmean(*,*,e)
+xlab='Zonal mean precipitation anomaly [mm/day]'
+mytickv=[-2,0,2]
+endif
+endif
 
 if (hoffnames(v) eq 'mask') then begin
+if (bb eq 0) then begin
 nlevv=11
 maxv=1
 minv=0
 myvar=masks_zon(*,*)
-xlab='Land-sea mask 0-1]'
+xlab='Land-sea mask [0-1]'
 mytickv=[0,0.2,0.4,0.6,0.8,1]
 endif
+if (bb eq 1) then begin
+nlevv=11
+maxv=0.5
+minv=-0.5
+myvar=masks_zon(*,*)-masks_zon_tmean(*,*)
+xlab='Land-sea mask anomaly[0-1]'
+mytickv=[-0.5,0,0.5]
+endif
+endif
+
+if (hoffnames(v) eq 'mixed') then begin
+if (bb eq 0) then begin
+nlevv=11
+maxv=10
+minv=0
+myvar=precip_zon(*,*,e)
+xlab='Mixed layer depth [m]'
+mytickv=[0,2,4,6,8,10]
+endif
+if (bb eq 1) then begin
+nlevv=11
+maxv=2
+minv=-2
+myvar=precip_zon(*,*,e)-precip_zon_tmean(*,*,e)
+xlab='Mixed layer depth anomaly [m]'
+mytickv=[-2,0,2]
+endif
+endif
+
 
 a=size(mytickv)
 myxticks=a(1)-1
@@ -4353,6 +4427,8 @@ contour,mybarv,mybarv(*,0),[0,1],levels=mylevsv,/fill,position=[0.15,0.1,0.95,0.
 xyouts,minv+0.5*(maxv-minv),-1.5,xlab,align=0.5
 
 device,/close
+
+endfor ; end bb
 
 endif ; end if hoffnames
 endfor ; end v
