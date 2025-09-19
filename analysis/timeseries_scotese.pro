@@ -97,6 +97,28 @@ g_cgmw(0:nstage-1)=[249,198,178,43,64,165,140,225,146,160]
 b_cgmw(0:nstage-1)=[29,78,201,146,40,153,55,182,112,86]
 ;;;;
 
+;;;;
+; for anomaly plots
+ncol=256.0
+colmax=255.0
+anom_s=[0,0.25,0.5,0.75,1]
+anom_r=[0,0,1,1,1]
+anom_g=[0,1,1,1,0]
+anom_b=[1,1,1,0,0]
+r_anom=colmax*interpol(anom_r,anom_s,findgen(ncol)/(ncol-1.0))
+g_anom=colmax*interpol(anom_g,anom_s,findgen(ncol)/(ncol-1.0))
+b_anom=colmax*interpol(anom_b,anom_s,findgen(ncol)/(ncol-1.0))
+r_anom(ncol/2.0-5:ncol/2.0+5)=colmax
+g_anom(ncol/2.0-5:ncol/2.0+5)=colmax
+b_anom(ncol/2.0-5:ncol/2.0+5)=colmax
+r_anom(0)=0
+g_anom(0)=0
+b_anom(0)=0
+r_anom(ncol-1)=colmax
+g_anom(ncol-1)=colmax
+b_anom(ncol-1)=colmax
+;;;;
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;No NEXP edits needed before here ;;;;;;;;;;;;
@@ -1538,6 +1560,7 @@ mixed_zonmean=fltarr(nymax,ndates,nexp)
 mixed_zonmax=fltarr(nymax,ndates,nexp)
 mixed_zonmax2=fltarr(nymax,ndates,nexp)
 mixed_zonmean2=fltarr(nymax,ndates,nexp)
+mixed_zonmean2_tmean=fltarr(nymax,ndates,nexp)
 
 for e=0,nexp-1 do begin
 for n=nstart,ndates-1 do begin
@@ -1586,7 +1609,12 @@ endelse
 endfor ; end j lats
 endif ; end if readfile
 
-endfor ; end n
+endfor                          ; end n
+
+for j=0,ny-1 do begin
+mixed_zonmean2_tmean(j,*,e)=mean(mixed_zonmean2(j,*,e))
+endfor
+
 endfor ; end e
 
 nnn=4
@@ -4276,6 +4304,8 @@ endif ; end climsensplot
 
 if (do_hoff_plots eq 1) then begin
 
+tvlct,r_39,g_39,b_39
+   
 ; Temp grads Hoffmuller plot
 
 for e=0,nexp-1 do begin
@@ -4287,7 +4317,7 @@ if (readfile(0,e) eq 1) then begin ; strictly only for temp and precip and mask
    if (do_clims eq 1) then hoffnames(0)='temp'
    if (do_precip eq 1) then hoffnames(1)='prec'
    if (do_readlsm eq 1) then hoffnames(2)='mask'
-   if (do_ocean eq 1) then hoffnames(2)='mixd'
+   if (do_ocean eq 1) then hoffnames(3)='mixd'
    
 for v=0,nhoff-1 do begin
 if (hoffnames(v) ne 'x') then begin
@@ -4305,7 +4335,10 @@ bbname(*)=['abs','anom']
 for bb=0,1 do begin
 
 device,filename='grads_time_'+hoffnames(v)+'_'+exproot(0,e)+'_'+bbname(bb)+'.eps',/encapsulate,/color,set_font='Helvetica',xsize=7,ysize=5,/inches
-   
+
+if (bb eq 0) then tvlct,r_39,g_39,b_39
+if (bb eq 1) then tvlct,r_anom,g_anom,b_anom
+
 if (hoffnames(v) eq 'temp') then begin
 if (bb eq 0) then begin
 nlevv=21
@@ -4316,9 +4349,9 @@ xlab='Zonal mean temperature [degrees C]'
 mytickv=[-40,-32,-24,-16,-8,0,8,16,24,32,40]
 endif
 if (bb eq 1) then begin
-nlevv=11
-maxv=10
-minv=-10
+nlevv=12
+maxv=11
+minv=-11
 myvar=grads(*,*,e,0)-grads_tmean(*,*,e,0)
 xlab='Zonal mean temperature anomaly [degrees C]'
 mytickv=[-10,0,10]
@@ -4335,9 +4368,9 @@ xlab='Zonal mean precipitation [mm/day]'
 mytickv=[0,2,4,6,8,10]
 endif
 if (bb eq 1) then begin
-nlevv=11
-maxv=2
-minv=-2
+nlevv=12
+maxv=2.2
+minv=-2.2
 myvar=precip_zon(*,*,e)-precip_zon_tmean(*,*,e)
 xlab='Zonal mean precipitation anomaly [mm/day]'
 mytickv=[-2,0,2]
@@ -4354,55 +4387,63 @@ xlab='Land-sea mask [0-1]'
 mytickv=[0,0.2,0.4,0.6,0.8,1]
 endif
 if (bb eq 1) then begin
-nlevv=11
-maxv=0.5
-minv=-0.5
+nlevv=12
+maxv=0.55
+minv=-0.55
 myvar=masks_zon(*,*)-masks_zon_tmean(*,*)
 xlab='Land-sea mask anomaly[0-1]'
 mytickv=[-0.5,0,0.5]
 endif
 endif
 
-if (hoffnames(v) eq 'mixed') then begin
+
+if (hoffnames(v) eq 'mixd') then begin
 if (bb eq 0) then begin
-nlevv=11
-maxv=10
+nlevv=31
+maxv=150
 minv=0
-myvar=precip_zon(*,*,e)
+myvar=reverse(mixed_zonmean2(*,*,e))
 xlab='Mixed layer depth [m]'
-mytickv=[0,2,4,6,8,10]
+mytickv=[0,50,100,150]
 endif
 if (bb eq 1) then begin
-nlevv=11
-maxv=2
-minv=-2
-myvar=precip_zon(*,*,e)-precip_zon_tmean(*,*,e)
+nlevv=12
+maxv=55
+minv=-55
+myvar=reverse(mixed_zonmean2(*,*,e)-mixed_zonmean2_tmean(*,*,e))
 xlab='Mixed layer depth anomaly [m]'
-mytickv=[-2,0,2]
+mytickv=[-50,0,50]
 endif
 endif
 
 
 a=size(mytickv)
 myxticks=a(1)-1
-
 mybarv=fltarr(nbar,2)
 mybarv(*,0)=minv+(maxv-minv)*findgen(nbar)/(nbar-1.0)
 mybarv(*,1)=mybarv(*,0)
 mylevsv=minv+(maxv-minv)*findgen(nlevv)/(nlevv-1.0)
+colvect=0.5*(mylevsv(0:nlevv-2)+mylevsv(1:nlevv-1))
+colvect=(colvect-min(colvect))/(max(colvect)-min(colvect))
+colvect=colvect*(ncol-3)+1
+colvect=[colvect,ncol-1]
 
 topbar=ymin+(ymax-ymin)*33.0/35.0
 dtopbar=(ymax-ymin)*0.6/35.0
 
 
-contour,transpose(myvar),dates2,lats,yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',ytitle='Latitude',ystyle=1,xstyle=1,/cell_fill,levels=mylevsv,position=[0.1,0.25,0.95,0.95]
-
+contour,transpose(myvar),dates2,lats,yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',ytitle='Latitude',ystyle=1,xstyle=1,/cell_fill,levels=mylevsv,position=[0.1,0.25,0.95,0.95],c_colors=colvect
+if (bb eq 1) then begin
+contour,transpose(myvar),dates2,lats,levels=[0],/overplot
+;contour,transpose(myvar),dates2,lats,levels=mylevsv,/overplot,c_linestyle=1
+endif
 
 tvlct,r_cgmw,g_cgmw,b_cgmw
 for n=0,nstage-1 do begin
 polyfill,[stageb(n),stageb(n+1),stageb(n+1),stageb(n)],[ymax,ymax,topbar,topbar],color=n
 endfor
-tvlct,r_39,g_39,b_39
+if (bb eq 0) then tvlct,r_39,g_39,b_39
+if (bb eq 1) then tvlct,r_anom,g_anom,b_anom
 
 oplot,[xmin,xmax],[topbar,topbar]
 for n=1,nstage-1 do begin
@@ -4422,8 +4463,11 @@ endfor
 ;xyouts,(stageb(n)+stageb(n+1))/2.0,topbar+dtopbar,alignment=0.5,stagen(n),charsize=0.7
 ;endfor
 
-
-contour,mybarv,mybarv(*,0),[0,1],levels=mylevsv,/fill,position=[0.15,0.1,0.95,0.15],/noerase,xstyle=1,xrange=[minv,maxv],ystyle=4,xtickv=mytickv,xticks=myxticks
+contour,mybarv,mybarv(*,0),[0,1],levels=mylevsv,/fill,position=[0.15,0.1,0.95,0.15],/noerase,xstyle=1,xrange=[minv,maxv],ystyle=4,xtickv=mytickv,xticks=myxticks,c_colors=colvect
+if (bb eq 1) then begin
+contour,mybarv,mybarv(*,0),[0,1],levels=[0],/overplot
+;contour,mybarv,mybarv(*,0),[0,1],levels=mylevsv,/overplot,c_linestyle=1
+endif
 xyouts,minv+0.5*(maxv-minv),-1.5,xlab,align=0.5
 
 device,/close
@@ -4436,6 +4480,7 @@ endfor ; end v
 endif ; end if readfile
 endfor ; end e
 
+tvlct,r_39,g_39,b_39
 endif ; end hoffplot
 
 
