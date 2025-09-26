@@ -5,8 +5,25 @@ pro time
 
 ; cross-plots of e.g. log(co2) (or total forcing) with temp, merid
 ;   gradient, log(CO2) with precip, circulation etc.
-; hoffmuller plots of temp, precip, lsm
 
+; mprec: compare land precip with Yixuan's figure. [DONE]
+
+; mprec: use Yixuan's continentality metric. [DONE]
+
+; mprec: look at maps of precip for key time period anomalies.
+
+; mprec: make oprec and lprec anomaly plots [DONE]
+
+; P-E=R and moisture convergence
+
+; plot orog as hoff
+
+; latitude-precip plots
+
+; read moist statice energy (in sed) papers, Byrne papers, Burls papers
+
+; plot continuous land [DONE]
+  
 ; *****************
 
 ;my_home='/home/bridge/'
@@ -50,7 +67,7 @@ do_readbounds=1 ; read in mask and ice
 do_solar_plot=0 ; prescribed solar forcing (from .dat file)
 do_ocean=1                    ; read in ocean mld
 do_merid=0 ; read in ocean streamfunction 
-do_precip=1 ; read in model precip output
+do_precip=1 ; read in model precip output (requires do_readlsm)
 
 do_temp_plot=0 ; global mean from proxies
 
@@ -1334,7 +1351,9 @@ if (do_readlsm eq 1) then begin
 masks=fltarr(nx,ny,ndates)
 masks_mean=fltarr(ndates)
 masks_zon=fltarr(ny,ndates)
+masks_con=fltarr(ny,ndates)
 masks_zon_tmean=fltarr(ny,ndates)
+masks_con_tmean=fltarr(ny,ndates)
 
 for n=nstart,ndates-1 do begin
 ; read in lsm
@@ -1351,11 +1370,25 @@ ncdf_close,id1
 for j=0,ny-1 do begin
   masks_zon(j,n)=mean(masks(*,j,n))
   masks_mean(n)=masks_mean(n)+weight_lat(j)*mean(masks(*,j,n))
+  ; find the maximum continous gridpoints
+  icount=0
+  icountmax=0
+  for i=0,nx-1 do begin
+     if (masks(i,j,n) eq 1) then begin
+        icount=icount+1
+        if (icount gt icountmax) then icountmax=icount
+     endif else begin
+        icount=0
+     endelse
+  endfor
+  masks_con(j,n)=icountmax*weight_lat(j)
 endfor
 endfor ; end n
 for j=0,ny-1 do begin
-masks_zon_tmean(j,*)=mean(masks_zon(j,*))
+   masks_zon_tmean(j,*)=mean(masks_zon(j,*))
+   masks_con_tmean(j,*)=mean(masks_con(j,*))
 endfor
+
 
 maskso=fltarr(nx,ny,ndates)
 maskso_mean=fltarr(ndates)
@@ -1511,8 +1544,13 @@ if (do_precip eq 1) then begin
 
 precip=fltarr(nx,ny,ndates,nexp)
 precip_zon=fltarr(ny,ndates,nexp)
+precipl_zon=fltarr(ny,ndates,nexp)
+precipo_zon=fltarr(ny,ndates,nexp)
 precip_zon_tmean=fltarr(ny,ndates,nexp)
+precipl_zon_tmean=fltarr(ny,ndates,nexp)
+precipo_zon_tmean=fltarr(ny,ndates,nexp)
 precip_gbl=fltarr(ndates,nexp)
+
 
 for e=0,nexp-1 do begin
 for n=nstart,ndates-1 do begin
@@ -1534,13 +1572,23 @@ precip(0:nx-1,0:ny-1,n,e)=dummy*86400
 
 for j=0,ny-1 do begin
 precip_zon(j,n,e)=mean(precip(*,j,n,e))
+mymean=mean(masks(*,j,n))
+if (mymean ne 0) then begin
+precipl_zon(j,n,e)=mean(precip(*,j,n,e)*masks(*,j,n))/mymean
+endif
+if (mymean ne 1) then begin
+precipo_zon(j,n,e)=mean(precip(*,j,n,e)*(1-masks(*,j,n)))/(1-mymean)
+endif
 endfor
 precip_gbl(n,e)=total(weight_lat(*)*precip_zon(*,n,e))
 
 endif
 endfor ; end n
+
 for j=0,ny-1 do begin
 precip_zon_tmean(j,*,e)=mean(precip_zon(j,*,e))
+precipl_zon_tmean(j,*,e)=mean(precipl_zon(j,*,e))
+precipo_zon_tmean(j,*,e)=mean(precipo_zon(j,*,e))
 endfor
 
 endfor
@@ -4311,13 +4359,15 @@ tvlct,r_39,g_39,b_39
 for e=0,nexp-1 do begin
 if (readfile(0,e) eq 1) then begin ; strictly only for temp and precip and mask
 
-   nhoff=4
+   nhoff=6
    hoffnames=strarr(nhoff)
    hoffnames(*)='x'
    if (do_clims eq 1) then hoffnames(0)='temp'
    if (do_precip eq 1) then hoffnames(1)='prec'
    if (do_readlsm eq 1) then hoffnames(2)='mask'
    if (do_ocean eq 1) then hoffnames(3)='mixd'
+   if (do_precip eq 1) then hoffnames(4)='mprec'
+   if (do_readlsm eq 1) then hoffnames(5)='cont'
    
 for v=0,nhoff-1 do begin
 if (hoffnames(v) ne 'x') then begin
@@ -4377,6 +4427,31 @@ mytickv=[-2,0,2]
 endif
 endif
 
+if (hoffnames(v) eq 'mprec') then begin
+if (bb eq 0) then begin
+nlevv=11
+maxv=10
+minv=0
+; precm:
+;myvar=(masks_zon(*,*)*precipl_zon_tmean(*,*,e))+((1-masks_zon(*,*))*precipo_zon_tmean(*,*,e))
+; precl:
+;myvar=precipl_zon(*,*,e)
+; preco:
+myvar=precipo_zon(*,*,e)
+xlab='Zonal mean precipitation [mm/day]'
+mytickv=[0,2,4,6,8,10]
+endif
+if (bb eq 1) then begin
+nlevv=12
+maxv=2.2
+minv=-2.2
+myvar=(masks_zon(*,*)*precipl_zon_tmean(*,*,e))+((1-masks_zon(*,*))*precipo_zon_tmean(*,*,e))-precip_zon_tmean(*,*,e)
+xlab='Zonal mean precipitation anomaly [mm/day]'
+mytickv=[-2,0,2]
+endif
+endif
+
+
 if (hoffnames(v) eq 'mask') then begin
 if (bb eq 0) then begin
 nlevv=11
@@ -4391,7 +4466,7 @@ nlevv=12
 maxv=0.55
 minv=-0.55
 myvar=masks_zon(*,*)-masks_zon_tmean(*,*)
-xlab='Land-sea mask anomaly[0-1]'
+xlab='Land-sea mask anomaly [0-1]'
 mytickv=[-0.5,0,0.5]
 endif
 endif
@@ -4413,6 +4488,26 @@ minv=-55
 myvar=reverse(mixed_zonmean2(*,*,e)-mixed_zonmean2_tmean(*,*,e))
 xlab='Mixed layer depth anomaly [m]'
 mytickv=[-50,0,50]
+endif
+endif
+
+
+if (hoffnames(v) eq 'cont') then begin
+if (bb eq 0) then begin
+nlevv=11
+maxv=100/50.0
+minv=0
+myvar=masks_con(*,*)*precip_zon_tmean(*,*,e)
+xlab='Continuity [0-96]'
+mytickv=[0,20,40,60,80,100]/50.0
+endif
+if (bb eq 1) then begin
+nlevv=12
+maxv=55/50.0
+minv=-55/50.0
+myvar=-1*(masks_con(*,*)*precip_zon_tmean(*,*,e)-(masks_con_tmean(*,*)*precip_zon_tmean(*,*,e)))
+xlab='Continuity [0-96]'
+mytickv=[-50,0,50]/50.0
 endif
 endif
 
