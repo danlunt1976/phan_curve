@@ -1,0 +1,56 @@
+#!/bin/ksh
+
+if [ $USER != 'swsvalde' ] ; then
+  echo "needs to run as swsvalde"
+  exit
+fi
+
+exp='texp'
+#exp='texx'
+#exp='tfke'
+#exp='tfks'
+tail=''
+
+exp1a=${exp}
+exp1b=`sed 's/./\U&/4' <<< "${exp1a}"`
+exp1c=`sed 's/./\U&/3' <<< "${exp1a}"`
+exp1d=`sed 's/./\U&/3' <<< "${exp1b}"`
+exp1e=`sed 's/./\U&/2' <<< "${exp1a}"`
+
+if [ "$exp" = 'texp' ] ; then
+  exp1e='texq'
+fi
+
+expids="${exp1a} ${exp1b} ${exp1c} ${exp1d} ${exp1e}"
+
+for expid in ${expids} ; do
+
+my_loop={a..z}
+if [ "$expid" = ${exp1e} ] ; then
+  my_loop={a..e}
+fi
+
+for id in ${my_loop} ; do
+expl=${expid}${id}${tail}
+exp=${expid}${id}
+
+
+cd ~swsvalde/ummodel/data/${expl}/climate
+~swsvalde/ummodel/scripts/src/Rocky8/precipevap <<EOF
+${expl}
+ann
+EOF
+
+done
+done
+
+
+
+
+
+
+
+
+
+
+exit
