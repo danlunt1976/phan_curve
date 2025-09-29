@@ -9,7 +9,7 @@ exp='texp'
 #exp='texx'
 #exp='tfke'
 #exp='tfks'
-tail=''
+tail='2'
 
 exp1a=${exp}
 exp1b=`sed 's/./\U&/4' <<< "${exp1a}"`
@@ -34,23 +34,19 @@ for id in ${my_loop} ; do
 expl=${expid}${id}${tail}
 exp=${expid}${id}
 
+echo $exp
 
-cd ~swsvalde/ummodel/data/${expl}/climate
-~swsvalde/ummodel/scripts/src/Rocky8/precipevap <<EOF
+expdir=~swsvalde/ummodel/data/${expl}/climate
+if test -d ${expdir}; then 
+echo ${expdir}" exist"
+cd ${expdir}
+~swsvalde/ummodel/scripts/src/CentOS6/precipevap <<EOF
 ${expl}
 ann
 EOF
+fi
 
 done
 done
-
-
-
-
-
-
-
-
-
 
 exit
