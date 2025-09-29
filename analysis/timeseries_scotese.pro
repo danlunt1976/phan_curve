@@ -68,6 +68,7 @@ do_solar_plot=0 ; prescribed solar forcing (from .dat file)
 do_ocean=1                    ; read in ocean mld
 do_merid=0 ; read in ocean streamfunction 
 do_precip=1 ; read in model precip output (requires do_readlsm)
+do_evap=1 ; read in evap
 
 do_temp_plot=0 ; global mean from proxies
 
@@ -1596,6 +1597,60 @@ endfor
 endif ; end do_precip
 
 
+if (do_evap eq 1) then begin
+
+evap=fltarr(nx,ny,ndates,nexp)
+evap_zon=fltarr(ny,ndates,nexp)
+evapl_zon=fltarr(ny,ndates,nexp)
+evapo_zon=fltarr(ny,ndates,nexp)
+evap_zon_tmean=fltarr(ny,ndates,nexp)
+evapl_zon_tmean=fltarr(ny,ndates,nexp)
+evapo_zon_tmean=fltarr(ny,ndates,nexp)
+evap_gbl=fltarr(ndates,nexp)
+
+
+for e=0,nexp-1 do begin
+for n=nstart,ndates-1 do begin
+
+if (readfile(n,e) eq 1) then begin
+
+if (readtype(n,e) eq 1) then begin
+data_filename=root(n,e)+'/'+expnamel(n,e)+'/climate/'+expnamel(n,e)+'a.precipevapclann.nc'
+endif
+if (readtype(n,e) eq 0) then begin
+data_filename=root(n,e)+'/'+expnamel(n,e)+'/'+expnamel(n,e)+'a.precipevapclann.nc'
+endif
+
+print,readtype(n,e),n,data_filename
+id1=ncdf_open(data_filename)
+ncdf_varget,id1,'totalevap',dummy
+ncdf_close,id1
+evap(0:nx-1,0:ny-1,n,e)=dummy
+
+for j=0,ny-1 do begin
+evap_zon(j,n,e)=mean(evap(*,j,n,e))
+mymean=mean(masks(*,j,n))
+if (mymean ne 0) then begin
+evapl_zon(j,n,e)=mean(evap(*,j,n,e)*masks(*,j,n))/mymean
+endif
+if (mymean ne 1) then begin
+evapo_zon(j,n,e)=mean(evap(*,j,n,e)*(1-masks(*,j,n)))/(1-mymean)
+endif
+endfor
+evap_gbl(n,e)=total(weight_lat(*)*evap_zon(*,n,e))
+
+endif
+endfor ; end n
+
+for j=0,ny-1 do begin
+evap_zon_tmean(j,*,e)=mean(evap_zon(j,*,e))
+evapl_zon_tmean(j,*,e)=mean(evapl_zon(j,*,e))
+evapo_zon_tmean(j,*,e)=mean(evapo_zon(j,*,e))
+endfor
+
+endfor
+
+endif ; end do_evap
 
 
 
@@ -4359,7 +4414,7 @@ tvlct,r_39,g_39,b_39
 for e=0,nexp-1 do begin
 if (readfile(0,e) eq 1) then begin ; strictly only for temp and precip and mask
 
-   nhoff=6
+   nhoff=8
    hoffnames=strarr(nhoff)
    hoffnames(*)='x'
    if (do_clims eq 1) then hoffnames(0)='temp'
@@ -4368,6 +4423,8 @@ if (readfile(0,e) eq 1) then begin ; strictly only for temp and precip and mask
    if (do_ocean eq 1) then hoffnames(3)='mixd'
    if (do_precip eq 1) then hoffnames(4)='mprec'
    if (do_readlsm eq 1) then hoffnames(5)='cont'
+   if (do_evap eq 1) then hoffnames(6)='evap'
+   if (do_evap eq 1) then hoffnames(7)='pme'
    
 for v=0,nhoff-1 do begin
 if (hoffnames(v) ne 'x') then begin
@@ -4511,6 +4568,43 @@ mytickv=[-50,0,50]/50.0
 endif
 endif
 
+if (hoffnames(v) eq 'evap') then begin
+if (bb eq 0) then begin
+nlevv=11
+maxv=10
+minv=0
+myvar=evap_zon(*,*,e)
+xlab='Zonal mean evaporation [mm/day]'
+mytickv=[0,2,4,6,8,10]
+endif
+if (bb eq 1) then begin
+nlevv=12
+maxv=2.2
+minv=-2.2
+myvar=evap_zon(*,*,e)-evap_zon_tmean(*,*,e)
+xlab='Zonal mean evaporation anomaly [mm/day]'
+mytickv=[-2,0,2]
+endif
+endif
+
+if (hoffnames(v) eq 'pme') then begin
+if (bb eq 0) then begin
+nlevv=11
+maxv=5.5
+minv=-5.5
+myvar=precip_zon(*,*,e)-evap_zon(*,*,e)
+xlab='Zonal mean p-e [mm/day]'
+mytickv=[-5,0,5]
+endif
+if (bb eq 1) then begin
+nlevv=12
+maxv=2.2
+minv=-2.2
+myvar=(precip_zon(*,*,e)-precip_zon_tmean(*,*,e))-(evap_zon(*,*,e)-evap_zon_tmean(*,*,e))
+xlab='Zonal mean p-e anomaly [mm/day]'
+mytickv=[-2,0,2]
+endif
+endif
 
 a=size(mytickv)
 myxticks=a(1)-1
