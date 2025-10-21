@@ -8,7 +8,7 @@ nco2=2
 ; 0 = foster
 ; 1 = rae
 
-nco2f=7
+nco2f=8
 ; 0 = foster
 ; 1 = foster | rae
 ; 2 = foster blended rae
@@ -16,9 +16,10 @@ nco2f=7
 ; 4 = inferred
 ; 5 = mean forcing of foster blended rae
 ; 6 = constant pi
+; 7 = constant temperature(co2) without solar change
 
 dowrite=intarr(nco2f)
-dowrite(*)=[0,0,0,0,0,0,1]
+dowrite(*)=[0,0,0,0,1,0,1,1]
 
 ntim=2
 ; 0 = orig
@@ -184,7 +185,7 @@ close,1
 
 for i=0,ns-1 do begin
 co2s(i,4,t)=co2_inf_1m(i)
-co2m(i,4,t)=co2s(i,2,t)*44.01/28970000.0
+co2m(i,4,t)=co2s(i,4,t)*44.01/28970000.0
 endfor
 
 endif
@@ -209,8 +210,26 @@ if (t eq 1) then begin
 co2_pi=4.25364e-4 
 
 for i=0,ns-1 do begin
-co2m(i,5,t)=co2_pi
-co2s(i,5,t)=co2_pi*28970000.0/44.01
+co2m(i,6,t)=co2_pi
+co2s(i,6,t)=co2_pi*28970000.0/44.01
+endfor
+
+endif
+
+
+; Constant temp(co2) with no solar
+if (t eq 1) then begin
+dates2=fltarr(ns)
+co2_con_1m=fltarr(ns)
+
+openr,1,'../analysis/co2_constant.dat'
+readf,1,dates2
+readf,1,co2_con_1m
+close,1
+
+for i=0,ns-1 do begin
+co2s(i,7,t)=mean(co2_con_1m)
+co2m(i,7,t)=co2s(i,7,t)*44.01/28970000.0
 endfor
 
 endif
@@ -258,11 +277,22 @@ if (dowrite(6) eq 1) then begin
 if (t eq 1) then begin
 openw,1,'co2_all_06'+extname(t)+'.dat'
 for i=0,ns-1 do begin
-PRINTf,1,cage(i,t),ages(i,t),co2s(i,5,t),co2m(i,5,t), FORMAT = '(1x,a,1x,2f10.2,1x,E12.5)'
+PRINTf,1,cage(i,t),ages(i,t),co2s(i,6,t),co2m(i,6,t), FORMAT = '(1x,a,1x,2f10.2,1x,E12.5)'
 endfor
 close,1
 endif
 endif
+
+if (dowrite(7) eq 1) then begin
+if (t eq 1) then begin
+openw,1,'co2_all_07'+extname(t)+'.dat'
+for i=0,ns-1 do begin
+PRINTf,1,cage(i,t),ages(i,t),co2s(i,7,t),co2m(i,7,t), FORMAT = '(1x,a,1x,2f10.2,1x,E12.5)'
+endfor
+close,1
+endif
+endif
+
 
 
 endfor ; end t/ntim
