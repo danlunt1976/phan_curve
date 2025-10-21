@@ -1,13 +1,17 @@
 #!/bin/ksh
 
-exp='texz'
-year='000005850'
-tail='1'
+rootdir=/home
+#rootdir=/home/bridge
+
+
+exp='texx'
+year='000007350'
+tail=''
 
 thisdir='extract_tmp'
 mkdir -p ${thisdir}
 
-newdir=/home/bridge/ggdjl/ClimateOutput/scotese_restarts/${exp}${tail}
+newdir=${rootdir}/ggdjl/ClimateOutput/scotese_restarts/${exp}${tail}
 mkdir -p ${newdir}
 
 exp1a=${exp}
@@ -19,7 +23,8 @@ exp1e=`sed 's/./\U&/2' <<< "${exp1a}"`
 expids="${exp1a} ${exp1b} ${exp1c} ${exp1d} ${exp1e}"
 
 for expid in ${expids} ; do
-
+#for expid in texx ; do
+    
 my_loop={a..z}
 if [ "$expid" = ${exp1e} ] ; then
   my_loop={a..e}
@@ -31,7 +36,7 @@ expl=${expid}${id}${tail}
 exp=${expid}${id}
 
 
-tar xvf /home/bridge/swsvalde/ummodel/data/${expl}/expt_archive/${expl}.taz -C ./${thisdir}/
+tar xvf ${rootdir}/swsvalde/ummodel/data/${expl}/expt_archive/${expl}.taz -C ./${thisdir}/
 \cp ${thisdir}/${exp}/datam/${expid}${id}?#da${year}c1+ ${newdir}/
 \rm -r ${thisdir}/${exp}
 
