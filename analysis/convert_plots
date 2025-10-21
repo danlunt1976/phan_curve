@@ -66,7 +66,23 @@
 #for file in clim_temp_geo_time ; do
 
 
-for file in ../Figure_polampsat ; do
+#for file in ../Figure_polampsat ; do
+
+#for file in mixed_time_tfke_mean2 ; do
+
+#for file in grads_time_temp_tfke_abs grads_time_temp_tfke_anom ; do
+
+#for file in grads_time_prec_tfke_abs grads_time_prec_tfke_anom ; do
+
+#for file in grads_time_prec_texp_anom grads_time_prec_texx_anom ; do
+
+#for file in grads_time_mixd_tfke_abs grads_time_mixd_tfke_anom grads_time_mixd_texp_anom grads_time_mixd_texx_anom ; do
+
+#for file in scatt_frad-gmst_tfke scatt_gmst-prec_tfke ; do
+
+#for file in grads_time_pme_texx_anom grads_time_evap_texx_anom ; do
+
+for file in grads_time_cont_texx_anom grads_time_mprec_texx_anom ; do
 
 gs -dSAFER -dEPSCrop -r600 -sDEVICE=pngalpha -o ${file}.png ${file}.eps
 done
