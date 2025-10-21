@@ -65,17 +65,17 @@ do_readbounds=1 ; read in mask and ice
     do_ice_plot=0 ; prescribed ice sheets
 
 do_solar_plot=0 ; prescribed solar forcing (from .dat file)
-do_ocean=1                    ; read in ocean mld
+do_ocean=0                    ; read in ocean mld
 do_merid=0 ; read in ocean streamfunction 
-do_precip=1 ; read in model precip output (requires do_readlsm)
-do_evap=1 ; read in evap
+do_precip=0 ; read in model precip output (requires do_readlsm)
+do_evap=0 ; read in evap
 
 do_temp_plot=0 ; global mean from proxies
 
-do_readsolar=0                  ; read solar forcing and albedo
-  do_ff_model=0 ; forcing/feedback model (requires do_clims, do_readbounds, do_readsolar?)     
+do_readsolar=1                  ; read solar forcing and albedo
+  do_ff_model=1 ; forcing/feedback model (requires do_clims, do_readbounds, do_readsolar?)     
     do_co2_plot=0 ; prescribed co2 (requires do_ff_model)
-    do_co2_const=0 ; constant co2 (requires do_ff_model)
+    do_co2_inferred=1 ; inferred and constant co2 (requires do_ff_model)
 
     do_forcings_plot=0 ; prescribed forcings in Wm-2
     do_forctemps_plot=0 ; prescribed forcings in oC
@@ -83,11 +83,14 @@ do_readsolar=0                  ; read solar forcing and albedo
     do_clim_plot=0 ;  plot new vs old, ff, MDC, and resid
                  ;  (requires ff_model) 
 
+    do_scatt_all=0 ; all scatter plots 
+    
 do_polamp_plot=0 ;  plot polamp
 do_scattemp_plot=0
 do_climsens_plot=0
 do_ess_plot=0
-do_hoff_plots=1 ; hoffmuller plot
+do_hoff_plots=0 ; hoffmuller plot
+do_reg_plots=0 ; regional plots
 
 do_ebm=0 ; EBM model
 do_aprp=0 ; APRP
@@ -196,10 +199,10 @@ if (read_all_clims eq 1) then begin
 readfile(*,*)=1
 readfile(*,6)=0 ; tflm for Shufeng no longer stored
 endif else begin
-;readfile(*,4)=1 ; just foster runs tfke
-readfile(*,4:5)=1 ; tfke and tkfs
-readfile(*,9)=1   ; add this back if Valdes (2021) Scotese_02 needed.
-readfile(*,10)=1   ; add this back if Scotese_noco2 needed.
+readfile(*,4)=1 ; just foster runs tfke
+;readfile(*,4:5)=1 ; tfke and tkfs
+;readfile(*,9)=1   ; add this back if Valdes (2021) Scotese_02 needed.
+;readfile(*,10)=1   ; add this back if Scotese_noco2 needed.
 ;readfile(*,5)=1 ; just tuned runs tfks
 ;;;;;;;; *******************************
 ; missing tfks files
@@ -214,9 +217,10 @@ if (read_all_clims eq 1) then begin
 readfile_o(*,*)=1
 readfile_o(*,6)=0 ; tflm for Shufeng no longer stored
 endif else begin
-readfile_o(*,4:5)=1 ; tfke and tkfs
-readfile_o(*,9)=1   ; Scotese_02
-readfile_o(*,10)=1 ; Scotese_noco2
+readfile_o(*,4)=1          ; tfke
+;readfile_o(*,4:5)=1          ; tfke and tkfs
+;readfile_o(*,9)=1   ; Scotese_02
+;readfile_o(*,10)=1 ; Scotese_noco2
 endelse
 
 
@@ -1944,7 +1948,6 @@ endfor
 ; NOTE FOR NEXT TIME:
 ; Now need to mask out data if have zonally continous ocean
 
-stop
 
 for j=0,nym-1 do begin
 merid_lat(j,n,e)=max(abs(merid(j,10:nzm-1,n,e)))
@@ -3085,7 +3088,7 @@ temp_ice=myconst - 1.0*f_ice_tun/lambda_tun
 
 ; for paper:
 print,'variances:'
-print,'temp_all_tuin = ',variance(temp_all_tun)
+print,'temp_all_tun = ',variance(temp_all_tun)
 print,'temp_co2 = ',variance(temp_co2)
 print,'temp_solar = ',variance(temp_solar)
 print,'temp_area = ',variance(temp_area)
@@ -3109,6 +3112,8 @@ temp_resid_anom=myconst2 + resid_anom
 
 temp_all_tun2=myconst+myresult(0)*r_co2 + myresult(1)*r_solar + myresult(2)*r_area +myresult(3)*r_ice
 
+; Here we check that the two methods are the same.
+; they are mathematically equivalent, because lambda = -1/myresult(0)
 testing=temp_all_tun-temp_all_tun2
 myerr=sqrt(total(testing*testing)/(ndates*1.0))
 if (myerr gt 1e-5) then begin
@@ -3119,35 +3124,60 @@ endif
 ;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
-; INFERRED CO2:
+if (do_co2_inferred eq 1) then begin
+
+print,'inferred!'
+
+; INFERRED and CONSTANT CO2:
 
 ; old method
 ;f_co2_inf = lambda_lin*(climav(baseline,pe,0)-temp_scot_interp)-(f_solar_lin+f_area_lin+f_ice_lin)
 
 ; new method 1: 
+; Here the new forcing additional forcing is the forcing to aim for
+; (i.e. lambda times [scotese corrected by the error in the EBM, i.e. resid+myconst]),
+; minus the forcing already provided by the non-co2 forcings.
+; scotese (the EBM error in the EBM (resid+myconst) plus scotese 
 f_co2_inf = lambda_tun*(resid+myconst-temp_scot_interp)-(f_solar_tun+f_area_tun+f_ice_tun)
+; for constant co2, this is similar, but this time we won't have solar forcing.
+f_co2_con = lambda_tun*(resid+myconst-mean(temp_scot_interp))-(f_area_tun+f_ice_tun)
 
 ; new method 2
+; Here, the new co2 forcing is the old co2 forcing, plus a component
+;   that shifts the modelled temperature to the scotese observed temps.
 f_co2_inf2 = f_co2_tun + lambda_tun * (climav(*,pe,0) - temp_scot_interp)
 f_co2_inf2_1m = f_co2_tun + lambda_tun * (climav(*,pe,0) - temp_scot1m_interp)
+; for constant co2, this is similar, but add back in the solar forcing.
+f_co2_con2 = f_co2_tun + lambda_tun * (climav(*,pe,0) - mean(temp_scot_interp)) + f_solar_tun
+f_co2_con2_1m = f_co2_tun + lambda_tun * (climav(*,pe,0) - mean(temp_scot1m_interp)) + f_solar_tun
 
-
-; methods 1 and 2 should be the same
+; Here we check that the two methods are the same.
+; they are mathematically equivalent.
 testing=f_co2_inf-f_co2_inf2
 myerr=sqrt(total(testing*testing)/(ndates*1.0))
 if (myerr gt 1e-5) then begin
 print,'Problem!!  f_co2_inf and f_co2_inf2'
 stop
 endif
+testing=f_co2_con-f_co2_con2
+myerr=sqrt(total(testing*testing)/(ndates*1.0))
+if (myerr gt 1e-5) then begin
+print,'Problem!!  f_co2_con and f_co2_con2'
+stop
+endif
 
 ; raw co2
 co2_inf=co2(baseline)*exp(f_co2_inf*alog(2)/(t_co2*c_co2))
 co2_inf_1m=co2(baseline)*exp(f_co2_inf2_1m*alog(2)/(t_co2*c_co2))
+co2_con=co2(baseline)*exp(f_co2_con*alog(2)/(t_co2*c_co2))
+co2_con_1m=co2(baseline)*exp(f_co2_con2_1m*alog(2)/(t_co2*c_co2))
 
 
 ; totally different method....
 
 co2_inf_1m2=co2*exp(-1.0*alog(2.0)*lambda_tun*(temp_scot1m_interp-climav(*,pe,0))/(c_co2))
+co2_con_1m2=co2*exp(-1.0*alog(2.0)*lambda_tun*(mean(temp_scot1m_interp)-climav(*,pe,0)-(f_solar_tun)/lambda_tun)/(c_co2))
+
 ; methods should be the same
 testing=co2_inf_1m2-co2_inf_1m
 myerr=sqrt(total(testing*testing)/(ndates*1.0))
@@ -3155,16 +3185,31 @@ if (myerr gt 1e-2) then begin
 print,'Problem!!  co2_inf_1m2 and co2_inf_1m'
 stop
 endif
+testing=co2_con_1m2-co2_con_1m
+myerr=sqrt(total(testing*testing)/(ndates*1.0))
+if (myerr gt 1e-2) then begin
+print,'Problem!!  co2_con_1m2 and co2_con_1m'
+stop
+endif
+
 
 
 ; final check that inferred inferred temp is OK!
 
 temp_all_tun3=resid+myconst+myresult(0)*c_co2*alog(co2_inf_1m/co2(baseline))/alog(2.0) + myresult(1)*r_solar + myresult(2)*r_area +myresult(3)*r_ice
 
+temp_all_tun4=resid+myconst+myresult(0)*c_co2*alog(co2_con_1m/co2(baseline))/alog(2.0) + myresult(2)*r_area +myresult(3)*r_ice
+
 testing=temp_all_tun3-temp_scot1m_interp
 myerr=sqrt(total(testing*testing)/(ndates*1.0))
 if (myerr gt 1e-5) then begin
 print,'Problem!! temp_all_tun3 and temp_scot1m_interp'
+stop
+endif
+testing=temp_all_tun4-mean(temp_scot1m_interp)
+myerr=sqrt(total(testing*testing)/(ndates*1.0))
+if (myerr gt 1e-5) then begin
+print,'Problem!! temp_all_tun4 and mean(temp_scot1m_interp)'
 stop
 endif
 
@@ -3175,6 +3220,13 @@ printf,1,dates2
 printf,1,co2_inf_1m
 close,1
 
+openw,1,'co2_constant.dat'
+printf,1,dates2
+printf,1,co2_con_1m
+close,1
+
+stop
+endif ; end do_co2_inferred
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;
 endif ; end do ff_model
@@ -4405,6 +4457,80 @@ device,/close
 endif ; end climsensplot
 
 
+if (do_scatt_all eq 1) then begin
+
+nscatt=3
+scattname=strarr(nscatt)
+scattname(*)=['fco2-gmst','frad-gmst','gmst-prec']
+
+for e=0,nexp-1 do begin
+if (readfile(0,e) eq 1) then begin ; strictly only for temp and precip and mask
+
+for ss=0,nscatt-1 do begin
+
+print,'plotting: ',scattname(ss)
+   
+device,filename='scatt_'+scattname(ss)+'_'+exproot(0,e)+'.eps',/encapsulate,/color,set_font='Helvetica',xsize=14,ysize=12
+
+if (ss eq 0) then begin
+xmin=-5
+xmax=15
+ymin=5
+ymax=30
+thisx=f_co2_tun
+thisy=climav(*,pe,0)
+thisxtitle='CO2 forcing [W/m2]'
+thisytitle='GMST [degC]'
+myformat='(F4.2)'
+endif
+
+if (ss eq 1) then begin
+xmin=-10
+xmax=10
+ymin=5
+ymax=30
+thisx=f_co2_tun+f_solar_tun
+thisy=climav(*,pe,0)
+thisxtitle='CO2 and solar forcing [W/m2]'
+thisytitle='GMST [degC]'
+myformat='(F4.2)'
+endif
+
+if (ss eq 2) then begin
+xmin=5
+xmax=30
+ymin=2.4
+ymax=3.6
+thisx=climav(*,pe,0)
+thisy=precip_gbl(*,pe)
+thisxtitle='GMST [degC]'
+thisytitle='precip [mm/day]'
+myformat='(F5.3)'
+endif
+
+
+plot,thisx,thisy,yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle=thisxtitle,ytitle=thisytitle,ystyle=1,xstyle=1,/nodata
+
+plots,thisx,thisy,psym=8,symsize=0.5
+
+myscattresult=linfit(thisx,thisy,sigma=myscattsigma)
+print,'myscattresult:'
+print,myscattresult
+print,myscattsigma
+
+oplot,[xmin,xmax],[myscattresult(0)+xmin*myscattresult(1),myscattresult(0)+xmax*myscattresult(1)]
+
+xyouts,xmin+[xmax-xmin]*0.1,ymin+[ymax-ymin]*0.9,'gradient='+strtrim(string(myscattresult(1),format=myformat),2)
+
+device,/close
+
+endfor ; end nscatt
+endif  ; end if readfile
+endfor ; end nexp
+
+endif  ; end do_scatt_all
+
+
 if (do_hoff_plots eq 1) then begin
 
 tvlct,r_39,g_39,b_39
@@ -4490,11 +4616,11 @@ nlevv=11
 maxv=10
 minv=0
 ; precm:
-;myvar=(masks_zon(*,*)*precipl_zon_tmean(*,*,e))+((1-masks_zon(*,*))*precipo_zon_tmean(*,*,e))
+myvar=(masks_zon(*,*)*precipl_zon_tmean(*,*,e))+((1-masks_zon(*,*))*precipo_zon_tmean(*,*,e))
 ; precl:
 ;myvar=precipl_zon(*,*,e)
 ; preco:
-myvar=precipo_zon(*,*,e)
+;myvar=precipo_zon(*,*,e)
 xlab='Zonal mean precipitation [mm/day]'
 mytickv=[0,2,4,6,8,10]
 endif
@@ -4673,6 +4799,69 @@ tvlct,r_39,g_39,b_39
 endif ; end hoffplot
 
 
+if (do_reg_plots eq 1) then begin
+
+nregg=5
+nregd=3   
+reggname=strarr(nregg)
+regdname=strarr(nregd)
+xsg=intarr(nregg)
+xfg=intarr(nregg)
+ysg=intarr(nregg)
+yfg=intarr(nregg)
+reggname(*)=['tr','nhtr','shtr','nhst','shst']
+regdname(*)=['tr1','tr2','str']
+;xsg(*)=[0,0,0,0,0]
+;xfg(*)=[95,95,95,95,95]
+ysg(*)=[34,39,29,44,24]
+yfg(*)=[38,43,33,48,28]
+
+print,'latitude ranges are: '
+for r=0,nregg-1 do begin
+print,r,ysg(r),yfg(r),latsedge(ysg(r)),latsedge(yfg(r)+1)
+endfor
+
+;precip_zon=fltarr(ny,ndates,nexp)
+precip_tr1=fltarr(ndates,nexp)
+precip_tr2=fltarr(ndates,nexp)
+precip_str=fltarr(ndates,nexp)
+
+
+
+for e=0,nexp-1 do begin
+if (readfile(0,e) eq 1) then begin ; strictly only for temp and precip and mask
+
+for n=nstart,ndates-1 do begin
+   precip_tr1(n,e)=mean(precip_zon(ysg(0):yfg(0),n,e))
+   precip_tr2(n,e)=0.5*(mean(precip_zon(ysg(1):yfg(1),n,e))+mean(precip_zon(ysg(2):yfg(2),n,e)))
+   precip_str(n,e)=0.5*(mean(precip_zon(ysg(3):yfg(3),n,e))+mean(precip_zon(ysg(4):yfg(4),n,e)))
+endfor
+
+device,filename='precip_reg_'+exproot(0,e)+'.eps',/encapsulate,/color,set_font='Helvetica',xsize=7,ysize=5,/inches
+xmin=-550
+xmax=0
+
+ymin=0
+ymax=10
+
+topbar=ymin+(ymax-ymin)*33.0/35.0
+dtopbar=(ymax-ymin)*0.6/35.0
+
+plot,dates2,precip_tr1(*,e),yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',psym=2,/nodata,ytitle='Precip',ystyle=1,xstyle=1,position=[0.1,0.25,0.95,0.95]
+
+oplot,dates2,precip_tr1(*,e)
+oplot,dates2,precip_tr2(*,e),linestyle=1
+oplot,dates2,precip_str(*,e),linestyle=4
+
+
+device,/close
+
+endif ; end readfile
+endfor                          ; end nexp
+
+endif ; end reg_plots 
+
+stop
 
 
 if (do_polamp_plot eq 1) then begin
@@ -4741,7 +4930,7 @@ endfor
 
 device,/close
 
-endfor ; end v 
+endfor                          ; end v 
 
 
 for v=0,nvar*2 do begin
@@ -4855,8 +5044,6 @@ endif
 device,/close
 
 endfor ; end v (2*nvar)
-
-
 
 endif ; end if do_polamp_plot
 
