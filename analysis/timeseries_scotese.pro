@@ -3172,6 +3172,8 @@ co2_inf_1m=co2(baseline)*exp(f_co2_inf2_1m*alog(2)/(t_co2*c_co2))
 co2_con=co2(baseline)*exp(f_co2_con*alog(2)/(t_co2*c_co2))
 co2_con_1m=co2(baseline)*exp(f_co2_con2_1m*alog(2)/(t_co2*c_co2))
 
+; try meaning forcing rather than meaning co2:
+co2_con_1m_mean=co2(baseline)*exp(mean(f_co2_con2_1m)*alog(2)/(t_co2*c_co2))
 
 ; totally different method....
 
