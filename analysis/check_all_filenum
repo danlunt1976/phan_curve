@@ -23,7 +23,9 @@ indir_root=/home/bridge/ggdjl/umdata
 #penum=0
 #rdnum=0
 
-for exproot in tFlm ; do
+#for exproot in tFlm ; do
+#for exproot in xqgv ; do
+for exproot in xqGV ; do
 ptnum=1321
 panum=660
 panum1=600
@@ -36,13 +38,16 @@ rdnum=0
 
 
 #   my_loop={o..z}
-   my_loop={a..e}
+#   my_loop={a..e}
 #   my_loop={a..h}
 #   my_loop={f..z}
 #   my_loop={a..z}
 #   my_loop='c'
 #   my_loop='w y'
 #   my_loop='u'
+#my_loop='a b c e f g'
+#my_loop='d h i y z'
+my_loop={a..z}
 
    if [[ "$exproot" = "tFgw" || "$exproot" = "tFja" || "$exproot" = "tFke" || "$exproot" = "tFks" ]] ; then
       my_loop={a..e}

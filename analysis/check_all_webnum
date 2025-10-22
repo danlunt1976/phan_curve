@@ -2,32 +2,55 @@
 
 indir_root=/home/bridge/ggdjl/ummodel
 
+### for tfke etc. stash:
+#biomenum=6
+#climatenum=146
+#monthlynum=72
+#sednum=2
+#merid_atmnum=18
+#merid_ocnnum=1
+#ocean_datanum=24
+#standard_new_plotsnum=986
+#stormsnum=0
+#wetlandnum=13
+#check_access=1
+###
+
+### for tflm etc. stash:
+biomenum=6
+climatenum=182
+#monthlynum=73
+monthlynum=75
+sednum=3
+merid_atmnum=18
+merid_ocnnum=1
+#ocean_datanum=24
+ocean_datanum=6
+#standard_new_plotsnum=1053
+standard_new_plotsnum=1139
+#stormsnum=25
+stormsnum=37
+wetlandnum=13
+check_access=0
+###
+
 #for exproot in tfja tfjA tfJa tfJA tFja ; do
 #for exproot in tfja ; do
 #for exproot in tFke ; do
 #for exproot in tfke ; do
 #for exproot in tfkE tfKe ; do
-
-for exproot in tfkS ; do
-
-biomenum=6
-climatenum=146
-monthlynum=72
-sednum=2
-merid_atmnum=18
-merid_ocnnum=1
-ocean_datanum=24
-standard_new_plotsnum=986
-stormsnum=0
-wetlandnum=13
-
+#for exproot in tfkS ; do
+#for exproot in tflm ; do
+for exproot in xqGV ; do
 
 #my_loop={a..z}
 #my_loop={f..z}
-#   my_loop={a..e}
+   my_loop={a..z}
 #   my_loop={a..z}
 #   my_loop={a..b}
-my_loop='w y'
+#my_loop='w y'
+#my_loop={a..z}
+#my_loop='x y z'
 
    if [[ "$exproot" = "tFgw" || "$exproot" = "tFja" || "$exproot" = "tFke" || "$exproot" = "tFks" ]] ; then
       my_loop={a..e}
@@ -54,6 +77,7 @@ my_loop='w y'
 
      done
 
+     if [ ${check_access} != 0 ] ; then
      dir=ggdjl_${exp}
      indir=${indir_root}/access/${dir}
      crnum=0
@@ -64,7 +88,9 @@ my_loop='w y'
        echo 'DODGY '${dir}' '${file}' '${mynum}' != '${crnum}
        fi
      done
+     fi
 
+   echo ''
 
    done
 done

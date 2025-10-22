@@ -1,25 +1,34 @@
 #!/bin/ksh
 
 indir_root=/home/bridge/ggdjl/umdata
+#indir_root=/home/ggdjl/umdata
 
 # **edit this
 #exprootroot=tfks
 #yearlist='000000999c1+ 000001999c1+ 000002999c1+ 000003000c1+'
-exprootroot=tflm
+#exprootroot=tflm
+exprootroot=xqgv
 yearlist='000000110c1+'
 # **
 
 oudir=/home/bridge/ggdjl/ClimateOutput/scotese_restarts/${exprootroot}
+#oudir=/home/ggdjl/ClimateOutput/scotese_restarts/${exprootroot}
 
 mkdir -p ${oudir}
 
 # **edit this
 #for exproot in tfks tfkS tfKs tfKS tFks ; do
 #for exproot in tflm tflM tfLm tFlm ; do
-for exproot in tfLM ; do
+#for exproot in tfLM ; do
+#my_loop={a..z}
+#for exproot in xqgv ; do
+#my_loop='a b c e f g'
+#my_loop='d h i y z'
+for exproot in xqGV ; do
+my_loop={a..z}
 # **
 
-  my_loop={a..z}
+
 
 # **edit this
   if [ "$exproot" = "tFlm" ] ; then
