@@ -10,24 +10,30 @@ fi
 exp=$1
 
 
+#method='A'
+method='B'
+
+
+if [[ ${method} == 'A' ]] ; then
+
 #yearlist='3000'
 yearlist='0110'
-
 echo ${yearlist}
-
 cd ~/umdata/${exp}/pl
-
 for year in ${yearlist} ; do
-
 yeam=`expr ${year} - 1`
 yeam=$(printf "%04d" ${yeam})
 echo ${yeam}
-
 cp -n -p ${exp}o#pl00000${yeam}c1+.nc ${exp}o#pl00000${year}c1+.nc 
-
-
 done
 
+fi
+
+if [[ ${method} == 'B' ]] ; then
+
+/home/bridge/swsvalde/ummodel/scripts/make_pk -expts ${exp} -fill n -overwrite n
+
+fi
 
 
 

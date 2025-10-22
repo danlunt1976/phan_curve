@@ -9,24 +9,34 @@ fi
 
 exp=$1
 
+#method='A'
+method='B'
+
+
+if [[ ${method} == 'A' ]] ; then
 
 #yearlist='3000'
 yearlist='0110'
-
 monlist='nov dec'
-
 cd ~/umdata/${exp}/pi
-
 for year in ${yearlist} ; do
 for mon in ${monlist} ; do
-
 /home/bridge/swsvalde/ummodel/scripts/make_pt_file ${exp}a#pi00000${year}${mon}+.nc
 mv -i ${exp}a#pt00000${year}${mon}+.nc ~/umdata/${exp}/pt/
-
-
 done
 done
 
+fi
+
+if [[ ${method} == 'B' ]] ; then
+
+cd ~/umdata/${exp}/pi
+for file in `ls ${exp}a#pi*.nc` ; do
+/home/bridge/swsvalde/ummodel/scripts/make_pt_file ${file}
+done
+mv -i ${exp}a#pt*.nc ~/umdata/${exp}/pt/
+
+fi
 
 
 

@@ -1,8 +1,8 @@
 #!/bin/bash
 #
 
-add_ftp=1 # [only works if file has some text in already]
-mk_dirs=0
+add_ftp=0 # [only works if file has some text in already]
+mk_dirs=1
 
 ###  get args
 if [ "$#" -ne 2 ]; then
@@ -33,7 +33,7 @@ exit
 fi
 
 # make directories
-if [ ${mk_dirs} -ne 0 ] ; then
+if [ ${mk_dirs} -eq 1 ] ; then
 
 dir1=/export/${mymachine}/array-01/ggdjl/${exp} 
 if [ ! -d ${dir1} ]; then
@@ -51,7 +51,7 @@ fi
 
 
 # add to ftp_control [only works if file has some text in already]
-if [ ${add_ftp} -ne 0 ] ; then
+if [ ${add_ftp} -eq 1 ] ; then
 file=/home/bridge/ggdjl/bin/ftp_sh.bc4.params
 
 if ! grep -q ${exp} ${file} ; then

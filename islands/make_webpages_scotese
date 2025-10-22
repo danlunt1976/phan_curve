@@ -3,7 +3,9 @@
 make_html=1
 make_inidata=1
 #
-exptype1=tflm
+exptype1=xqej
+#exptype1=xqgv
+#exptype1=tflm
 #exptype1=tfks
 #exptype1=tfke
 #exptype1=tfja
@@ -28,6 +30,14 @@ fi
 if [ ${exptype1} == 'tflm' ] ; then
 co2_file='co2_all_04_nt.dat'
 exptype2='tfks'
+fi
+if [ ${exptype1} == 'xqgv' ] ; then
+co2_file='co2_all_03_nt.dat'
+exptype2='tfke'
+fi
+if [ ${exptype1} == 'xqej' ] ; then
+co2_file='co2_all_07_nt.dat'
+exptype2='tfke'
 fi
 #
 ###  get args
@@ -171,6 +181,31 @@ MY_LONGER="Scientifically as benchmark except using water age update, dark respi
 MY_OWNER='ggdjl'
 MY_ANOMALY="EXPTID-${exp_old}"
 fi
+
+if [ ${exptype1} == 'xqgv' ] ; then
+MY_START='0000'
+MY_LENGTH='110'
+MY_MEANS='100'
+MY_SPINUP='10'
+MY_PAPB='55'
+MY_LONG="This is the ${age} Ma simulation using the Scotese palaeogeographies and revised CCN etc.  This version has islands and smoothing and desert albedo included.  Tuned CO2 to give Scotese temperatures.  Started from end of ${exp_old}.  With JEDI output."
+MY_LONGER="Scientifically as benchmark except using water age update, dark respiration, salinity conservation and revised ozone. Also using new orbital and solar update, and outputting leaf CO2.  This version has islands included and atmospheric smoothing and desert albedo.  Started from end of ${exp_old}.  With JEDI and cloud output."
+MY_OWNER='ggdjl'
+MY_ANOMALY="EXPTID-${exp_old}"
+fi
+
+if [ ${exptype1} == 'xqej' ] ; then
+MY_START='0000'
+MY_LENGTH='3000'
+MY_MEANS='100'
+MY_SPINUP='2900'
+MY_PAPB='50'
+MY_LONG="This is the ${age} Ma simulation using the Scotese palaeogeographies and revised CCN etc.  This version has islands and smoothing and desert albedo included.  Started from end of ${exp_old}.  Constant CO2 to match mean Scotese temps."
+MY_LONGER="Scientifically as benchmark except using water age update, dark respiration, salinity conservation and revised ozone. Also using new orbital and solar update, and outputting leaf CO2.  This version has islands included and atmospheric smoothing and desert albedo.  Started from end of ${exp_old}.   Constant CO2 to match mean Scotese temps."
+MY_OWNER='ggdjl'
+MY_ANOMALY="EXPTID-${exp_old}"
+fi
+
 
 olddir='/home/bridge/swsvalde/ummodel/scripts/html_list/jobs'
 
