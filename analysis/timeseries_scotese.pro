@@ -18,7 +18,7 @@ pro time
 
 ; plot orog as hoff
 
-; latitude-precip plots
+; latitude-precip plots [DONE]
 
 ; read moist statice energy (in sed) papers, Byrne papers, Burls papers
 
@@ -52,7 +52,7 @@ do_times=0 ; read/write timeseries files
 do_greg=0 ; read gregory data
   read_all_greg=0         ; if 0 [0=default] then only read in more recent simulations 
            ;   (e.g. tfke,tfks), for speed
-  do_greg_plot=0 ; , make gregory plots (requires do_greg and do_clims)
+  do_greg_plot=0 ; , mke gregory plots (requires do_greg and do_clims)
 
 ;means
 do_clims=1 ; read in model temperature output
@@ -60,20 +60,22 @@ do_clims=1 ; read in model temperature output
            ;   (e.g. tfke,tfks), for speed
 do_readbounds=1 ; read in mask and ice
   do_readlsm=1 ; read in lsm
-    do_lsm_plot=0               ; prescribed land area
-  do_readice=1                  ; read ice
-    do_ice_plot=0 ; prescribed ice sheets
+    do_lsm_plot=0               ; plot prescribed land area
+  do_readice=0                  ; read ice
+    do_ice_plot=0 ; plot prescribed ice sheets
 
-do_solar_plot=0 ; prescribed solar forcing (from .dat file)
+do_solar_plot=0 ; plot prescribed solar forcing (from .dat file)
 do_ocean=0                    ; read in ocean mld
 do_merid=0 ; read in ocean streamfunction 
-do_precip=0 ; read in model precip output (requires do_readlsm)
-do_evap=0 ; read in evap
+
+do_precip=1                     ; read in model precip output (requires do_readlsm)
+do_evap=1 ; read in evap
+do_mfc=1 ; moisture flux convergence
 
 do_temp_plot=0 ; global mean from proxies
 
-do_readsolar=1                  ; read solar forcing and albedo
-  do_ff_model=1 ; forcing/feedback model (requires do_clims, do_readbounds, do_readsolar?)     
+do_readsolar=0                  ; read solar forcing and albedo from first simulation
+  do_ff_model=0 ; forcing/feedback model (requires do_clims, do_readbounds, do_readsolar?)     
     do_co2_plot=0 ; prescribed co2 (requires do_ff_model)
     do_co2_inferred=1 ; inferred and constant co2 (requires do_ff_model)
 
@@ -89,12 +91,13 @@ do_polamp_plot=0 ;  plot polamp
 do_scattemp_plot=0
 do_climsens_plot=0
 do_ess_plot=0
-do_hoff_plots=0 ; hoffmuller plot
+do_hoff_plots=1 ; hoffmuller plot
 do_reg_plots=0 ; regional plots
 
 do_ebm=0 ; EBM model
-do_aprp=0 ; APRP
-do_seas=0 ; wmmt, cmmt
+  do_aprp=0 ; APRP (requires do_ebm)
+
+do_seas=0                     ; wmmt, cmmt
 
 do_textfile1=0 ; textfile of proxies for Emily
 do_textfile2=0 ; textfile of proxies for Chris
@@ -2218,6 +2221,65 @@ endif ; end do_seas
 
 ;stop
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;
+; MOISTURE FLUX CONVERGENCE
+
+
+
+if (do_mfc eq 1) then begin
+
+nvarmfc=1
+varnamemfc=strarr(nvarmfc)
+varnamemfc[*]=['convergence']
+
+modvar_mfc=fltarr(nxmax,nymax,ndates,nexp,nvarmfc)
+modvar_mfc_zonmean=fltarr(nymax,ndates,nexp,nvarmfc)
+modvar_mfc_zonmean_tmean=fltarr(nymax,ndates,nexp,nvarmfc)
+
+mfcroot=my_home+'ggdjl/ggdjl/bas/doc/phan_curve/mfc'
+  
+for e=0,nexp-1 do begin
+if (readfile(0,e) eq 1) then begin
+
+filename=mfcroot+'/'+exproot(0,e)+'_moisture_fluxes.nc'
+print,filename
+id1=ncdf_open(filename)
+
+for v=0,nvarmfc-1 do begin
+
+thisvarname=varnamemfc(v)
+ncdf_varget,id1,thisvarname,dummy
+dummy[where(dummy gt 1e10)]=0.0
+
+
+for n=nstart,ndates-1 do begin
+for j=0,ny-1 do begin
+for i=0,nx-1 do begin
+modvar_mfc(i,j,n,e,v)=dummy(i,j,n)
+endfor
+modvar_mfc_zonmean(j,n,e,v)=mean(modvar_mfc(*,j,n,e,v))
+endfor
+endfor
+
+for j=0,ny-1 do begin
+modvar_mfc_zonmean_tmean(j,*,e,v)=mean(modvar_mfc_zonmean(j,*,e,v))
+endfor
+
+endfor ; end v
+
+ncdf_close,id1
+
+endif ; end readfile
+endfor ; end exp
+
+
+
+endif ; end mfc
+
+
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; EBM and APRP
 
@@ -2234,7 +2296,8 @@ varnameebm=['temp_mm_srf','longwave_mm_s3_srf','ilr_mm_s3_srf','solar_mm_s3_srf'
 modvar_2d=fltarr(nxmax,nymax,ndates,nexp,nvarebm)
 
 ; for aprp
-aprproot='/export/silurian/array-01/wb19586/aprp_bridge/tfke_vs_PI'
+aprproot=my_home+'ggdjl/ggdjl/bas/doc/phan_curve/aprp/export/silurian/array-01/wb19586/aprp_bridge/tfke_vs_PI'
+;aprproot='/export/silurian/array-01/wb19586/aprp_bridge/tfke_vs_PI'
 nvaraprp=12
 varnameaprp=strarr(nvaraprp)
 varnameaprp=['tas1','tas2','cld','cld_c','cld_ga','cld_mu','clr','clr_ga','clr_mu','alf','alf_clr','alf_oc']
@@ -2933,7 +2996,7 @@ endfor
 
 device,/close
 
-endif
+endif                           ; end if do_ebm
 
 
 ;stop
@@ -4542,7 +4605,7 @@ tvlct,r_39,g_39,b_39
 for e=0,nexp-1 do begin
 if (readfile(0,e) eq 1) then begin ; strictly only for temp and precip and mask
 
-   nhoff=8
+   nhoff=10
    hoffnames=strarr(nhoff)
    hoffnames(*)='x'
    if (do_clims eq 1) then hoffnames(0)='temp'
@@ -4553,6 +4616,8 @@ if (readfile(0,e) eq 1) then begin ; strictly only for temp and precip and mask
    if (do_readlsm eq 1) then hoffnames(5)='cont'
    if (do_evap eq 1) then hoffnames(6)='evap'
    if (do_evap eq 1) then hoffnames(7)='pme'
+   if (do_mfc eq 1) then hoffnames(8)='mfcm'
+   if (do_mfc eq 1) then hoffnames(9)='mfce'
    
 for v=0,nhoff-1 do begin
 if (hoffnames(v) ne 'x') then begin
@@ -4733,6 +4798,47 @@ xlab='Zonal mean p-e anomaly [mm/day]'
 mytickv=[-2,0,2]
 endif
 endif
+
+if (hoffnames(v) eq 'mfcm') then begin
+if (bb eq 0) then begin
+nlevv=11
+maxv=5.5
+minv=-5.5
+myvar=modvar_mfc_zonmean(*,*,e,0)
+xlab='Zonal mean moisture flux convergence by mean flow [mm/day]'
+mytickv=[-5,0,5]
+endif
+if (bb eq 1) then begin
+nlevv=12
+maxv=2.2
+minv=-2.2
+myvar=(modvar_mfc_zonmean(*,*,e)-modvar_mfc_zonmean_tmean(*,*,e))
+xlab='Zonal mean moisture flux convergence by mean flow anomaly [mm/day]'
+mytickv=[-2,0,2]
+endif
+endif
+
+if (hoffnames(v) eq 'mfce') then begin
+if (bb eq 0) then begin
+nlevv=11
+maxv=5.5
+minv=-5.5
+myvar=(precip_zon(*,*,e)-evap_zon(*,*,e))-modvar_mfc_zonmean(*,*,e,0)
+xlab='Zonal mean moisture flux convergence by eddies [mm/day]'
+mytickv=[-5,0,5]
+endif
+if (bb eq 1) then begin
+nlevv=12
+maxv=2.2
+minv=-2.2
+myvar=(precip_zon(*,*,e)-precip_zon_tmean(*,*,e))-(evap_zon(*,*,e)-evap_zon_tmean(*,*,e)) - $
+      (modvar_mfc_zonmean(*,*,e)-modvar_mfc_zonmean_tmean(*,*,e))
+xlab='Zonal mean moisture flux convergence by eddies anomaly [mm/day]'
+mytickv=[-2,0,2]
+endif
+endif
+
+
 
 a=size(mytickv)
 myxticks=a(1)-1
