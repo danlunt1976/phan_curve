@@ -2242,7 +2242,7 @@ mfcroot=my_home+'ggdjl/ggdjl/bas/doc/phan_curve/mfc'
 for e=0,nexp-1 do begin
 if (readfile(0,e) eq 1) then begin
 
-filename=mfcroot+'/'+exproot(0,e)+'_moisture_fluxes.nc'
+filename=mfcroot+'/'+exproot(0,e)+'_moisture_fluxes_v2.nc'
 print,filename
 id1=ncdf_open(filename)
 
