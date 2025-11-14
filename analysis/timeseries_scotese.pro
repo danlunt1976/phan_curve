@@ -14,13 +14,13 @@ pro time
 
 ; mprec: make oprec and lprec anomaly plots [DONE]
 
-; P-E=R and moisture convergence
+; P-E=R and moisture convergence [DONE]
 
 ; plot orog as hoff
 
 ; latitude-precip plots [DONE]
 
-; read moist statice energy (in sed) papers, Byrne papers, Burls papers
+; read moist static energy (in sed) papers, Byrne papers, Burls papers
 
 ; plot continuous land [DONE]
   
@@ -94,9 +94,10 @@ do_ess_plot=0
 do_hoff_plots=1 ; hoffmuller plot
 do_reg_plots=0 ; regional plots
 
-do_ebm=0 ; EBM model
+do_ebm=1 ; EBM model
   do_aprp=0 ; APRP (requires do_ebm)
-
+  do_hf=1 ; heat fluxes (requires do_ebm)
+  
 do_seas=0                     ; wmmt, cmmt
 
 do_textfile1=0 ; textfile of proxies for Emily
@@ -553,6 +554,7 @@ latsedge(1:ny-1)=90.0-1.25-dlat*findgen(ny-1)
 latsedge(0)=90.0
 latsedge(ny)=-90.0
 
+rearth=6371e3
 
 weight_lat=fltarr(ny)
 weight_hlat=fltarr(ny)
@@ -1280,7 +1282,7 @@ endfor
 
 
 
-
+; N.B. hard-wired to resolution
 nreg=8
 regname=strarr(nreg)
 xs=intarr(nreg)
@@ -2442,9 +2444,149 @@ modvar_2d_zonmean_der(*,n,e,4)=modvar_2d_zonmean(*,n,e,5)/modvar_2d_zonmean(*,n,
 modvar_2d_zonmean_der(*,n,e,5)=modvar_2d_zonmean(*,n,e,5)+modvar_2d_zonmean(*,n,e,6)-modvar_2d_zonmean(*,n,e,7)
 modvar_2d_zonmean_der(*,n,e,6)=modvar_2d_zonmean(*,n,e,7)-modvar_2d_zonmean(*,n,e,6)-modvar_2d_zonmean(*,n,e,5)
 modvar_2d_zonmean_der(*,n,e,7)=modvar_2d_zonmean(*,n,e,2)-modvar_2d_zonmean(*,n,e,1)+modvar_2d_zonmean(*,n,e,4)-modvar_2d_zonmean(*,n,e,3)-modvar_2d_zonmean(*,n,e,8)-modvar_2d_zonmean(*,n,e,9)
+
 endif
 endfor
 endfor
+
+if (do_hf eq 1) then begin
+; calculate heat fluxes
+
+h_tra=fltarr(ny+1,ndates,nexp)
+o_tra=fltarr(ny+1,ndates,nexp)
+a_tra=fltarr(ny+1,ndates,nexp)
+h_tra_tmean=fltarr(ny+1,ndates,nexp)
+o_tra_tmean=fltarr(ny+1,ndates,nexp)
+a_tra_tmean=fltarr(ny+1,ndates,nexp)
+
+h_tra_nh=fltarr(ndates,nexp)
+h_tra_sh=fltarr(ndates,nexp)
+o_tra_nh=fltarr(ndates,nexp)
+o_tra_sh=fltarr(ndates,nexp)
+a_tra_nh=fltarr(ndates,nexp)
+a_tra_sh=fltarr(ndates,nexp)
+
+aearthp=4*!pi*rearth*rearth*1e-15
+
+for e=0,nexp-1 do begin
+for n=nstart,ndates-1 do begin
+if (readfile(n,e) eq 1) then begin
+
+for j=1,ny do begin
+   h_tra(j,n,e)=h_tra(j-1,n,e)+(modvar_2d_zonmean_der(j-1,n,e,5)*weight_lat(j-1)*aearthp)
+   o_tra(j,n,e)=o_tra(j-1,n,e)+(-1.0*modvar_2d_zonmean_der(j-1,n,e,7)*weight_lat(j-1)*aearthp)
+endfor
+a_tra(*,n,e)=h_tra(*,n,e)-o_tra(*,n,e)
+
+; N.B. hard-wired to resolution
+for j=0,35 do begin
+   h_tra_nh(n,e)=h_tra_nh(n,e)+(modvar_2d_zonmean_der(j-1,n,e,5)*weight_lat(j-1)*aearthp)
+   o_tra_nh(n,e)=o_tra_nh(n,e)+(modvar_2d_zonmean_der(j-1,n,e,7)*weight_lat(j-1)*aearthp)
+endfor
+j=36
+h_tra_nh(n,e)=h_tra_nh(n,e)+0.5*(modvar_2d_zonmean_der(j-1,n,e,5)*weight_lat(j-1)*aearthp)
+o_tra_nh(n,e)=o_tra_nh(n,e)+0.5*(modvar_2d_zonmean_der(j-1,n,e,7)*weight_lat(j-1)*aearthp)
+
+a_tra_nh(n,e)=h_tra_nh(n,e)-o_tra_nh(n,e)
+
+for j=37,72 do begin
+h_tra_sh(n,e)=h_tra_sh(n,e)+(modvar_2d_zonmean_der(j-1,n,e,5)*weight_lat(j-1)*aearthp)
+o_tra_sh(n,e)=o_tra_sh(n,e)+(modvar_2d_zonmean_der(j-1,n,e,7)*weight_lat(j-1)*aearthp)
+endfor
+j=36
+h_tra_sh(n,e)=h_tra_sh(n,e)+0.5*(modvar_2d_zonmean_der(j-1,n,e,5)*weight_lat(j-1)*aearthp)
+o_tra_sh(n,e)=o_tra_sh(n,e)+0.5*(modvar_2d_zonmean_der(j-1,n,e,7)*weight_lat(j-1)*aearthp)
+
+a_tra_sh(n,e)=h_tra_sh(n,e)-o_tra_sh(n,e)
+
+endif ; end if readfile
+endfor ; end ndates
+endfor ; end nexp
+
+for e=0,nexp-1 do begin
+if (readfile(0,e) eq 1) then begin
+for j=0,ny-1 do begin
+   h_tra_tmean(j,*,e)=mean(h_tra(j,*,e))
+   o_tra_tmean(j,*,e)=mean(o_tra(j,*,e))
+   a_tra_tmean(j,*,e)=mean(a_tra(j,*,e))
+endfor
+endif
+endfor
+
+
+; now, identify the latitude(s) at which the atmospheric heat
+; transport is zero.  For this, require that consecutive values of
+; a_tra are positive and then negative
+
+lat_efe=fltarr(ny,ndates,nexp)
+
+for e=0,nexp-1 do begin
+for n=nstart,ndates-1 do begin
+if (readfile(n,e) eq 1) then begin
+
+sefe=10
+for j=sefe,ny-1-sefe do begin
+   if ( (a_tra(j,n,e) gt 0) ne (a_tra(j+1,n,e) gt 0) ) then begin
+   lat_efe(j,n,e) = 1
+   endif
+endfor
+  
+endif
+endfor
+endfor
+
+
+; here is a plot
+for e=0,nexp-1 do begin
+for n=nstart,ndates-1 do begin
+if (readfile(n,e) eq 1) then begin
+; Here is the plot of the heat transports
+picname='fluxes/heat_transport_'+expnamel(n,e)
+device,filename=picname+'.eps',/encapsulate,set_font='Helvetica',/color
+plot,[0,1],[0,1],yrange=[-6,6],xrange=[-90,90],ystyle=1,xstyle=1,title='Latitudinal heat transport - '+expnamel(n,e),xtitle='latitude',ytitle='heat transport [PW]',/nodata
+oplot,[-90,90],[0,0],color=0
+oplot,latsedge(0:ny),h_tra(*,n,e),color=100,linestyle=0,thick=5
+oplot,latsedge(0:ny),a_tra(*,n,e),color=150,linestyle=0,thick=5
+oplot,latsedge(0:ny),o_tra(*,n,e),color=200,linestyle=0,thick=5
+for j=0,ny-1 do begin
+   if (lat_efe(j,n,e) eq 1) then begin
+      oplot,[lats(j),lats(j)],[-6,6],color=150,linestyle=1,thick=1
+   endif   
+endfor
+xyouts,-70,5,'total heat transport [PW]',color=100
+xyouts,-70,4,'atmospheric heat transport [PW]',color=150
+xyouts,-70,3,'ocean heat transport [PW]',color=200
+device,/close
+endif
+endfor
+endfor
+
+; plot all heat fluxes
+for e=0,nexp-1 do begin
+if (readfile(0,e) eq 1) then begin
+picname='fluxes/heat_transport_'+exproot(0,e)
+device,filename=picname+'.eps',/encapsulate,set_font='Helvetica',/color
+plot,[0,1],[0,1],yrange=[-6,6],xrange=[-90,90],ystyle=1,xstyle=1,title='Latitudinal heat transport - '+exproot(0,e),xtitle='latitude',ytitle='heat transport [PW]',/nodata
+oplot,[-90,90],[0,0],color=0
+for n=nstart,ndates-1 do begin
+oplot,latsedge(0:ny),h_tra(*,n,e),color=100,linestyle=0,thick=1
+oplot,latsedge(0:ny),a_tra(*,n,e),color=150,linestyle=0,thick=1
+oplot,latsedge(0:ny),o_tra(*,n,e),color=200,linestyle=0,thick=1
+endfor
+xyouts,-70,5,'total heat transport [PW]',color=100
+xyouts,-70,4,'atmospheric heat transport [PW]',color=150
+xyouts,-70,3,'ocean heat transport [PW]',color=200
+device,/close
+endif
+endfor
+
+
+
+
+
+endif ; end do_hf
+
+
 
 
 tvlct,r_39,g_39,b_39
@@ -4605,7 +4747,7 @@ tvlct,r_39,g_39,b_39
 for e=0,nexp-1 do begin
 if (readfile(0,e) eq 1) then begin ; strictly only for temp and precip and mask
 
-   nhoff=10
+   nhoff=13
    hoffnames=strarr(nhoff)
    hoffnames(*)='x'
    if (do_clims eq 1) then hoffnames(0)='temp'
@@ -4618,6 +4760,10 @@ if (readfile(0,e) eq 1) then begin ; strictly only for temp and precip and mask
    if (do_evap eq 1) then hoffnames(7)='pme'
    if (do_mfc eq 1) then hoffnames(8)='mfcm'
    if (do_mfc eq 1) then hoffnames(9)='mfce'
+   if (do_hf eq 1) then hoffnames(10)='htra'
+   if (do_hf eq 1) then hoffnames(11)='otra'
+   if (do_hf eq 1) then hoffnames(12)='atra'
+   
    
 for v=0,nhoff-1 do begin
 if (hoffnames(v) ne 'x') then begin
@@ -4838,7 +4984,62 @@ mytickv=[-2,0,2]
 endif
 endif
 
+if (hoffnames(v) eq 'htra') then begin
+if (bb eq 0) then begin
+nlevv=13
+maxv=6.5
+minv=-6.5
+myvar=h_tra(1:ny,*,e)
+xlab='Northward heat transport [PW]'
+mytickv=[-6,-3,0,3,6]
+endif
+if (bb eq 1) then begin
+nlevv=12
+maxv=1
+minv=-1
+myvar=h_tra(1:ny,*,e)-h_tra_tmean(1:ny,*,e)
+xlab='Northward heat transport [PW]'
+mytickv=[-1,0,1]
+endif
+endif
 
+if (hoffnames(v) eq 'otra') then begin
+if (bb eq 0) then begin
+nlevv=13
+maxv=6.5
+minv=-6.5
+myvar=o_tra(1:ny,*,e)
+xlab='Northward ocean heat transport [PW]'
+mytickv=[-6,-3,0,3,6]
+endif
+if (bb eq 1) then begin
+nlevv=11
+maxv=1
+minv=-1
+myvar=o_tra(1:ny,*,e)-o_tra_tmean(1:ny,*,e)
+xlab='Northward ocean heat transport [PW]'
+mytickv=[-1,0,1]
+endif
+endif
+
+if (hoffnames(v) eq 'atra') then begin
+if (bb eq 0) then begin
+nlevv=13
+maxv=6.5
+minv=-6.5
+myvar=a_tra(1:ny,*,e)
+xlab='Northward atmopsheric heat transport [PW]'
+mytickv=[-6,-3,0,3,6]
+endif
+if (bb eq 1) then begin
+nlevv=11
+maxv=1
+minv=-1
+myvar=a_tra(1:ny,*,e)-a_tra_tmean(1:ny,*,e)
+xlab='Northward atmospheric heat transport [PW]'
+mytickv=[-1,0,1]
+endif
+endif
 
 a=size(mytickv)
 myxticks=a(1)-1
@@ -4860,6 +5061,36 @@ if (bb eq 1) then begin
 contour,transpose(myvar),dates2,lats,levels=[0],/overplot
 ;contour,transpose(myvar),dates2,lats,levels=mylevsv,/overplot,c_linestyle=1
 endif
+
+if (do_hf eq 1) then begin
+;contour,transpose(lat_efe(*,*,e)),dates2,lats,levels=[0.9],/overplot
+
+for j=0,ny-1 do begin
+for n=nstart,ndates-1 do begin
+   if (lat_efe(j,n,e) eq 1) then begin
+;     plots,dates2(n),lats(j),psym=1,color=0
+   endif
+endfor
+endfor
+
+; plot a countour of the zero efe
+for n=nstart,ndates-2 do begin
+   oplot,[dates2(n),dates2(n+1)],[max(lats(where(lat_efe(*,n,e) eq 1))),max(lats(where(lat_efe(*,n+1,e) eq 1)))],color=0,thick=5
+   oplot,[dates2(n),dates2(n+1)],[min(lats(where(lat_efe(*,n,e) eq 1))),min(lats(where(lat_efe(*,n+1,e) eq 1)))],color=0,thick=5
+endfor
+
+; plot the maximum value in the deep tripcs
+if (hoffnames(v) eq 'prec') then begin
+myvarc=myvar
+myvarc( where(lats gt 12 or lats lt -12),*)=-1e5
+for n=nstart,ndates-2 do begin
+   aa=max(myvarc(*,n),l1)
+   aa=max(myvarc(*,n+1),l2)
+   oplot,[dates2(n),dates2(n+1)],[lats(l1),lats(l2)],color=0,thick=5,linestyle=1
+endfor
+endif
+
+endif ; end if do_hf
 
 tvlct,r_cgmw,g_cgmw,b_cgmw
 for n=0,nstage-1 do begin
