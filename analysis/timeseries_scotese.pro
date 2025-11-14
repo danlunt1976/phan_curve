@@ -23,6 +23,8 @@ pro time
 ; read moist static energy (in sed) papers, Byrne papers, Burls papers
 
 ; plot continuous land [DONE]
+
+; make hoffmuller plots to be area-weighted in y axis
   
 ; *****************
 
@@ -1361,9 +1363,14 @@ if (do_readlsm eq 1) then begin
 masks=fltarr(nx,ny,ndates)
 masks_mean=fltarr(ndates)
 masks_zon=fltarr(ny,ndates)
+maskss_zon=fltarr(ny,ndates)
+masksa_zon=fltarr(ny,ndates)
 masks_con=fltarr(ny,ndates)
 masks_zon_tmean=fltarr(ny,ndates)
+maskss_zon_tmean=fltarr(ny,ndates)
+masksa_zon_tmean=fltarr(ny,ndates)
 masks_con_tmean=fltarr(ny,ndates)
+
 
 for n=nstart,ndates-1 do begin
 ; read in lsm
@@ -1393,9 +1400,20 @@ for j=0,ny-1 do begin
   endfor
   masks_con(j,n)=icountmax*weight_lat(j)
 endfor
+
+for j=0,ny-1 do begin
+   maskss_zon(j,n)=0.5*(masks_zon(j,n)+masks_zon(ny-j-1,n))
+   masksa_zon(j,n)=0.5*(masks_zon(j,n)-masks_zon(ny-j-1,n))
+endfor
+
+
 endfor ; end n
+
+
 for j=0,ny-1 do begin
    masks_zon_tmean(j,*)=mean(masks_zon(j,*))
+   maskss_zon_tmean(j,*)=mean(maskss_zon(j,*))
+   masksa_zon_tmean(j,*)=mean(masksa_zon(j,*))
    masks_con_tmean(j,*)=mean(masks_con(j,*))
 endfor
 
@@ -1553,12 +1571,19 @@ endif ; end do_clims
 if (do_precip eq 1) then begin
 
 precip=fltarr(nx,ny,ndates,nexp)
+
 precip_zon=fltarr(ny,ndates,nexp)
+precips_zon=fltarr(ny,ndates,nexp) ; symmetric
+precipa_zon=fltarr(ny,ndates,nexp) ; asymmetric
 precipl_zon=fltarr(ny,ndates,nexp)
 precipo_zon=fltarr(ny,ndates,nexp)
+
 precip_zon_tmean=fltarr(ny,ndates,nexp)
+precips_zon_tmean=fltarr(ny,ndates,nexp)
+precipa_zon_tmean=fltarr(ny,ndates,nexp)
 precipl_zon_tmean=fltarr(ny,ndates,nexp)
 precipo_zon_tmean=fltarr(ny,ndates,nexp)
+
 precip_gbl=fltarr(ndates,nexp)
 
 
@@ -1592,11 +1617,18 @@ endif
 endfor
 precip_gbl(n,e)=total(weight_lat(*)*precip_zon(*,n,e))
 
+for j=0,ny-1 do begin
+   precips_zon(j,n,e)=0.5*(precip_zon(j,n,e)+precip_zon(ny-j-1,n,e))
+   precipa_zon(j,n,e)=0.5*(precip_zon(j,n,e)-precip_zon(ny-j-1,n,e))
+endfor
+
 endif
 endfor ; end n
 
 for j=0,ny-1 do begin
 precip_zon_tmean(j,*,e)=mean(precip_zon(j,*,e))
+precips_zon_tmean(j,*,e)=mean(precips_zon(j,*,e))
+precipa_zon_tmean(j,*,e)=mean(precipa_zon(j,*,e))
 precipl_zon_tmean(j,*,e)=mean(precipl_zon(j,*,e))
 precipo_zon_tmean(j,*,e)=mean(precipo_zon(j,*,e))
 endfor
@@ -2380,10 +2412,10 @@ endif ; end aprp
 ;stop
 
 
-nder=8
+nder=9
 modvar_2d_der=fltarr(nx,ny,ndates,nexp,nder)
 dervar_2d_name=strarr(nder)
-dervar_2d_name=['Surface albedo','TOA albedo','Surface temperature','Derived surface temperature','Emissivity','Heat transport','TOA inbalance','Surface inbalance']
+dervar_2d_name=['Surface albedo','TOA albedo','Surface temperature','Derived surface temperature','Emissivity','Heat transport','TOA inbalance','Surface inbalance','sens latent']
 
 
 for e=0,nexp-1 do begin
@@ -2398,7 +2430,7 @@ modvar_2d_der(*,*,n,e,4)=modvar_2d(*,*,n,e,5)/modvar_2d(*,*,n,e,1)
 modvar_2d_der(*,*,n,e,5)=modvar_2d(*,*,n,e,5)+modvar_2d(*,*,n,e,6)-modvar_2d(*,*,n,e,7)
 modvar_2d_der(*,*,n,e,6)=modvar_2d(*,*,n,e,7)-modvar_2d(*,*,n,e,6)-modvar_2d(*,*,n,e,5)
 modvar_2d_der(*,*,n,e,7)=modvar_2d(*,*,n,e,2)-modvar_2d(*,*,n,e,1)+modvar_2d(*,*,n,e,4)-modvar_2d(*,*,n,e,3)-modvar_2d(*,*,n,e,8)-modvar_2d(*,*,n,e,9)
-
+modvar_2d_der(*,*,n,e,8)=modvar_2d(*,*,n,e,8)+modvar_2d(*,*,n,e,9)
 endif
 endfor
 endfor
@@ -2444,7 +2476,7 @@ modvar_2d_zonmean_der(*,n,e,4)=modvar_2d_zonmean(*,n,e,5)/modvar_2d_zonmean(*,n,
 modvar_2d_zonmean_der(*,n,e,5)=modvar_2d_zonmean(*,n,e,5)+modvar_2d_zonmean(*,n,e,6)-modvar_2d_zonmean(*,n,e,7)
 modvar_2d_zonmean_der(*,n,e,6)=modvar_2d_zonmean(*,n,e,7)-modvar_2d_zonmean(*,n,e,6)-modvar_2d_zonmean(*,n,e,5)
 modvar_2d_zonmean_der(*,n,e,7)=modvar_2d_zonmean(*,n,e,2)-modvar_2d_zonmean(*,n,e,1)+modvar_2d_zonmean(*,n,e,4)-modvar_2d_zonmean(*,n,e,3)-modvar_2d_zonmean(*,n,e,8)-modvar_2d_zonmean(*,n,e,9)
-
+modvar_2d_zonmean_der(*,n,e,8)=modvar_2d_zonmean(*,n,e,8)+modvar_2d_zonmean(*,n,e,9)
 endif
 endfor
 endfor
@@ -2455,9 +2487,12 @@ if (do_hf eq 1) then begin
 h_tra=fltarr(ny+1,ndates,nexp)
 o_tra=fltarr(ny+1,ndates,nexp)
 a_tra=fltarr(ny+1,ndates,nexp)
+;a1_tra=fltarr(ny+1,ndates,nexp)
+
 h_tra_tmean=fltarr(ny+1,ndates,nexp)
 o_tra_tmean=fltarr(ny+1,ndates,nexp)
 a_tra_tmean=fltarr(ny+1,ndates,nexp)
+;a1_tra_tmean=fltarr(ny+1,ndates,nexp)
 
 h_tra_nh=fltarr(ndates,nexp)
 h_tra_sh=fltarr(ndates,nexp)
@@ -2475,8 +2510,11 @@ if (readfile(n,e) eq 1) then begin
 for j=1,ny do begin
    h_tra(j,n,e)=h_tra(j-1,n,e)+(modvar_2d_zonmean_der(j-1,n,e,5)*weight_lat(j-1)*aearthp)
    o_tra(j,n,e)=o_tra(j-1,n,e)+(-1.0*modvar_2d_zonmean_der(j-1,n,e,7)*weight_lat(j-1)*aearthp)
+;   a1_tra(j,n,e)=a1_tra(j-1,n,e)+(modvar_2d_zonmean_der(j-1,n,e,8)*weight_lat(j-1)*aearthp)
 endfor
 a_tra(*,n,e)=h_tra(*,n,e)-o_tra(*,n,e)
+
+
 
 ; N.B. hard-wired to resolution
 for j=0,35 do begin
@@ -2509,6 +2547,7 @@ for j=0,ny-1 do begin
    h_tra_tmean(j,*,e)=mean(h_tra(j,*,e))
    o_tra_tmean(j,*,e)=mean(o_tra(j,*,e))
    a_tra_tmean(j,*,e)=mean(a_tra(j,*,e))
+;   a1_tra_tmean(j,*,e)=mean(a1_tra(j,*,e))
 endfor
 endif
 endfor
@@ -2547,6 +2586,7 @@ plot,[0,1],[0,1],yrange=[-6,6],xrange=[-90,90],ystyle=1,xstyle=1,title='Latitudi
 oplot,[-90,90],[0,0],color=0
 oplot,latsedge(0:ny),h_tra(*,n,e),color=100,linestyle=0,thick=5
 oplot,latsedge(0:ny),a_tra(*,n,e),color=150,linestyle=0,thick=5
+;oplot,latsedge(0:ny),a1_tra(*,n,e),color=150,linestyle=1,thick=5
 oplot,latsedge(0:ny),o_tra(*,n,e),color=200,linestyle=0,thick=5
 for j=0,ny-1 do begin
    if (lat_efe(j,n,e) eq 1) then begin
@@ -4747,7 +4787,7 @@ tvlct,r_39,g_39,b_39
 for e=0,nexp-1 do begin
 if (readfile(0,e) eq 1) then begin ; strictly only for temp and precip and mask
 
-   nhoff=13
+   nhoff=17
    hoffnames=strarr(nhoff)
    hoffnames(*)='x'
    if (do_clims eq 1) then hoffnames(0)='temp'
@@ -4763,7 +4803,10 @@ if (readfile(0,e) eq 1) then begin ; strictly only for temp and precip and mask
    if (do_hf eq 1) then hoffnames(10)='htra'
    if (do_hf eq 1) then hoffnames(11)='otra'
    if (do_hf eq 1) then hoffnames(12)='atra'
-   
+   if (do_precip eq 1) then hoffnames(13)='precs'
+   if (do_precip eq 1) then hoffnames(14)='preca'   
+   if (do_readlsm eq 1) then hoffnames(15)='masks'
+   if (do_readlsm eq 1) then hoffnames(16)='maska'   
    
 for v=0,nhoff-1 do begin
 if (hoffnames(v) ne 'x') then begin
@@ -5040,6 +5083,84 @@ xlab='Northward atmospheric heat transport [PW]'
 mytickv=[-1,0,1]
 endif
 endif
+
+if (hoffnames(v) eq 'precs') then begin
+if (bb eq 0) then begin
+nlevv=11
+maxv=10
+minv=0
+myvar=precips_zon(*,*,e)
+xlab='Zonal mean symmetric precipitation [mm/day]'
+mytickv=[0,2,4,6,8,10]
+endif
+if (bb eq 1) then begin
+nlevv=12
+maxv=2.2
+minv=-2.2
+myvar=precips_zon(*,*,e)-precips_zon_tmean(*,*,e)
+xlab='Zonal mean symmetric precipitation anomaly [mm/day]'
+mytickv=[-2,0,2]
+endif
+endif
+
+if (hoffnames(v) eq 'preca') then begin
+if (bb eq 0) then begin
+nlevv=12
+maxv=2.2
+minv=-2.2
+myvar=precipa_zon(*,*,e)
+xlab='Zonal mean asymmetric precipitation [mm/day]'
+mytickv=[-2,0,2]
+endif
+if (bb eq 1) then begin
+nlevv=12
+maxv=2.2
+minv=-2.2
+myvar=precipa_zon(*,*,e)-precipa_zon_tmean(*,*,e)
+xlab='Zonal mean asymmetric precipitation anomaly [mm/day]'
+mytickv=[-2,0,2]
+endif
+endif
+
+if (hoffnames(v) eq 'masks') then begin
+if (bb eq 0) then begin
+nlevv=11
+maxv=1
+minv=0
+myvar=maskss_zon(*,*)
+xlab='Land-sea mask symmetric [0-1]'
+mytickv=[0,0.2,0.4,0.6,0.8,1]
+endif
+if (bb eq 1) then begin
+nlevv=12
+maxv=0.55
+minv=-0.55
+myvar=maskss_zon(*,*)-maskss_zon_tmean(*,*)
+xlab='Land-sea mask symmetric anomaly [0-1]'
+mytickv=[-0.5,0,0.5]
+endif
+endif
+
+if (hoffnames(v) eq 'maska') then begin
+if (bb eq 0) then begin
+nlevv=12
+maxv=0.55
+minv=-0.55
+myvar=masksa_zon(*,*)
+xlab='Land-sea mask asymmetric [0-1]'
+mytickv=[0,0.2,0.4,0.6,0.8,1]
+endif
+if (bb eq 1) then begin
+nlevv=12
+maxv=0.55
+minv=-0.55
+myvar=masksa_zon(*,*)-masksa_zon_tmean(*,*)
+xlab='Land-sea mask asymmetric anomaly [0-1]'
+mytickv=[-0.5,0,0.5]
+endif
+endif
+
+
 
 a=size(mytickv)
 myxticks=a(1)-1
