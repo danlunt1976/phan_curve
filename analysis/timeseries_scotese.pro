@@ -1402,8 +1402,8 @@ for j=0,ny-1 do begin
 endfor
 
 for j=0,ny-1 do begin
-   maskss_zon(j,n)=0.5*(masks_zon(j,n)+masks_zon(ny-j-1,n))
-   masksa_zon(j,n)=0.5*(masks_zon(j,n)-masks_zon(ny-j-1,n))
+   maskss_zon(j,n)=73*weight_lat(j)*0.5*(masks_zon(j,n)+masks_zon(ny-j-1,n))
+   masksa_zon(j,n)=73*weight_lat(j)*0.5*(masks_zon(j,n)-masks_zon(ny-j-1,n))
 endfor
 
 
@@ -4787,7 +4787,7 @@ tvlct,r_39,g_39,b_39
 for e=0,nexp-1 do begin
 if (readfile(0,e) eq 1) then begin ; strictly only for temp and precip and mask
 
-   nhoff=17
+   nhoff=18
    hoffnames=strarr(nhoff)
    hoffnames(*)='x'
    if (do_clims eq 1) then hoffnames(0)='temp'
@@ -4806,7 +4806,9 @@ if (readfile(0,e) eq 1) then begin ; strictly only for temp and precip and mask
    if (do_precip eq 1) then hoffnames(13)='precs'
    if (do_precip eq 1) then hoffnames(14)='preca'   
    if (do_readlsm eq 1) then hoffnames(15)='masks'
-   if (do_readlsm eq 1) then hoffnames(16)='maska'   
+   if (do_readlsm eq 1) then hoffnames(16)='maska'
+   if (do_readlsm eq 1) then hoffnames(17)='maskan'
+   
    
 for v=0,nhoff-1 do begin
 if (hoffnames(v) ne 'x') then begin
@@ -5148,7 +5150,7 @@ maxv=0.55
 minv=-0.55
 myvar=masksa_zon(*,*)
 xlab='Land-sea mask asymmetric [0-1]'
-mytickv=[0,0.2,0.4,0.6,0.8,1]
+mytickv=[-0.5,0,0.5]
 endif
 if (bb eq 1) then begin
 nlevv=12
@@ -5160,7 +5162,24 @@ mytickv=[-0.5,0,0.5]
 endif
 endif
 
-
+if (hoffnames(v) eq 'maskan') then begin
+if (bb eq 0) then begin
+nlevv=12
+maxv=0.55
+minv=-0.55
+myvar=-1*masksa_zon(*,*)
+xlab='Land-sea mask asymmetric [0-1]'
+mytickv=[-0.5,0,0.5]
+endif
+if (bb eq 1) then begin
+nlevv=12
+maxv=0.55
+minv=-0.55
+myvar=-1*(masksa_zon(*,*)-masksa_zon_tmean(*,*))
+xlab='Land-sea mask asymmetric anomaly [0-1]'
+mytickv=[-0.5,0,0.5]
+endif
+endif
 
 a=size(mytickv)
 myxticks=a(1)-1
@@ -5184,33 +5203,28 @@ contour,transpose(myvar),dates2,lats,levels=[0],/overplot
 endif
 
 if (do_hf eq 1) then begin
+   
+if (hoffnames(v) eq 'preca' or hoffnames(v) eq 'maska') then begin
+
 ;contour,transpose(lat_efe(*,*,e)),dates2,lats,levels=[0.9],/overplot
-
-for j=0,ny-1 do begin
-for n=nstart,ndates-1 do begin
-   if (lat_efe(j,n,e) eq 1) then begin
-;     plots,dates2(n),lats(j),psym=1,color=0
-   endif
-endfor
-endfor
-
+   
 ; plot a countour of the zero efe
 for n=nstart,ndates-2 do begin
    oplot,[dates2(n),dates2(n+1)],[max(lats(where(lat_efe(*,n,e) eq 1))),max(lats(where(lat_efe(*,n+1,e) eq 1)))],color=0,thick=5
    oplot,[dates2(n),dates2(n+1)],[min(lats(where(lat_efe(*,n,e) eq 1))),min(lats(where(lat_efe(*,n+1,e) eq 1)))],color=0,thick=5
 endfor
 
-; plot the maximum value in the deep tripcs
-if (hoffnames(v) eq 'prec') then begin
-myvarc=myvar
-myvarc( where(lats gt 12 or lats lt -12),*)=-1e5
-for n=nstart,ndates-2 do begin
-   aa=max(myvarc(*,n),l1)
-   aa=max(myvarc(*,n+1),l2)
-   oplot,[dates2(n),dates2(n+1)],[lats(l1),lats(l2)],color=0,thick=5,linestyle=1
-endfor
-endif
+; plot the maximum value in the deep tropics
 
+;myvarc=myvar
+;myvarc( where(lats gt 10 or lats lt -10),*)=-1e5
+;for n=nstart,ndates-2 do begin
+;   aa=max(myvarc(*,n),l1)
+;   aa=max(myvarc(*,n+1),l2)
+;   oplot,[dates2(n),dates2(n+1)],[lats(l1),lats(l2)],color=0,thick=5,linestyle=1
+;endfor
+
+endif ; end preca
 endif ; end if do_hf
 
 tvlct,r_cgmw,g_cgmw,b_cgmw
