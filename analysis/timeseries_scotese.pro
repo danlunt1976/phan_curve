@@ -27,10 +27,11 @@ pro time
 ; make hoffmuller plots to be area-weighted in y axis
 
 ; stramfunction plot: remove continous ocean as in overturning plots
+; [DO TODAY IF I HAVE TIME!!!!]
 
-; stramfunction plot: +ve and -ve colour scales
+; streamfunction plot: +ve and -ve colour scales []
 
-; mixed layer depth - different colour for north and south
+; mixed layer depth - different colour for north and south [DONE]
   
   
 ; *****************
@@ -133,18 +134,19 @@ b_cgmw(0:nstage-1)=[29,78,201,146,40,153,55,182,112,86]
 
 ;;;;
 ; for anomaly plots
+colscal=0.95
 ncol=256.0
 colmax=255.0
 anom_s=[0,0.25,0.5,0.75,1]
-anom_r=[0,0,1,1,1]
-anom_g=[0,1,1,1,0]
-anom_b=[1,1,1,0,0]
+anom_r=[0,0,1,1,1]*colscal
+anom_g=[0,1,1,1,0]*colscal
+anom_b=[1,1,1,0,0]*colscal
 r_anom=colmax*interpol(anom_r,anom_s,findgen(ncol)/(ncol-1.0))
 g_anom=colmax*interpol(anom_g,anom_s,findgen(ncol)/(ncol-1.0))
 b_anom=colmax*interpol(anom_b,anom_s,findgen(ncol)/(ncol-1.0))
-r_anom(ncol/2.0-5:ncol/2.0+5)=colmax
-g_anom(ncol/2.0-5:ncol/2.0+5)=colmax
-b_anom(ncol/2.0-5:ncol/2.0+5)=colmax
+r_anom(ncol/2.0-5:ncol/2.0+5)=colmax*colscal
+g_anom(ncol/2.0-5:ncol/2.0+5)=colmax*colscal
+b_anom(ncol/2.0-5:ncol/2.0+5)=colmax*colscal
 r_anom(0)=0
 g_anom(0)=0
 b_anom(0)=0
@@ -1712,6 +1714,8 @@ mixed_zonmax=fltarr(nymax,ndates,nexp)
 mixed_zonmax2=fltarr(nymax,ndates,nexp)
 mixed_zonmean2=fltarr(nymax,ndates,nexp)
 mixed_zonmean2_tmean=fltarr(nymax,ndates,nexp)
+mixed_zonmean3=fltarr(nymax,ndates,nexp)
+mixed_zonmean3_tmean=fltarr(nymax,ndates,nexp)
 
 for e=0,nexp-1 do begin
 for n=nstart,ndates-1 do begin
@@ -1736,7 +1740,6 @@ ncdf_varget,id1,'latitude',lats_ocn
 ncdf_varget,id1,'longitude',lons_ocn
 endif
 ncdf_close,id1
-;mixed(0:nxmax-1,0:nymax-1,n,e)=reverse(dummy) ; CHECK!!!!
 mixed(0:nxmax-1,0:nymax-1,n,e)=dummy
 
 ntv=5
@@ -1752,9 +1755,16 @@ mixed_zonmax2(j,n,e)=mean(top_ntv_values)
 
 my_msk=mean(maskso(*,j,n))
 if (my_msk ne 0) then begin
-mixed_zonmean2(j,n,e)=mean(mixed(*,j,n,e))/mean(maskso(*,j,n))
+   mixed_zonmean2(j,n,e)=mean(mixed(*,j,n,e))/mean(maskso(*,j,n))
+   mixed_zonmean3(j,n,e)=mean(mixed(*,j,n,e))/mean(maskso(*,j,n))
+   mixed_zonmean3(j,n,e)=mixed_zonmean3(j,n,e)* $
+                         (mixed_zonmean3(j,n,e) gt 70)
+   mixed_zonmean3(j,n,e)=mixed_zonmean3(j,n,e)* $ 
+                         ( (float(lats_ocn(j) ge 0)) - (float(lats_ocn(j) lt 0)) )
+
 endif else begin
-mixed_zonmean2(j,n,e)=0.0
+   mixed_zonmean2(j,n,e)=0.0
+   mixed_zonmean3(j,n,e)=0.0
 endelse
 
 endfor ; end j lats
@@ -1763,7 +1773,8 @@ endif ; end if readfile
 endfor                          ; end n
 
 for j=0,ny-1 do begin
-mixed_zonmean2_tmean(j,*,e)=mean(mixed_zonmean2(j,*,e))
+   mixed_zonmean2_tmean(j,*,e)=mean(mixed_zonmean2(j,*,e))
+   mixed_zonmean3_tmean(j,*,e)=mean(mixed_zonmean3(j,*,e))
 endfor
 
 endfor ; end e
@@ -2003,6 +2014,12 @@ for j=0,nym-1 do begin
 mymax=max(abs(merid(j,12:nzm-1,n,e)),myindex)
 mymaxsign=float(merid(j,12+myindex,n,e) gt 0) - float(merid(j,12+myindex,n,e) lt 0)
 merid_lat(j,n,e)=mymaxsign*mymax
+
+; now blank out non-continous
+if ( (min(maskso(*,j,n) eq 1)) or (min(maskso(*,j+1,n) eq 1)) ) then begin
+merid_lat(j,n,e)=!VALUES.F_NAN
+endif
+
 
 endfor                          ; end j lats
 
@@ -4809,7 +4826,7 @@ tvlct,r_39,g_39,b_39
 for e=0,nexp-1 do begin
 if (readfile(0,e) eq 1) then begin ; strictly only for temp and precip and mask
 
-   nhoff=19
+   nhoff=20
    hoffnames=strarr(nhoff)
    hoffnames(*)='x'
    if (do_clims eq 1) then hoffnames(0)='temp'
@@ -4831,6 +4848,7 @@ if (readfile(0,e) eq 1) then begin ; strictly only for temp and precip and mask
    if (do_readlsm eq 1) then hoffnames(16)='maska'
    if (do_readlsm eq 1) then hoffnames(17)='maskan'
    if (do_merid eq 1) then hoffnames(18)='merid'
+   if (do_ocean eq 1) then hoffnames(19)='mixds'
    
 for v=0,nhoff-1 do begin
 if (hoffnames(v) ne 'x') then begin
@@ -5230,6 +5248,7 @@ minv=-30
 myvar=reverse(merid_lat(*,*,e))
 xlab='Maximum streamfunction [Sv]'
 mytickv=[-30,-20,-10,0,10,20,30]
+tvlct,r_anom,g_anom,b_anom
 endif
 if (bb eq 1) then begin
 nlevv=20
@@ -5240,6 +5259,29 @@ xlab='Maximum streamfunction anomaly [m^3s^-1]'
 mytickv=[-10,0,10]
 endif
 endif
+
+if (hoffnames(v) eq 'mixds') then begin
+mylats=reverse(lats_ocn)
+if (bb eq 0) then begin
+nlevv=31
+maxv=150
+minv=-150
+myvar=reverse(mixed_zonmean3(*,*,e))
+xlab='Mixed layer depth N/S [m]'
+mytickv=[-150,-100,-50,0,50,100,150]
+tvlct,r_anom,g_anom,b_anom
+endif
+if (bb eq 1) then begin
+nlevv=12
+maxv=55
+minv=-55
+myvar=reverse(mixed_zonmean3(*,*,e)-mixed_zonmean3_tmean(*,*,e))
+xlab='Mixed layer depth anomaly [m]'
+mytickv=[-50,0,50]
+endif
+endif
+
+
 
 
 a=size(mytickv)
@@ -5288,12 +5330,20 @@ endfor
 endif ; end preca
 endif ; end if do_hf
 
+contour,mybarv,mybarv(*,0),[0,1],levels=mylevsv,/fill,position=[0.15,0.1,0.95,0.15],/noerase,xstyle=1,xrange=[minv,maxv],ystyle=4,xtickv=mytickv,xticks=myxticks,c_colors=colvect
+if (bb eq 1) then begin
+contour,mybarv,mybarv(*,0),[0,1],levels=[0],/overplot
+;contour,mybarv,mybarv(*,0),[0,1],levels=mylevsv,/overplot,c_linestyle=1
+endif
+xyouts,minv+0.5*(maxv-minv),-1.5,xlab,align=0.5
+
+
 tvlct,r_cgmw,g_cgmw,b_cgmw
 for n=0,nstage-1 do begin
 polyfill,[stageb(n),stageb(n+1),stageb(n+1),stageb(n)],[ymax,ymax,topbar,topbar],color=n
 endfor
-if (bb eq 0) then tvlct,r_39,g_39,b_39
-if (bb eq 1) then tvlct,r_anom,g_anom,b_anom
+
+tvlct,r_39,g_39,b_39
 
 oplot,[xmin,xmax],[topbar,topbar]
 for n=1,nstage-1 do begin
@@ -5313,12 +5363,7 @@ endfor
 ;xyouts,(stageb(n)+stageb(n+1))/2.0,topbar+dtopbar,alignment=0.5,stagen(n),charsize=0.7
 ;endfor
 
-contour,mybarv,mybarv(*,0),[0,1],levels=mylevsv,/fill,position=[0.15,0.1,0.95,0.15],/noerase,xstyle=1,xrange=[minv,maxv],ystyle=4,xtickv=mytickv,xticks=myxticks,c_colors=colvect
-if (bb eq 1) then begin
-contour,mybarv,mybarv(*,0),[0,1],levels=[0],/overplot
-;contour,mybarv,mybarv(*,0),[0,1],levels=mylevsv,/overplot,c_linestyle=1
-endif
-xyouts,minv+0.5*(maxv-minv),-1.5,xlab,align=0.5
+
 
 device,/close
 
