@@ -3,37 +3,8 @@ pro time
 ; *****************
 ; TO DO:
 
-; cross-plots of e.g. log(co2) (or total forcing) with temp, merid
-;   gradient, log(CO2) with precip, circulation etc.
-
-; mprec: compare land precip with Yixuan's figure. [DONE]
-
-; mprec: use Yixuan's continentality metric. [DONE]
-
-; mprec: look at maps of precip for key time period anomalies.
-
-; mprec: make oprec and lprec anomaly plots [DONE]
-
-; P-E=R and moisture convergence [DONE]
-
-; plot orog as hoff
-
-; latitude-precip plots [DONE]
-
-; read moist static energy (in sed) papers, Byrne papers, Burls papers
-
-; plot continuous land [DONE]
-
 ; make hoffmuller plots to be area-weighted in y axis
 
-; stramfunction plot: remove continous ocean as in overturning plots
-; [DO TODAY IF I HAVE TIME!!!!]
-
-; streamfunction plot: +ve and -ve colour scales []
-
-; mixed layer depth - different colour for north and south [DONE]
-  
-  
 ; *****************
 
 ;my_home='/home/bridge/'
@@ -216,8 +187,8 @@ readfile(*,6)=0 ; tflm for Shufeng no longer stored
 endif else begin
 readfile(*,4)=1 ; just foster runs tfke
 ;readfile(*,4:5)=1 ; tfke and tkfs
-;readfile(*,9)=1   ; add this back if Valdes (2021) Scotese_02 needed.
-;readfile(*,10)=1   ; add this back if Scotese_noco2 needed.
+readfile(*,9)=1   ; add this back if Valdes (2021) Scotese_02 needed.
+readfile(*,10)=1   ; add this back if Scotese_noco2 needed.
 ;readfile(*,5)=1 ; just tuned runs tfks
 ;;;;;;;; *******************************
 ; missing tfks files
@@ -234,8 +205,8 @@ readfile_o(*,6)=0 ; tflm for Shufeng no longer stored
 endif else begin
 readfile_o(*,4)=1          ; tfke
 ;readfile_o(*,4:5)=1          ; tfke and tkfs
-;readfile_o(*,9)=1   ; Scotese_02
-;readfile_o(*,10)=1 ; Scotese_noco2
+readfile_o(*,9)=1   ; Scotese_02
+readfile_o(*,10)=1 ; Scotese_noco2
 endelse
 
 
