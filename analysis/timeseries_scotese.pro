@@ -25,6 +25,13 @@ pro time
 ; plot continuous land [DONE]
 
 ; make hoffmuller plots to be area-weighted in y axis
+
+; stramfunction plot: remove continous ocean as in overturning plots
+
+; stramfunction plot: +ve and -ve colour scales
+
+; mixed layer depth - different colour for north and south
+  
   
 ; *****************
 
@@ -1831,7 +1838,7 @@ print,nnlevs
 thisdata=mixed_zonmean2(*,*,e)
 endif
 
-contour,transpose(reverse(thisdata)),dates2,lats,/over,/fill,levels=nnlevs
+contour,transpose(reverse(thisdata)),dates2,reverse(lats_ocn),/over,/fill,levels=nnlevs
 
 nlevv=nnnlev+2
 maxv=nnmax
@@ -1972,8 +1979,8 @@ ncdf_varget,id1,'latitude',lats_merid
 ncdf_varget,id1,'depth',depths_merid
 ncdf_close,id1
 
-print,lats_ocnm
-print,lats_merid
+;print,lats_ocnm
+;print,lats_merid
 
 merid(0:nym-1,0:nzm-1,n,e)=dummy
 for j=0,nym-1 do begin
@@ -1986,7 +1993,6 @@ endfor
 
 ; NOTE FOR NEXT TIME:
 ; Now need to mask out data if have zonally continous ocean
-
 
 ; take the maximum absolute level at and below level 12 = 800 metres.
 for j=0,nym-1 do begin
@@ -2035,11 +2041,11 @@ tvlct,r_39,g_39,b_39
 nnmax=30.0
 nndel=1.0
 nnnlev=nnmax/nndel
-nnlevs=[0.001,nndel*findgen(nnnlev)+nndel,1000]
+nnlevs=[-1000,reverse(-1*(nndel*findgen(nnnlev)+nndel)),nndel*findgen(nnnlev)+nndel,1000]
 print,nnlevs
 thisdata=merid_lat(*,*,e)
 
-contour,transpose(reverse(thisdata)),dates2,lats_merid,/over,/cell_fill,levels=nnlevs
+contour,transpose(reverse(thisdata)),dates2,reverse(lats_merid),/over,/cell_fill,levels=nnlevs
 
 ; plot the colour bar
 my_cbymin=-50
@@ -2049,12 +2055,12 @@ my_cbxmax=30
 
 ncb=100
 my_cb=fltarr(2,ncb)
-my_cb(0,*)=findgen(ncb)*(nnmax-0)/(ncb-1.0)
+my_cb(0,*)=findgen(ncb)*(nnmax*2)/(ncb-1.0)-nnmax
 my_cb(1,*)=my_cb(0,*)
 my_cby=findgen(ncb)*(my_cbymax-my_cbymin)/(ncb-1.0)+my_cbymin
 my_cbx=[my_cbxmin,my_cbxmax]
 contour,my_cb,my_cbx,my_cby,/over,/fill,levels=nnlevs,/noclip;,position=[20,40,-50,50]
-xyouts,my_cbxmax+10,my_cbymin,'0',charsize=0.7
+xyouts,my_cbxmax+10,my_cbymin,strtrim(-1*nnmax,2),charsize=0.7
 xyouts,my_cbxmax+10,my_cbymax-5,strtrim(nnmax,2),charsize=0.7
 xyouts,my_cbxmin,my_cbymax+5,'abs(merid) [Sv]',charsize=0.5
 
@@ -4934,7 +4940,7 @@ endif
 
 
 if (hoffnames(v) eq 'mixd') then begin
-mylats=lats
+mylats=reverse(lats_ocn)
 if (bb eq 0) then begin
 nlevv=31
 maxv=150
@@ -5216,7 +5222,7 @@ endif
 endif
 
 if (hoffnames(v) eq 'merid') then begin
-mylats=lats_merid
+mylats=reverse(lats_merid)
 if (bb eq 0) then begin
 nlevv=31
 maxv=30
