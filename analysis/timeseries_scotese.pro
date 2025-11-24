@@ -67,19 +67,19 @@ do_readbounds=1 ; read in mask and ice
     do_ice_plot=0 ; plot prescribed ice sheets
 
 do_solar_plot=0 ; plot prescribed solar forcing (from .dat file)
-do_ocean=0                    ; read in ocean mld
-do_merid=0 ; read in ocean streamfunction 
+do_ocean=1                    ; read in ocean mld
+do_merid=1 ; read in ocean streamfunction 
 
-do_precip=1                     ; read in model precip output (requires do_readlsm)
-do_evap=1 ; read in evap
-do_mfc=1 ; moisture flux convergence
+do_precip=0                     ; read in model precip output (requires do_readlsm)
+do_evap=0 ; read in evap
+do_mfc=0 ; moisture flux convergence
 
 do_temp_plot=0 ; global mean from proxies
 
 do_readsolar=0                  ; read solar forcing and albedo from first simulation
   do_ff_model=0 ; forcing/feedback model (requires do_clims, do_readbounds, do_readsolar?)     
     do_co2_plot=0 ; prescribed co2 (requires do_ff_model)
-    do_co2_inferred=1 ; inferred and constant co2 (requires do_ff_model)
+    do_co2_inferred=0 ; inferred and constant co2 (requires do_ff_model)
 
     do_forcings_plot=0 ; prescribed forcings in Wm-2
     do_forctemps_plot=0 ; prescribed forcings in oC
@@ -96,9 +96,9 @@ do_ess_plot=0
 do_hoff_plots=1 ; hoffmuller plot
 do_reg_plots=0 ; regional plots
 
-do_ebm=1 ; EBM model
+do_ebm=0 ; EBM model
   do_aprp=0 ; APRP (requires do_ebm)
-  do_hf=1 ; heat fluxes (requires do_ebm)
+  do_hf=0 ; heat fluxes (requires do_ebm)
   
 do_seas=0                     ; wmmt, cmmt
 
@@ -1956,6 +1956,8 @@ nzm=21
 
 merid=fltarr(nym,nzm,ndates,nexp)
 merid_lat=fltarr(nym,ndates,nexp)
+merid_lat_tmean=fltarr(nym,ndates,nexp)
+
 
 for e=0,nexp-1 do begin
 for n=nstart,ndates-1 do begin
@@ -1986,13 +1988,27 @@ endfor
 ; Now need to mask out data if have zonally continous ocean
 
 
+; take the maximum absolute level at and below level 12 = 800 metres.
 for j=0,nym-1 do begin
-merid_lat(j,n,e)=max(abs(merid(j,10:nzm-1,n,e)))
-endfor ; end j lats
+; old version:
+;merid_lat(j,n,e)=max(abs(merid(j,12:nzm-1,n,e)))
 
-endif
+; this version to mantain the sign:
+mymax=max(abs(merid(j,12:nzm-1,n,e)),myindex)
+mymaxsign=float(merid(j,12+myindex,n,e) gt 0) - float(merid(j,12+myindex,n,e) lt 0)
+merid_lat(j,n,e)=mymaxsign*mymax
+
+endfor                          ; end j lats
+
+
+endif ; end if readfile
+endfor ; end ndates
+
+for j=0,nym-1 do begin
+   merid_lat_tmean(j,*,e)=mean(merid_lat(j,*,e))
 endfor
-endfor
+
+endfor                          ; end exp
 
 
 for e=0,nexp-1 do begin
@@ -2016,14 +2032,14 @@ plot,lats,dates2,yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',psym=2,/
 
 tvlct,r_39,g_39,b_39
 
-nnmax=30
-nndel=1
+nnmax=30.0
+nndel=1.0
 nnnlev=nnmax/nndel
 nnlevs=[0.001,nndel*findgen(nnnlev)+nndel,1000]
 print,nnlevs
 thisdata=merid_lat(*,*,e)
 
-contour,transpose(reverse(thisdata)),dates2,lats_merid,/over,/fill,levels=nnlevs
+contour,transpose(reverse(thisdata)),dates2,lats_merid,/over,/cell_fill,levels=nnlevs
 
 ; plot the colour bar
 my_cbymin=-50
@@ -2061,8 +2077,8 @@ endfor
 
 device,/close
 
-endif
-endfor
+endif ; end readfile
+endfor ; end nexp
 
 endif ; end do_merid
 
@@ -4787,7 +4803,7 @@ tvlct,r_39,g_39,b_39
 for e=0,nexp-1 do begin
 if (readfile(0,e) eq 1) then begin ; strictly only for temp and precip and mask
 
-   nhoff=18
+   nhoff=19
    hoffnames=strarr(nhoff)
    hoffnames(*)='x'
    if (do_clims eq 1) then hoffnames(0)='temp'
@@ -4795,7 +4811,7 @@ if (readfile(0,e) eq 1) then begin ; strictly only for temp and precip and mask
    if (do_readlsm eq 1) then hoffnames(2)='mask'
    if (do_ocean eq 1) then hoffnames(3)='mixd'
    if (do_precip eq 1) then hoffnames(4)='mprec'
-   if (do_readlsm eq 1) then hoffnames(5)='cont'
+   if (do_readlsm eq 1 and do_precip eq 1) then hoffnames(5)='cont'
    if (do_evap eq 1) then hoffnames(6)='evap'
    if (do_evap eq 1) then hoffnames(7)='pme'
    if (do_mfc eq 1) then hoffnames(8)='mfcm'
@@ -4808,7 +4824,7 @@ if (readfile(0,e) eq 1) then begin ; strictly only for temp and precip and mask
    if (do_readlsm eq 1) then hoffnames(15)='masks'
    if (do_readlsm eq 1) then hoffnames(16)='maska'
    if (do_readlsm eq 1) then hoffnames(17)='maskan'
-   
+   if (do_merid eq 1) then hoffnames(18)='merid'
    
 for v=0,nhoff-1 do begin
 if (hoffnames(v) ne 'x') then begin
@@ -4831,6 +4847,7 @@ if (bb eq 0) then tvlct,r_39,g_39,b_39
 if (bb eq 1) then tvlct,r_anom,g_anom,b_anom
 
 if (hoffnames(v) eq 'temp') then begin
+mylats=lats
 if (bb eq 0) then begin
 nlevv=21
 maxv=40
@@ -4850,6 +4867,7 @@ endif
 endif
 
 if (hoffnames(v) eq 'prec') then begin
+mylats=lats
 if (bb eq 0) then begin
 nlevv=11
 maxv=10
@@ -4869,6 +4887,7 @@ endif
 endif
 
 if (hoffnames(v) eq 'mprec') then begin
+mylats=lats
 if (bb eq 0) then begin
 nlevv=11
 maxv=10
@@ -4894,6 +4913,7 @@ endif
 
 
 if (hoffnames(v) eq 'mask') then begin
+mylats=lats
 if (bb eq 0) then begin
 nlevv=11
 maxv=1
@@ -4914,6 +4934,7 @@ endif
 
 
 if (hoffnames(v) eq 'mixd') then begin
+mylats=lats
 if (bb eq 0) then begin
 nlevv=31
 maxv=150
@@ -4934,6 +4955,7 @@ endif
 
 
 if (hoffnames(v) eq 'cont') then begin
+mylats=lats
 if (bb eq 0) then begin
 nlevv=11
 maxv=100/50.0
@@ -4953,6 +4975,7 @@ endif
 endif
 
 if (hoffnames(v) eq 'evap') then begin
+mylats=lats
 if (bb eq 0) then begin
 nlevv=11
 maxv=10
@@ -4972,6 +4995,7 @@ endif
 endif
 
 if (hoffnames(v) eq 'pme') then begin
+mylats=lats
 if (bb eq 0) then begin
 nlevv=11
 maxv=5.5
@@ -4991,6 +5015,7 @@ endif
 endif
 
 if (hoffnames(v) eq 'mfcm') then begin
+mylats=lats
 if (bb eq 0) then begin
 nlevv=11
 maxv=5.5
@@ -5010,6 +5035,7 @@ endif
 endif
 
 if (hoffnames(v) eq 'mfce') then begin
+mylats=lats
 if (bb eq 0) then begin
 nlevv=11
 maxv=5.5
@@ -5030,6 +5056,7 @@ endif
 endif
 
 if (hoffnames(v) eq 'htra') then begin
+mylats=lats
 if (bb eq 0) then begin
 nlevv=13
 maxv=6.5
@@ -5049,6 +5076,7 @@ endif
 endif
 
 if (hoffnames(v) eq 'otra') then begin
+mylats=lats
 if (bb eq 0) then begin
 nlevv=13
 maxv=6.5
@@ -5068,6 +5096,7 @@ endif
 endif
 
 if (hoffnames(v) eq 'atra') then begin
+mylats=lats
 if (bb eq 0) then begin
 nlevv=13
 maxv=6.5
@@ -5087,6 +5116,7 @@ endif
 endif
 
 if (hoffnames(v) eq 'precs') then begin
+mylats=lats
 if (bb eq 0) then begin
 nlevv=11
 maxv=10
@@ -5106,6 +5136,7 @@ endif
 endif
 
 if (hoffnames(v) eq 'preca') then begin
+mylats=lats
 if (bb eq 0) then begin
 nlevv=12
 maxv=2.2
@@ -5125,6 +5156,7 @@ endif
 endif
 
 if (hoffnames(v) eq 'masks') then begin
+mylats=lats
 if (bb eq 0) then begin
 nlevv=11
 maxv=1
@@ -5144,6 +5176,7 @@ endif
 endif
 
 if (hoffnames(v) eq 'maska') then begin
+mylats=lats
 if (bb eq 0) then begin
 nlevv=12
 maxv=0.55
@@ -5163,6 +5196,7 @@ endif
 endif
 
 if (hoffnames(v) eq 'maskan') then begin
+mylats=lats
 if (bb eq 0) then begin
 nlevv=12
 maxv=0.55
@@ -5181,6 +5215,27 @@ mytickv=[-0.5,0,0.5]
 endif
 endif
 
+if (hoffnames(v) eq 'merid') then begin
+mylats=lats_merid
+if (bb eq 0) then begin
+nlevv=31
+maxv=30
+minv=-30
+myvar=reverse(merid_lat(*,*,e))
+xlab='Maximum streamfunction [Sv]'
+mytickv=[-30,-20,-10,0,10,20,30]
+endif
+if (bb eq 1) then begin
+nlevv=20
+maxv=10.5
+minv=-10.5
+myvar=reverse(merid_lat(*,*,e)-merid_lat_tmean(*,*,e))
+xlab='Maximum streamfunction anomaly [m^3s^-1]'
+mytickv=[-10,0,10]
+endif
+endif
+
+
 a=size(mytickv)
 myxticks=a(1)-1
 mybarv=fltarr(nbar,2)
@@ -5196,32 +5251,32 @@ topbar=ymin+(ymax-ymin)*33.0/35.0
 dtopbar=(ymax-ymin)*0.6/35.0
 
 
-contour,transpose(myvar),dates2,lats,yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',ytitle='Latitude',ystyle=1,xstyle=1,/cell_fill,levels=mylevsv,position=[0.1,0.25,0.95,0.95],c_colors=colvect
+contour,transpose(myvar),dates2,mylats,yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',ytitle='Latitude',ystyle=1,xstyle=1,/cell_fill,levels=mylevsv,position=[0.1,0.25,0.95,0.95],c_colors=colvect
 if (bb eq 1) then begin
-contour,transpose(myvar),dates2,lats,levels=[0],/overplot
-;contour,transpose(myvar),dates2,lats,levels=mylevsv,/overplot,c_linestyle=1
+contour,transpose(myvar),dates2,mylats,levels=[0],/overplot
+;contour,transpose(myvar),dates2,mylats,levels=mylevsv,/overplot,c_linestyle=1
 endif
 
 if (do_hf eq 1) then begin
    
 if (hoffnames(v) eq 'preca' or hoffnames(v) eq 'maska') then begin
 
-;contour,transpose(lat_efe(*,*,e)),dates2,lats,levels=[0.9],/overplot
+;contour,transpose(lat_efe(*,*,e)),dates2,mylats,levels=[0.9],/overplot
    
 ; plot a countour of the zero efe
 for n=nstart,ndates-2 do begin
-   oplot,[dates2(n),dates2(n+1)],[max(lats(where(lat_efe(*,n,e) eq 1))),max(lats(where(lat_efe(*,n+1,e) eq 1)))],color=0,thick=5
-   oplot,[dates2(n),dates2(n+1)],[min(lats(where(lat_efe(*,n,e) eq 1))),min(lats(where(lat_efe(*,n+1,e) eq 1)))],color=0,thick=5
+   oplot,[dates2(n),dates2(n+1)],[max(mylats(where(lat_efe(*,n,e) eq 1))),max(mylats(where(lat_efe(*,n+1,e) eq 1)))],color=0,thick=5
+   oplot,[dates2(n),dates2(n+1)],[min(mylats(where(lat_efe(*,n,e) eq 1))),min(mylats(where(lat_efe(*,n+1,e) eq 1)))],color=0,thick=5
 endfor
 
 ; plot the maximum value in the deep tropics
 
 ;myvarc=myvar
-;myvarc( where(lats gt 10 or lats lt -10),*)=-1e5
+;myvarc( where(mylats gt 10 or mylats lt -10),*)=-1e5
 ;for n=nstart,ndates-2 do begin
 ;   aa=max(myvarc(*,n),l1)
 ;   aa=max(myvarc(*,n+1),l2)
-;   oplot,[dates2(n),dates2(n+1)],[lats(l1),lats(l2)],color=0,thick=5,linestyle=1
+;   oplot,[dates2(n),dates2(n+1)],[mylats(l1),mylats(l2)],color=0,thick=5,linestyle=1
 ;endfor
 
 endif ; end preca
