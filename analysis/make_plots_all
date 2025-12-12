@@ -1,10 +1,10 @@
 #!/bin/ksh
 
 #indir_root=/home/bridge/ggdjl/um_climates
-indir_root=/home/bridge/ggdjl/ummodel/data
+indir_root=/home/ggdjl/ummodel/data
 
-exptype1=tfks
-#exptype1=tfke
+#exptype1=tfks
+exptype1=tfke
 #exptype1=tfja
 #exptype1=tfgw
 

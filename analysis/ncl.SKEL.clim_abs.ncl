@@ -7,8 +7,8 @@ doplot=DOPLOT
 flip=FLIP
 mymask=MASK
 
-exp_dir="/home/bridge/swsvalde/ummodel/data"
-exr_dir="/home/bridge/swsvalde/ummodel/data"
+exp_dir="/home/swsvalde/ummodel/data"
+exr_dir="/home/swsvalde/ummodel/data"
 
 g3=addfile(exr_dir+"/"+exrname+"/inidata/"+exrname+".qrparm.omask.nc","r")
 my_lsm=g3->lsm(:,:)

@@ -82,7 +82,11 @@
 
 #for file in grads_time_pme_texx_anom grads_time_evap_texx_anom ; do
 
-for file in grads_time_cont_texx_anom grads_time_mprec_texx_anom ; do
+#for file in grads_time_cont_texx_anom grads_time_mprec_texx_anom ; do
+
+#for file in grads_time_merid_tfke_abs ; do
+
+for file in clim_temp_geo_time ; do
 
 gs -dSAFER -dEPSCrop -r600 -sDEVICE=pngalpha -o ${file}.png ${file}.eps
 done

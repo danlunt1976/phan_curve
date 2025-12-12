@@ -5,9 +5,10 @@ plot_tempdiff=0
 plot_streamabs=0
 plot_uv=0
 plot_mixed=0
-plot_merid=1
+plot_merid=0
 plot_wind=0
 plot_temp=0
+plot_sat=1
 plot_salin=0
 plot_topo=0
 plot_albdiff=0
@@ -200,6 +201,32 @@ sed -i "s/DOPLOT/${doplot}/g" ${jobfile}
 ncl ${jobfile}
 \rm ${jobfile}
 fi
+
+if [ ${plot_sat} -eq 1 ] ; then
+jobfile="ncl.${exp}.clim_abs.ncl"
+\cp ncl.SKEL.clim_abs.ncl ${jobfile}
+sed -i "s/EXP/${exp}/g" ${jobfile}
+sed -i "s/EXR/${exr}/g" ${jobfile}
+sed -i "s/AGE/${age}/g" ${jobfile}
+sed -i "s/TYP/pd/g" ${jobfile}
+sed -i "s/CODE/a/g" ${jobfile}
+sed -i "s/FLIP/0/g" ${jobfile}
+sed -i "s/MASK/0/g" ${jobfile}
+sed -i "s/COL/BlAqGrYeOrReVi200/g" ${jobfile}
+sed -i "s/MAX/300.0/g" ${jobfile}
+sed -i "s/MIN/250.0/g" ${jobfile}
+sed -i "s/DEL/5.0/g" ${jobfile}
+sed -i "s/MX2/10.0/g" ${jobfile}
+sed -i "s/MN2/-10.0/g" ${jobfile}
+sed -i "s/DL2/1.0/g" ${jobfile}
+sed -i "s/VAR/temp_mm_1_5m/g" ${jobfile}
+sed -i "s/VSHORT/sat/g" ${jobfile}
+sed -i "s/VLONG/Surface Air Temperature/g" ${jobfile}
+sed -i "s/DOPLOT/${doplot}/g" ${jobfile}
+ncl ${jobfile}
+\rm ${jobfile}
+fi
+
 
 if [ ${plot_uv} -eq 1 ] ; then
 for lev in 0 11 15 ; do

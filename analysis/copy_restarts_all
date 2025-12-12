@@ -24,14 +24,15 @@ mkdir -p ${oudir}
 #for exproot in xqgv ; do
 #my_loop='a b c e f g'
 #my_loop='d h i y z'
-for exproot in xqGV ; do
+#for exproot in xqGV ; do
+for exproot in xqej xqeJ xqEj xqEJ xQej ; do
 my_loop={a..z}
 # **
 
 
 
 # **edit this
-  if [ "$exproot" = "tFlm" ] ; then
+  if [ "$exproot" = "tFlm" || "$exproot" = "xQej" ] ; then
     my_loop={a..e}
   fi
 # **
