@@ -46,7 +46,7 @@ do_clims=1 ; read in model temperature output
 do_readbounds=1 ; read in mask and ice
   do_readlsm=1 ; read in lsm
     do_lsm_plot=0               ; plot prescribed land area
-  do_readice=0                  ; read ice
+  do_readice=1                  ; read ice
     do_ice_plot=0 ; plot prescribed ice sheets
 
 do_solar_plot=0 ; plot prescribed solar forcing (from .dat file)
@@ -57,17 +57,17 @@ do_precip=0                     ; read in model precip output (requires do_readl
 do_evap=0 ; read in evap
 do_mfc=0 ; moisture flux convergence
 
-do_temp_plot=0 ; global mean from proxies
+do_temp_plot=1 ; global mean from proxies
 
-do_readsolar=0                  ; read solar forcing and albedo from first simulation
-  do_ff_model=0 ; forcing/feedback model (requires do_clims, do_readbounds, do_readsolar?)     
+do_readsolar=1                  ; read solar forcing and albedo from first simulation
+  do_ff_model=1 ; forcing/feedback model (requires do_clims, do_readbounds, do_readsolar?)     
     do_co2_plot=0 ; prescribed co2 (requires do_ff_model)
     do_co2_inferred=0 ; inferred and constant co2 (requires do_ff_model)
 
     do_forcings_plot=0 ; prescribed forcings in Wm-2
     do_forctemps_plot=0 ; prescribed forcings in oC
  
-    do_clim_plot=0 ;  plot new vs old, ff, MDC, and resid
+    do_clim_plot=1 ;  plot new vs old, ff, MDC, and resid
                  ;  (requires ff_model) 
 
     do_scatt_all=0 ; all scatter plots 
@@ -191,9 +191,9 @@ readfile(*,6)=0 ; tflm for Shufeng no longer stored
 endif else begin
 readfile(*,4)=1 ; just foster runs tfke
 ;readfile(*,4:5)=1 ; tfke and tkfs
-readfile(*,9)=1   ; add this back if Valdes (2021) Scotese_02 needed.
-readfile(*,10)=1   ; add this back if Scotese_noco2 needed.
-;readfile(*,5)=1 ; just tuned runs tfks
+;readfile(*,9)=1   ; add this back if Valdes (2021) Scotese_02 needed.
+;readfile(*,10)=1   ; add this back if Scotese_noco2 needed.
+readfile(*,5)=1 ; just tuned runs tfks
 ;;;;;;;; *******************************
 ; missing tfks files
 ;tfks_missing=[21,49,51]-1
@@ -3918,7 +3918,7 @@ endif
 
 if (p eq 3) then begin
 oplot,[x1,x1+dx1],[y1+dy1,y1+dy1],color=200,thick=3
-xyouts,x1+dx2,y1+dy1-dy2,'Judd et al (in review)',color=200
+xyouts,x1+dx2,y1+dy1-dy2,'Judd et al (in 2024)',color=200
 endif
 
 
@@ -4540,8 +4540,8 @@ endif
 if (t eq 1) then begin
 for e=0,nexp-1 do begin
 if (e ne pe) then begin
-xyouts,-500,13+e*1.0,exproot(0,e)
-plots,-520,13+e*1.0,psym=5,color=colexp(e)
+;xyouts,-500,13+e*1.0,exproot(0,e)
+;plots,-520,13+e*1.0,psym=5,color=colexp(e)
 endif
 endfor
 endif
@@ -4550,6 +4550,12 @@ if (t eq 1 or t eq 0) then begin
 xyouts,-500,12,'HadCM3L ['+exproot(0,pe)+']'
 plots,-520,12,psym=8,symsize=0.5
 oplot,[-510,-530],[12,12],thick=3
+endif
+
+if (t eq 1) then begin
+xyouts,-500,11,'HadCM3L ['+exproot(0,pt)+']',color=colexp(pt)
+plots,-520,11,psym=8,symsize=0.5,color=colexp(pt)
+oplot,[-510,-530],[11,11],thick=3,color=colexp(pt)
 endif
 
 if (v eq 0 and (t eq 2 or t eq 3 or t eq 4 or t eq 5 or t eq 6 or t eq 7 or t eq 8)) then begin

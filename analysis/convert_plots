@@ -86,7 +86,7 @@
 
 #for file in grads_time_merid_tfke_abs ; do
 
-for file in clim_temp_geo_time ; do
+for file in clim_temp_cmp_time ; do
 
 gs -dSAFER -dEPSCrop -r600 -sDEVICE=pngalpha -o ${file}.png ${file}.eps
 done
