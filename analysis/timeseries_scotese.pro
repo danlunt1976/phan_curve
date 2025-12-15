@@ -5,6 +5,10 @@ pro time
 
 ; make hoffmuller plots to be area-weighted in y axis
 
+; plot a timeseries and cross-plot of maximum mixed-layer depth in
+; each hemisphere versus maximum overturning in each hemisphere (in
+; middle of doing this!!!).
+  
 ; *****************
 
 ;my_home='/home/bridge/'
@@ -46,8 +50,8 @@ do_readbounds=1 ; read in mask and ice
     do_ice_plot=0 ; plot prescribed ice sheets
 
 do_solar_plot=0 ; plot prescribed solar forcing (from .dat file)
-do_ocean=1                    ; read in ocean mld
-do_merid=1 ; read in ocean streamfunction 
+do_ocean=0                    ; read in ocean mld
+do_merid=0 ; read in ocean streamfunction 
 
 do_precip=0                     ; read in model precip output (requires do_readlsm)
 do_evap=0 ; read in evap
@@ -72,7 +76,7 @@ do_polamp_plot=0 ;  plot polamp
 do_scattemp_plot=0
 do_climsens_plot=0
 do_ess_plot=0
-do_hoff_plots=1 ; hoffmuller plot
+do_hoff_plots=0 ; hoffmuller plot
 do_reg_plots=0 ; regional plots
 
 do_ebm=0 ; EBM model
@@ -1729,7 +1733,7 @@ if (my_msk ne 0) then begin
    mixed_zonmean2(j,n,e)=mean(mixed(*,j,n,e))/mean(maskso(*,j,n))
    mixed_zonmean3(j,n,e)=mean(mixed(*,j,n,e))/mean(maskso(*,j,n))
    mixed_zonmean3(j,n,e)=mixed_zonmean3(j,n,e)* $
-                         (mixed_zonmean3(j,n,e) gt 70)
+                         (mixed_zonmean3(j,n,e) gt 50)
    mixed_zonmean3(j,n,e)=mixed_zonmean3(j,n,e)* $ 
                          ( (float(lats_ocn(j) ge 0)) - (float(lats_ocn(j) lt 0)) )
 
@@ -1744,8 +1748,8 @@ endif ; end if readfile
 endfor                          ; end n
 
 for j=0,ny-1 do begin
-   mixed_zonmean2_tmean(j,*,e)=mean(mixed_zonmean2(j,*,e))
-   mixed_zonmean3_tmean(j,*,e)=mean(mixed_zonmean3(j,*,e))
+   mixed_zonmean2_tmean(j,*,e)=mean(mixed_zonmean2(j,*,e),/nan)
+   mixed_zonmean3_tmean(j,*,e)=mean(mixed_zonmean3(j,*,e),/nan)
 endfor
 
 endfor ; end e
@@ -1975,15 +1979,15 @@ endfor
 
 ; NOTE FOR NEXT TIME:
 ; Now need to mask out data if have zonally continous ocean
-
+merlev=12
 ; take the maximum absolute level at and below level 12 = 800 metres.
 for j=0,nym-1 do begin
 ; old version:
-;merid_lat(j,n,e)=max(abs(merid(j,12:nzm-1,n,e)))
+;merid_lat(j,n,e)=max(abs(merid(j,merlev:nzm-1,n,e)))
 
 ; this version to mantain the sign:
-mymax=max(abs(merid(j,12:nzm-1,n,e)),myindex)
-mymaxsign=float(merid(j,12+myindex,n,e) gt 0) - float(merid(j,12+myindex,n,e) lt 0)
+mymax=max(abs(merid(j,merlev:nzm-1,n,e)),myindex)
+mymaxsign=float(merid(j,merlev+myindex,n,e) gt 0) - float(merid(j,merlev+myindex,n,e) lt 0)
 merid_lat(j,n,e)=mymaxsign*mymax
 
 ; now blank out non-continous
@@ -1999,7 +2003,7 @@ endif ; end if readfile
 endfor ; end ndates
 
 for j=0,nym-1 do begin
-   merid_lat_tmean(j,*,e)=mean(merid_lat(j,*,e))
+   merid_lat_tmean(j,*,e)=mean(merid_lat(j,*,e),/nan)
 endfor
 
 endfor                          ; end exp
@@ -2073,6 +2077,79 @@ device,/close
 
 endif ; end readfile
 endfor ; end nexp
+
+
+;;;;;;;
+; THIS IS THE BIT I AM IN THE MIDDLE OF EDITING - JUST COPY-PASTE FROM
+;                                                 ABOVE SO FAR
+;nmxl=12 ; up to (not including) 60 degrees N/S
+nmxl=17 ; up to (including) 50 degrees N/S
+
+for n=nstart,ndates-1 do begin
+
+sortvect=thisdata(ny-nmxl:ny-1,n)
+sorted_indices=reverse(sort(sortvect))
+top_ntv2_values=sortvect[sorted_indices(0:ntv2-1)]
+merid_time_nh(n,e)=mean(top_ntv2_values)
+
+sortvect=thisdata(0:nmxl-1,n)
+sorted_indices=reverse(sort(sortvect))
+top_ntv2_values=sortvect[sorted_indices(0:ntv2-1)]
+mixed_time_sh(n,e,nn)=mean(top_ntv2_values)
+
+;mixed_time_nh(n,e,nn)=mean(thisdata(ny-nmxl:ny-1,n))
+;mixed_time_sh(n,e,nn)=mean(thisdata(0:nmxl-1,n))
+;mixed_time_nh(n,e,nn)=max(thisdata(ny-nmxl:ny-1,n))
+;mixed_time_sh(n,e,nn)=max(thisdata(0:nmxl-1,n))
+
+endfor ; end nstart to ndates
+
+
+
+
+device,filename='mixednhsh_time_'+exproot(0,e)+'_'+nnname(nn)+'.eps',/encapsulate,/color,set_font='Helvetica',xsize=7,ysize=5,/inches
+
+xmin=-550
+xmax=0
+
+ymin=0
+ymax=nnmax*1.5
+
+topbar=ymin+(ymax-ymin)*33.0/35.0
+dtopbar=(ymax-ymin)*0.6/35.0
+
+plot,dates2,mixed_time_nh(*,e,nn),yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',ytitle='mixed layer depth',ystyle=1,xstyle=1,color=0,/nodata,YTICKFORMAT='(F6.0)'
+oplot,dates2,mixed_time_nh(*,e,nn),color=70,thick=5
+plots,dates2,mixed_time_sh(*,e,nn),color=180,thick=5
+
+
+tvlct,r_cgmw,g_cgmw,b_cgmw
+for n=0,nstage-1 do begin
+polyfill,[stageb(n),stageb(n+1),stageb(n+1),stageb(n)],[ymax,ymax,topbar,topbar],color=n
+endfor
+tvlct,r_39,g_39,b_39
+
+oplot,[xmin,xmax],[topbar,topbar]
+for n=1,nstage-1 do begin
+oplot,[stageb(n),stageb(n)],[topbar,ymax]
+endfor
+
+for n=0,nstage-1 do begin
+xyouts,(stageb(n)+stageb(n+1))/2.0,topbar+dtopbar,alignment=0.5,stagen(n),charsize=0.7
+endfor
+
+corr1=-50
+myy=ymin+(ymax-ymin)*0.9
+dy1=(ymax-ymin)/200
+dy2=(ymax-ymin)/20
+oplot,[-150,-120]+corr1,[myy,myy],color=70,thick=5
+xyouts,-100+corr1,myy-dy1,'Northern Hemisphere', charsize=0.7
+oplot,[-150,-120]+corr1,[myy-dy2,myy-dy2], color=180,thick=5
+xyouts,-100+corr1,myy-dy2-dy1,'Southern Hemisphere', charsize=0.7
+
+
+device,/close
+
 
 endif ; end do_merid
 
@@ -4527,7 +4604,7 @@ if (t eq 5 or t eq 7 or t eq 8) then begin
 oplot,[x1,x1+dx1],[y1-dy1,y1-dy1],color=colwin,thick=3
 xyouts,x1+dx2,y1-dy1-dy2,'Wing and Huber (2020)',color=colwin
 oplot,[x1,x1+dx1],[y1-2*dy1,y1-2*dy1],color=coljud,thick=3
-xyouts,x1+dx2,y1-2*dy1-dy2,'Judd et al (in prep)',color=coljud
+xyouts,x1+dx2,y1-2*dy1-dy2,'Judd et al (2024)',color=coljud
 endif
 
 if (t eq 6) then begin
@@ -5223,11 +5300,11 @@ tvlct,r_anom,g_anom,b_anom
 endif
 if (bb eq 1) then begin
 nlevv=20
-maxv=10.5
-minv=-10.5
+maxv=20.5
+minv=-20.5
 myvar=reverse(merid_lat(*,*,e)-merid_lat_tmean(*,*,e))
 xlab='Maximum streamfunction anomaly [m^3s^-1]'
-mytickv=[-10,0,10]
+mytickv=[-20,-10,0,10,20]
 endif
 endif
 
