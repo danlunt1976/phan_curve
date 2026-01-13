@@ -86,10 +86,29 @@
 
 #for file in grads_time_merid_tfke_abs ; do
 
-for file in clim_temp_cmp_time ; do
+#for file in clim_temp_cmp_time ; do
 
-gs -dSAFER -dEPSCrop -r600 -sDEVICE=pngalpha -o ${file}.png ${file}.eps
+#for file in climsens_time ; do
+
+#for file in scattemp_time_all ; do
+
+for file in forctemps_time_3 ; do
+
+#convert -flatten ${file}.eps ${file}.png
+    
+#gs -dSAFER -dEPSCrop -r600 -sDEVICE=pngalpha -o ${file}.png ${file}.eps
+
+gs -dSAFER -dEPSCrop -r600 -sDEVICE=png16m -o ${file}.png ${file}.eps
+
+#ps2pdf -dEPSCrop -dAutoRotatePages=/None ${file}.eps ${file}.pdf
+#pdfcrop ${file}.pdf ${file}_crop.pdf
+
 done
+
+
+
+
+
 
 
 

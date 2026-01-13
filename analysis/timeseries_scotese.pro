@@ -6,7 +6,7 @@ pro time
 ;   do_times
 ;   do_greg
 ;   *Read proxies
-;   *Read solar
+;   *Read solar (used for ff model)
 ;   do_times (gmst)
 ;   *Set up reg
 ;   do_readbounds
@@ -40,7 +40,7 @@ pro time
 ;   do_reg_plots
 ;   do_polamp_plot
 ;   do_ess_plot
-
+;   do_textfile
   
 ; *****************
 ; TO DO:
@@ -88,10 +88,10 @@ do_greg=0 ; read gregory data
 do_clims=1 ; read in model temperature output
   read_all_clims=0        ; if 0 [0=default] then only read in more recent simulations 
            ;   (e.g. tfke,tfks), for speed
-do_readbounds=0 ; read in mask and ice
-  do_readlsm=0 ; read in lsm
+do_readbounds=1 ; read in mask and ice
+  do_readlsm=1 ; read in lsm
     do_lsm_plot=0               ; plot prescribed land area
-  do_readice=0                  ; read ice
+  do_readice=1                  ; read ice
     do_ice_plot=0 ; plot prescribed ice sheets
 
 do_solar_plot=0 ; plot prescribed solar forcing (from .dat file)
@@ -105,14 +105,14 @@ do_mfc=0 ; moisture flux convergence
 do_temp_plot=1 ; global mean from proxies
 
 do_readsolar=0                  ; read solar forcing and albedo from first simulation
-  do_ff_model=0 ; forcing/feedback model (requires do_clims, do_readbounds, do_readsolar?)     
+  do_ff_model=1 ; forcing/feedback model (requires do_clims, do_readbounds, do_readlsm, do_readsolar??x)     
     do_co2_plot=0 ; prescribed co2 (requires do_ff_model)
-    do_co2_inferred=0 ; inferred and constant co2 (requires do_ff_model)
+    do_co2_inferred=1 ; inferred and constant co2 (requires do_ff_model)
 
-    do_forcings_plot=0 ; prescribed forcings in Wm-2
-    do_forctemps_plot=0 ; prescribed forcings in oC
+    do_forcings_plot=1 ; prescribed forcings in Wm-2 (requires ff_model)
+    do_forctemps_plot=1 ; prescribed forcings in oC (requires ff_model)
  
-    do_clim_plot=0 ;  plot new vs old, ff, MDC, and resid
+    do_clim_plot=1 ;  plot new vs old, ff, MDC, and resid
                  ;  (requires ff_model) 
 
     do_scatt_all=0 ; all scatter plots 
@@ -573,6 +573,7 @@ dates2edge=fltarr(ndates+1)
 
 dates3=strarr(ndates)
 co2=fltarr(ndates)
+co2tun=fltarr(ndates)
 solar=fltarr(ndates)
 
 for e=0,nexp-1 do begin
@@ -1273,6 +1274,17 @@ my_line=strsplit(line,' ',/EXTRACT)
 dates2(n)=my_line(1)
 co2(n)=my_line(2)
 endfor
+
+line=''
+close,1
+openr,1,'../islands/'+co2file(pt)+'.dat'
+for n=nstart,ndates-1 do begin
+readf,1,line
+my_line=strsplit(line,' ',/EXTRACT)
+co2tun(n)=my_line(2)
+endfor
+
+
 close,1
 dates2=dates2*(-1.0)
 for n=nstart+1,ndates-1 do begin
@@ -3327,6 +3339,11 @@ endif                           ; end if do_ebm
 
 if (do_ff_model eq 1) then begin 
 
+if (do_readbounds ne 1 or do_clims ne 1 or do_readlsm ne 1 or do_readice ne 1) then begin
+   print,'ff_model requires do_readbounds and do_clims'
+   stop
+endif
+   
 c_alb=0.27
 c_co2=3.7
 
@@ -3335,7 +3352,6 @@ c_dalb_jud=0.14-0.06
 ;c_dalb_jud=0.2-0.02
 
 c_dice=0.9-0.14
-
 
 t_co2=1.0
 t_co2_lin=1.0
@@ -3402,14 +3418,18 @@ temp_all_lin=fltarr(ndates)
 
 ; units of f_co2 and f_solar are w/m2
 f_co2(*)=t_co2*c_co2*alog(co2/co2(baseline))/alog(2.0)
+; note that this solar comes from a text file, rather than from the
+; model climatologies.  Could change this:
 f_solar(*)=t_solar*(1.0-c_alb)*(solar-solar(baseline))/4.0
 f_area(*)=t_area*solar*(-1.0)*(masks_mean-masks_mean(baseline))*c_dalb/4.0
 f_ice(*)=t_ice*solar*(-1.0)*(ice_mean-ice_mean(baseline))*c_dice/4.0
+f_all=f_co2+f_solar+f_area+f_ice
+
 
 f_co2_jud(*)=1.0*c_co2*alog(co2/co2(baseline))/alog(2.0)
 f_solar_jud(*)=1.0*(1.0-c_alb)*(solar-solar(baseline))/4.0
 f_area_jud(*)=1.0*solar(0)*(-1.0)*(masks_mean-masks_mean(baseline))*c_dalb_jud/4.0
-
+f_all_jud=f_co2_jud+f_solar_jud+f_area_jud
 f_solararea_jud=solar*(1-c_alb_time_jud)/4.0 - solar(0)*(1-c_alb_time_jud(0))/4.0
 
 
@@ -3417,9 +3437,6 @@ f_co2_lin(*)=t_co2_lin*c_co2*alog(co2/co2(baseline))/alog(2.0)
 f_solar_lin(*)=t_solar_lin*(1.0-c_alb)*(solar-solar(baseline))/4.0
 f_area_lin(*)=t_area_lin*solar*(-1.0)*(masks_mean-masks_mean(baseline))*c_dalb/4.0
 f_ice_lin(*)=t_ice*solar*(-1.0)*(ice_mean-ice_mean(baseline))*c_dice/4.0
-
-f_all=f_co2+f_solar+f_area+f_ice
-f_all_jud=f_co2_jud+f_solar_jud+f_area_jud
 f_all_lin=f_co2_lin+f_solar_lin+f_area_lin+f_ice_lin
 
 
@@ -3434,6 +3451,9 @@ r_co2=c_co2*alog(co2/co2(baseline))/alog(2.0)
 r_solar=(1.0-c_alb)*(solar-solar(baseline))/4.0
 r_area=solar*(-1.0)*(masks_mean-masks_mean(baseline))*c_dalb/4.0
 r_ice=solar*(-1.0)*(ice_mean-ice_mean(baseline))*c_dice/4.0
+
+; check that the co2 in the denominator is correct (instead of co2tun)
+r_co2tun=c_co2*alog(co2tun/co2(baseline))/alog(2.0)
 
 rr = [TRANSPOSE(r_co2), TRANSPOSE(r_solar), TRANSPOSE(r_area), TRANSPOSE(r_ice)]
 
@@ -3455,36 +3475,54 @@ print,'t_ice_tun= ',t_ice_tun
 print,'lambda_tun= ',lambda_tun
 print,'sensitivity= ',-1*c_co2/lambda_tun
 
+
 f_co2_tun=t_co2_tun*r_co2
 f_solar_tun=t_solar_tun*r_solar
 f_area_tun=t_area_tun*r_area
 f_ice_tun=t_ice_tun*r_ice
-
 f_all_tun=f_co2_tun+f_solar_tun+f_area_tun+f_ice_tun
 
-temp_all_tun=myconst - 1.0*f_all_tun/lambda_tun 
-temp_co2=myconst - 1.0*f_co2_tun/lambda_tun 
-temp_solar=myconst - 1.0*f_solar_tun/lambda_tun 
-temp_area=myconst - 1.0*f_area_tun/lambda_tun 
-temp_ice=myconst - 1.0*f_ice_tun/lambda_tun 
+f_co2_tunt=t_co2_tun*r_co2tun
+f_all_tunt=f_co2_tunt+f_solar_tun+f_area_tun+f_ice_tun
+
+temp_co2_tun=myconst - 1.0*f_co2_tun/lambda_tun 
+temp_solar_tun=myconst - 1.0*f_solar_tun/lambda_tun 
+temp_area_tun=myconst - 1.0*f_area_tun/lambda_tun 
+temp_ice_tun=myconst - 1.0*f_ice_tun/lambda_tun 
+temp_all_tun=myconst - 1.0*f_all_tun/lambda_tun
+
+temp_co2_tunt=myconst - 1.0*f_co2_tunt/lambda_tun 
+temp_all_tunt=myconst - 1.0*f_all_tunt/lambda_tun 
 
 ; for paper:
 print,'variances:'
 print,'temp_all_tun = ',variance(temp_all_tun)
-print,'temp_co2 = ',variance(temp_co2)
-print,'temp_solar = ',variance(temp_solar)
-print,'temp_area = ',variance(temp_area)
-print,'temp_ice = ',variance(temp_ice)
-variance_sum=variance(temp_co2)+variance(temp_solar)+variance(temp_area)+variance(temp_ice)
+print,'temp_co2_tun = ',variance(temp_co2_tun)
+print,'temp_solar_tun = ',variance(temp_solar_tun)
+print,'temp_area_tun = ',variance(temp_area_tun)
+print,'temp_ice_tun = ',variance(temp_ice_tun)
+variance_sum=variance(temp_co2_tun)+variance(temp_solar_tun)+variance(temp_area_tun)+variance(temp_ice_tun)
 print,'sum = ',variance_sum
-print,'co2 and solar %: ',100*variance(temp_co2)/variance_sum, 100*variance(temp_solar)/variance_sum
+print,'co2 and solar %: ',100*variance(temp_co2_tun)/variance_sum, 100*variance(temp_solar_tun)/variance_sum
+print,''
+print,'temp_all_tunt = ',variance(temp_all_tunt)
+variance_sum=variance(temp_co2_tunt)+variance(temp_solar_tun)+variance(temp_area_tun)+variance(temp_ice_tun)
+print,'sum tunt = ',variance_sum
+print,'**FOR PAPER NUM** co2 and solar % tunt: ',100*variance(temp_co2_tunt)/variance_sum, 100*variance(temp_solar_tun)/variance_sum
+
+
 
 myconst2=0.0
 temp_all_tun_anom=myconst2 - 1.0*f_all_tun/lambda_tun 
-temp_co2_anom=myconst2 - 1.0*f_co2_tun/lambda_tun 
-temp_solar_anom=myconst2 - 1.0*f_solar_tun/lambda_tun 
-temp_area_anom=myconst2 - 1.0*f_area_tun/lambda_tun 
-temp_ice_anom=myconst2 - 1.0*f_ice_tun/lambda_tun 
+temp_co2_tun_anom=myconst2 - 1.0*f_co2_tun/lambda_tun 
+temp_solar_tun_anom=myconst2 - 1.0*f_solar_tun/lambda_tun 
+temp_area_tun_anom=myconst2 - 1.0*f_area_tun/lambda_tun 
+temp_ice_tun_anom=myconst2 - 1.0*f_ice_tun/lambda_tun 
+
+myconst3=0.0
+temp_all_tunt_anom=myconst3 - 1.0*f_all_tunt/lambda_tun 
+temp_co2_tunt_anom=myconst3 - 1.0*f_co2_tunt/lambda_tun 
+
 
 resid=climav(*,pe,0)-temp_all_tun(*)
 temp_resid=myconst + resid
@@ -3597,6 +3635,15 @@ print,'Problem!! temp_all_tun4 and mean(temp_scot1m_interp)'
 stop
 endif
 
+; and a check that co2tun is equal to co2_inf_1m
+testing=co2tun-co2_inf_1m
+myerr=sqrt(total(testing*testing)/(ndates*1.0))
+if (myerr gt 2e-2) then begin
+print,'Problem!! co2tun and co2_inf_1m',myerr
+stop
+endif
+
+
 ; now print out inferred co2 
 
 openw,1,'co2_inferred.dat'
@@ -3609,7 +3656,7 @@ printf,1,dates2
 printf,1,co2_con_1m
 close,1
 
-stop
+;stop
 endif ; end do_co2_inferred
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -4138,15 +4185,14 @@ endif ; end if ice plot
 
 if (do_forcings_plot eq 1) then begin
 
-
-
-for t=0,3 do begin
+for t=0,4 do begin
 
 ; t=0; individual forcings and all forcings.
 ; t=1; individual forcings and all forcings and inferred CO2.
 ; t=2; individual forcings and all forcings, for tuned parameters.
 ; t=3; judd partitioning
-
+; t=4; **FOR PAPER FIG** paper plot
+   
 device,filename='forcings_time_'+strtrim(t,2)+'.eps',/encapsulate,/color,set_font='Helvetica',xsize=7,ysize=5,/inches
 
 xmin=-550
@@ -4155,6 +4201,10 @@ xmax=0
 
 ymin=-15
 ymax=15
+if (t eq 4) then begin
+ymin=-15
+ymax=25
+endif
 
 topbar=ymin+(ymax-ymin)*33.0/35.0
 dtopbar=(ymax-ymin)*0.6/35.0
@@ -4175,7 +4225,7 @@ plots,dates2,f_all,color=150,psym=8,symsize=0.5
 tvlct,r_39,g_39,b_39
 endif
 
-if (t eq 2) then begin
+if (t eq 2 or t eq 4) then begin
 oplot,dates2,f_solar_tun,color=50,thick=3
 oplot,dates2,f_co2_tun,color=100,thick=3
 oplot,dates2,f_area_tun,color=150,thick=3
@@ -4188,8 +4238,15 @@ plots,dates2,f_all_tun,color=150,psym=8,symsize=0.5
 tvlct,r_39,g_39,b_39
 endif
 
-if (t eq 1) then begin
+if (t eq 1 or t eq 4) then begin
 oplot,dates2,f_co2_inf,color=100,thick=3,linestyle=1
+endif
+
+if (t eq 4) then begin
+oplot,dates2,f_co2_tunt,color=80,thick=3
+;tvlct,r_0,g_0,b_0
+;oplot,dates2,f_all_inf,color=100,thick=3,linestyle=1
+;tvlct,r_39,g_39,b_39
 endif
 
 
@@ -4209,7 +4266,6 @@ tvlct,r_39,g_39,b_39
 endif
 
 
-
 y1=-8
 dy1=1.2
 x1=-220
@@ -4226,6 +4282,9 @@ endif else begin
 oplot,[x1,x1+dx1],[y1-(3*dy1),y1-(3*dy1)],color=250,thick=1,linestyle=1
 oplot,[x1,x1+dx1],[y1-(3*dy1),y1-(3*dy1)],color=200,thick=1,linestyle=2
 endelse
+if (t eq 4) then begin
+
+endif
 
 xyouts,x1+dx2,y1,color=50,'Solar forcing',charsize=cs
 xyouts,x1+dx2,y1-(1*dy1),color=100,'CO2 forcing',charsize=cs
@@ -4235,6 +4294,9 @@ xyouts,x1+dx2,y1-(3*dy1),color=200,'Ice sheet forcing',charsize=cs
 endif else begin
 xyouts,x1+dx2,y1-(3*dy1),color=230,'Solar+land forcing',charsize=cs
 endelse
+if (t eq 4) then begin
+;
+endif
 
 ;loadct,0
 tvlct,r_0,g_0,b_0
@@ -4245,6 +4307,13 @@ plots,x1+dx1/2.0,y1-(4*dy1),psym=8,symsize=0.5,color=150
 ;loadct,39
 tvlct,r_39,g_39,b_39
 
+
+tvlct,r_cgmw,g_cgmw,b_cgmw
+for n=0,nstage-1 do begin
+polyfill,[stageb(n),stageb(n+1),stageb(n+1),stageb(n)],[ymax,ymax,topbar,topbar],color=n
+endfor
+tvlct,r_39,g_39,b_39
+
 oplot,[xmin,xmax],[topbar,topbar]
 for n=1,nstage-1 do begin
 oplot,[stageb(n),stageb(n)],[topbar,ymax]
@@ -4253,6 +4322,8 @@ endfor
 for n=0,nstage-1 do begin
 xyouts,(stageb(n)+stageb(n+1))/2.0,topbar+dtopbar,alignment=0.5,stagen(n),charsize=0.7
 endfor
+
+
 
 device,/close
 
@@ -4269,9 +4340,10 @@ print,'forctemp plot'
 ; t=0; individual forctemps and all forctemps.
 ; t=1; individual forctemps and all forctemps. and inferred CO2.
 ; t=2; anom forctemps.
+; t=3; anom forctemps for paper.
 
 
-for t=0,2 do begin
+for t=0,3 do begin
 
 device,filename='forctemps_time_'+strtrim(t,2)+'.eps',/encapsulate,/color,set_font='Helvetica',xsize=7,ysize=5,/inches
 
@@ -4286,7 +4358,10 @@ if (t eq 2) then begin
 ymin=-14
 ymax=14
 endif
-
+if (t eq 3) then begin
+ymin=-15
+ymax=22
+endif
 
 topbar=ymin+(ymax-ymin)*33.0/35.0
 dtopbar=(ymax-ymin)*0.6/35.0
@@ -4295,10 +4370,10 @@ plot,dates2,f_all,yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',ytitle=
 
 if (t eq 0 or t eq 1) then begin
 plots,dates2,climav(*,pe,0),psym=8,symsize=0.5
-oplot,dates2,temp_solar,color=50,thick=3
-oplot,dates2,temp_co2,color=100,thick=3
-oplot,dates2,temp_area,color=150,thick=3
-oplot,dates2,temp_ice,color=200,thick=3
+oplot,dates2,temp_solar_tun,color=50,thick=3
+oplot,dates2,temp_co2_tun,color=100,thick=3
+oplot,dates2,temp_area_tun,color=150,thick=3
+oplot,dates2,temp_ice_tun,color=200,thick=3
 oplot,dates2,temp_resid,color=250,thick=3
 oplot,dates2,temp_all_tun,color=0,thick=3
 endif
@@ -4308,53 +4383,93 @@ oplot,dates2,f_co2_inf,color=100,thick=3,linestyle=1
 endif
 
 if (t eq 2) then begin
-oplot,dates2,temp_solar_anom,color=50,thick=3
-oplot,dates2,temp_co2_anom,color=100,thick=3
-oplot,dates2,temp_area_anom,color=150,thick=3
-oplot,dates2,temp_ice_anom,color=200,thick=3
+oplot,dates2,temp_solar_tun_anom,color=50,thick=3
+oplot,dates2,temp_co2_tun_anom,color=100,thick=3
+oplot,dates2,temp_area_tun_anom,color=150,thick=3
+oplot,dates2,temp_ice_tun_anom,color=200,thick=3
 oplot,dates2,temp_all_tun_anom,color=0,thick=3
+;oplot,dates2,temp_resid_anom,color=250,thick=3
+endif
+
+if (t eq 3) then begin
+;plots,dates2,climav(*,pt,0)-climav(0,pt,0),psym=8,symsize=0.5
+plots,dates2,climav(*,pt,0)-myconst,psym=8,symsize=0.5
+oplot,dates2,temp_solar_tun_anom,color=50,thick=3
+oplot,dates2,temp_co2_tunt_anom,color=100,thick=3
+oplot,dates2,temp_area_tun_anom,color=150,thick=3
+oplot,dates2,temp_ice_tun_anom,color=200,thick=3
+oplot,dates2,temp_all_tunt_anom,color=0,thick=3
 ;oplot,dates2,temp_resid_anom,color=250,thick=3
 endif
 
 
 if (t eq 0 or t eq 1) then begin
 y1=12
+dy1=1.2
+dy2=0.2
 endif
 if (t eq 2) then begin
 y1=-6
+dy1=1.2
+dy2=0.2
+endif
+if (t eq 3) then begin
+y1=-6
+dy1=1.5
+dy2=0.5
 endif
 
-dy1=1.2
+
 x1=-220
 dx1=30
 dx2=50
 cs=1.0
-
+if (t eq 3) then begin
+x1=-150
+dx1=30
+dx2=40
+cs=1.0
+endif
 
 
 if (t eq 0 or t eq 1) then begin
 plots,x1+dx1/2.0,y1+(1*dy1),psym=8,symsize=0.5
 oplot,[x1,x1+dx1],[y1-(4*dy1),y1-(4*dy1)],color=250,thick=3
 endif
+if (t eq 3) then begin
+plots,x1+dx1/2.0,y1-(5*dy1),psym=8,symsize=0.5
+endif
 oplot,[x1,x1+dx1],[y1,y1],color=50,thick=3
 oplot,[x1,x1+dx1],[y1-(1*dy1),y1-(1*dy1)],color=100,thick=3
 oplot,[x1,x1+dx1],[y1-(2*dy1),y1-(2*dy1)],color=150,thick=3
 oplot,[x1,x1+dx1],[y1-(3*dy1),y1-(3*dy1)],color=200,thick=3
 ;oplot,[x1,x1+dx1],[y1-(4*dy1),y1-(4*dy1)],color=250,thick=3
+if (t ne 3) then begin
 oplot,[x1,x1+dx1],[y1-(5*dy1),y1-(5*dy1)],color=0,thick=3
-
-
+endif
+if (t eq 3) then begin
+oplot,[x1,x1+dx1],[y1-(4*dy1),y1-(4*dy1)],color=0,thick=3
+endif
 
 if (t eq 0 or t eq 1) then begin
-xyouts,x1+dx2,y1+(1*dy1),'HadCM3L ['+exproot(0,pe)+']',charsize=cs
-xyouts,x1+dx2,y1-(4*dy1),color=250,'Residual temp',charsize=cs
+xyouts,x1+dx2,y1+(1*dy1-dy2),'HadCM3L ['+exproot(0,pe)+']',charsize=cs
+xyouts,x1+dx2,y1-(4*dy1+dy2),color=250,'Residual temp',charsize=cs
 endif
-xyouts,x1+dx2,y1,color=50,'Solar temp',charsize=cs
-xyouts,x1+dx2,y1-(1*dy1),color=100,'CO2 temp',charsize=cs
-xyouts,x1+dx2,y1-(2*dy1),color=150,'Land surface temp',charsize=cs
-xyouts,x1+dx2,y1-(3*dy1),color=200,'Ice sheet temp',charsize=cs
-;xyouts,x1+dx2,y1-(4*dy1),color=250,'Residual temp',charsize=cs
-xyouts,x1+dx2,y1-(5*dy1),color=0,'All temps',charsize=cs
+if (t eq 3) then begin
+xyouts,x1+dx2,y1-(5*dy1+dy2),ensname(pt),charsize=cs
+endif
+
+xyouts,x1+dx2,y1-dy2,color=50,'Solar',charsize=cs
+xyouts,x1+dx2,y1-(1*dy1+dy2),color=100,'CO!D2!N',charsize=cs
+xyouts,x1+dx2,y1-(2*dy1+dy2),color=150,'Land surface',charsize=cs
+xyouts,x1+dx2,y1-(3*dy1+dy2),color=200,'Ice sheet',charsize=cs
+;xyouts,x1+dx2,y1-(4*dy1+dy2),color=250,'Residual temp',charsize=cs
+if (t ne 3) then begin
+xyouts,x1+dx2,y1-(5*dy1+dy2),color=0,'All',charsize=cs
+endif
+if (t eq 3) then begin
+xyouts,x1+dx2,y1-(4*dy1+dy2),color=0,'All',charsize=cs
+endif
 
 tvlct,r_cgmw,g_cgmw,b_cgmw
 for n=0,nstage-1 do begin
@@ -4374,6 +4489,15 @@ endfor
 device,/close
 
 endfor
+
+print,'**FOR PAPER NUM** solar contribution at 540 Ma:',temp_solar_tun_anom(ndates-1)
+print,'**FOR PAPER NUM** max CO2 contribution:',max(temp_co2_tunt_anom)
+print,'**FOR PAPER NUM** timing of max CO2 contribution:',dates2(!c)
+print,'**FOR PAPER NUM** min CO2 contribution:',min(temp_co2_tunt_anom)
+print,'**FOR PAPER NUM** timing of min CO2 contribution:',dates2(!c)
+print,'**FOR PAPER NUM** max land surface contribution:',max(temp_area_tun_anom)
+print,'**FOR PAPER NUM** max ice contribution:',max(temp_ice_tun_anom)
+stop
 
 endif ; end if forctemp plot
 
@@ -4797,7 +4921,7 @@ device,/close
 
 endfor 
 
-print,'FOR PAPER NUM, r for '+ensname(pt)+' : '+strtrim(correlate(climav(*,pt,0),temp_scot1m_interp),2)
+print,'**FOR PAPER NUM**, r for '+ensname(pt)+' : '+strtrim(correlate(climav(*,pt,0),temp_scot1m_interp),2)
 print,'FOR PAPER, r for '+ensname(pe)+' : '+strtrim(correlate(climav(*,pe,0),temp_scot1m_interp),2)
 
 endif ; end scattemp plot
@@ -6028,7 +6152,7 @@ if (do_clims eq 1) then begin
 ;print,'** FOR PAPER**  LOWEST MODEL TEMP IS: '+strtrim(min(climav(nstart:ndates-1,pe,0),ind),2)
 ;print,dates2(ind)
 ;print,'** FOR PAPER**  MEAN MODEL TEMP IS: '+strtrim(mean(climav(nstart:ndates-1,pe,0)),2)
-print,'** FOR PAPER NUM**  MODERN MODEL TEMP (PT) IS: '+strtrim(climav(nstart,pt,0),2)
+print,'**FOR PAPER NUM**  MODERN MODEL TEMP (PT) IS: '+strtrim(climav(nstart,pt,0),2)
 endif
 
 
