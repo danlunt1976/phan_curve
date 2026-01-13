@@ -1,5 +1,47 @@
 pro time
 
+; Structure:
+;   *Definitions
+;   check_names
+;   do_times
+;   do_greg
+;   *Read proxies
+;   *Read solar
+;   do_times (gmst)
+;   *Set up reg
+;   do_readbounds
+;   do_clims
+;   do_precip
+;   do_evap
+;   do_ocean
+;   do_merid
+;   do_seas
+;   do_mfc
+;   do_ebm
+;     do_aprp
+;     do_hf
+;   do_ff_model
+;     do_co2_inferred
+;   do_timeseries_plot
+;   do_greg_plot
+;   do_gmst_plot (timeseries)
+;   do_temp_plot (proxies)
+;   do_co2_plot
+;   do_lsm_plot
+;   do_solar_plot
+;   do_ice_plot
+;   do_forcings_plot
+;   do_forctemps_plot
+;   do_clim_plot
+;   do_scattemp_plot
+;   do_climsens_plot
+;   do_scatt_all
+;   do_hoff_plots
+;   do_reg_plots
+;   do_polamp_plot
+;   do_ess_plot
+
+  
 ; *****************
 ; TO DO:
 
@@ -8,6 +50,9 @@ pro time
 ; plot a timeseries and cross-plot of maximum mixed-layer depth in
 ; each hemisphere versus maximum overturning in each hemisphere (in
 ; middle of doing this!!!).
+
+; 'FOR PAPER NUM' for numbers in paper
+; 'FOR PAPER FIG' for figures in paper
   
 ; *****************
 
@@ -43,10 +88,10 @@ do_greg=0 ; read gregory data
 do_clims=1 ; read in model temperature output
   read_all_clims=0        ; if 0 [0=default] then only read in more recent simulations 
            ;   (e.g. tfke,tfks), for speed
-do_readbounds=1 ; read in mask and ice
-  do_readlsm=1 ; read in lsm
+do_readbounds=0 ; read in mask and ice
+  do_readlsm=0 ; read in lsm
     do_lsm_plot=0               ; plot prescribed land area
-  do_readice=1                  ; read ice
+  do_readice=0                  ; read ice
     do_ice_plot=0 ; plot prescribed ice sheets
 
 do_solar_plot=0 ; plot prescribed solar forcing (from .dat file)
@@ -59,21 +104,21 @@ do_mfc=0 ; moisture flux convergence
 
 do_temp_plot=1 ; global mean from proxies
 
-do_readsolar=1                  ; read solar forcing and albedo from first simulation
-  do_ff_model=1 ; forcing/feedback model (requires do_clims, do_readbounds, do_readsolar?)     
+do_readsolar=0                  ; read solar forcing and albedo from first simulation
+  do_ff_model=0 ; forcing/feedback model (requires do_clims, do_readbounds, do_readsolar?)     
     do_co2_plot=0 ; prescribed co2 (requires do_ff_model)
     do_co2_inferred=0 ; inferred and constant co2 (requires do_ff_model)
 
     do_forcings_plot=0 ; prescribed forcings in Wm-2
     do_forctemps_plot=0 ; prescribed forcings in oC
  
-    do_clim_plot=1 ;  plot new vs old, ff, MDC, and resid
+    do_clim_plot=0 ;  plot new vs old, ff, MDC, and resid
                  ;  (requires ff_model) 
 
     do_scatt_all=0 ; all scatter plots 
     
 do_polamp_plot=0 ;  plot polamp
-do_scattemp_plot=0
+do_scattemp_plot=1
 do_climsens_plot=0
 do_ess_plot=0
 do_hoff_plots=0 ; hoffmuller plot
@@ -142,6 +187,11 @@ ndates=109
 nexp=11
 tmax=4000
 nstart=0
+;;;;
+
+;;;;
+ensname=strarr(nexp)
+ensname(*)=['','','','','ENS!Dvar-FCO2!N','ENS!Dvar!N','','','','','']
 ;;;;
 
 ;;;;
@@ -864,7 +914,7 @@ endif
 endfor
 endfor
 
-endif ; end times
+endif ; end do_times
 
 
 
@@ -1047,7 +1097,7 @@ print,mean(abs(mytemptoa2(t2max-1,*,ee)))
 endfor
 
 
-endif ; end do gregory
+endif ; end do_greg
 
 
 ; READ IN PROXIES
@@ -1257,7 +1307,7 @@ close,1
 
 
 
-
+if (do_times eq 1) then begin
 for e=0,nexp-1 do begin
 for d=0,ndepth-1 do begin
 for n=nstart,ndates-1 do begin
@@ -1265,7 +1315,7 @@ gmst(n,d,e)=mean(mytemp(ntimes(n,e)-(1+navy(e)):ntimes(n,e)-1,n,d,e))
 endfor
 endfor
 endfor
-
+endif
 
 
 ; N.B. hard-wired to resolution
@@ -3742,7 +3792,7 @@ endif ; end do gregory plot
 
 
 
-
+if (do_times eq 1) then begin
 if (do_gmst_plot eq 1) then begin
 
 ; GMST PLOT
@@ -3816,7 +3866,7 @@ endfor ; end d
 
 endif ; end gmst plot
 
-
+endif ; end do_times
 
 
 
@@ -4703,7 +4753,15 @@ endif ; end do_clim_plot
 
 if (do_scattemp_plot eq 1) then begin
 
-device,filename='scattemp_time.eps',/encapsulate,/color,set_font='Helvetica',xsize=14,ysize=12
+nsc=2
+mycot=0
+mycou=210
+scname=strarr(nsc)
+scname=['tun','all']
+
+for sc=0,nsc-1 do begin
+
+device,filename='scattemp_time_'+scname(sc)+'.eps',/encapsulate,/color,set_font='Helvetica',xsize=14,ysize=12
 
 xmin=8
 xmax=30
@@ -4711,22 +4769,36 @@ xmax=30
 ymin=8
 ymax=30
 
-plot,temp_scot1m_interp,climav(*,pe,0),yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='GMST, Scotese et al',ytitle='Modelled GMST',ystyle=1,xstyle=1,/nodata
+plot,temp_scot1m_interp,climav(*,pe,0),yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='GMST, Scotese et al (2021)',ytitle='Modelled GMST',ystyle=1,xstyle=1,/nodata
 
-plots,temp_scot1m_interp,climav(*,pe,0),psym=8,symsize=0.5
 plots,temp_scot1m_interp,climav(*,pt,0),psym=8,symsize=0.5,color=mycot
+if (sc eq 1) then begin
+plots,temp_scot1m_interp,climav(*,pe,0),psym=8,symsize=0.5,color=mycou
+endif
 
-oplot,[xmin,xmax],[ymin,ymax],color=0
+
+oplot,[xmin,xmax],[ymin,ymax],color=0,linestyle=1
 
 myyy=ymin+(ymax-ymin)*0.9
 myxx=xmin+(xmax-xmin)*0.1
 mydy=1.5
 mydy2=0.2
 mydx=0.5
-plots,myxx,myyy,psym=8,color=0,symsize=0.5
-plots,myxx,myyy-mydy,psym=8,color=mycot,symsize=0.5
-xyouts,myxx+mydx,myyy-mydy2,'Untuned'
-xyouts,myxx+mydx,myyy-mydy-mydy2,'Tuned',color=mycot
+
+if (sc eq 1) then begin
+plots,myxx,myyy,psym=8,symsize=0.5,color=mycou
+xyouts,myxx+mydx,myyy-mydy2,ensname(pe),color=mycou
+endif
+
+plots,myxx,myyy-mydy,psym=8,symsize=0.5,color=mycot
+xyouts,myxx+mydx,myyy-mydy-mydy2,ensname(pt),color=mycot
+
+device,/close
+
+endfor 
+
+print,'FOR PAPER NUM, r for '+ensname(pt)+' : '+strtrim(correlate(climav(*,pt,0),temp_scot1m_interp),2)
+print,'FOR PAPER, r for '+ensname(pe)+' : '+strtrim(correlate(climav(*,pe,0),temp_scot1m_interp),2)
 
 endif ; end scattemp plot
 
@@ -5430,7 +5502,7 @@ endif ; end if readfile
 endfor ; end e
 
 tvlct,r_39,g_39,b_39
-endif ; end hoffplot
+endif ; end do_hoffplot
 
 
 if (do_reg_plots eq 1) then begin
@@ -5495,7 +5567,7 @@ endfor                          ; end nexp
 
 endif ; end reg_plots 
 
-stop
+;stop
 
 
 if (do_polamp_plot eq 1) then begin
@@ -5890,7 +5962,7 @@ device,/close
 endfor
 
 
-endif
+endif ; end do_ess_plot
 
 
 if (do_textfile1 eq 1) then begin
@@ -5951,12 +6023,12 @@ endif
 if (do_clims eq 1) then begin
 ;;;;;
 ; Numbers for paper:
-print,'** FOR PAPER**  HIGHEST MODEL TEMP IS: '+strtrim(max(climav(nstart:ndates-1,pe,0),ind),2)
-print,dates2(ind)
-print,'** FOR PAPER**  LOWEST MODEL TEMP IS: '+strtrim(min(climav(nstart:ndates-1,pe,0),ind),2)
-print,dates2(ind)
-print,'** FOR PAPER**  MEAN MODEL TEMP IS: '+strtrim(mean(climav(nstart:ndates-1,pe,0)),2)
-print,'** FOR PAPER**  MODERN MODEL TEMP IS: '+strtrim(climav(nstart,pe,0),2)
+;print,'** FOR PAPER**  HIGHEST MODEL TEMP IS: '+strtrim(max(climav(nstart:ndates-1,pe,0),ind),2)
+;print,dates2(ind)
+;print,'** FOR PAPER**  LOWEST MODEL TEMP IS: '+strtrim(min(climav(nstart:ndates-1,pe,0),ind),2)
+;print,dates2(ind)
+;print,'** FOR PAPER**  MEAN MODEL TEMP IS: '+strtrim(mean(climav(nstart:ndates-1,pe,0)),2)
+print,'** FOR PAPER NUM**  MODERN MODEL TEMP (PT) IS: '+strtrim(climav(nstart,pt,0),2)
 endif
 
 
