@@ -117,7 +117,7 @@ do_readsolar=0                  ; read solar forcing and albedo from first simul
 
     do_scatt_all=0 ; all scatter plots 
     
-do_polamp_plot=0 ;  plot polamp
+do_polamp_plot=1 ;  plot polamp
 do_scattemp_plot=1
 do_climsens_plot=0
 do_ess_plot=0
@@ -1385,8 +1385,8 @@ ymaxm=[45,26]
 
 yminp=fltarr(nvar)
 ymaxp=fltarr(nvar)
-yminp=[18,17]
-ymaxp=[45,26]
+yminp=[18,16]
+ymaxp=[50,26]
 
 
 
@@ -4497,7 +4497,6 @@ print,'**FOR PAPER NUM** min CO2 contribution:',min(temp_co2_tunt_anom)
 print,'**FOR PAPER NUM** timing of min CO2 contribution:',dates2(!c)
 print,'**FOR PAPER NUM** max land surface contribution:',max(temp_area_tun_anom)
 print,'**FOR PAPER NUM** max ice contribution:',max(temp_ice_tun_anom)
-stop
 
 endif ; end if forctemp plot
 
@@ -4516,9 +4515,13 @@ if (do_clim_plot eq 1) then begin
 ; wmt is tfke, tfks, Scotese02, and ScoteseSmoothed and Winghuber and
 ; Judd (new)
 ; geo is tfke, tfks, and ScoteseSmoothed and Winghuber and Judd (new)
+; fin is **FOR PAPER FIG** tfks and ScoteseSmoothed and Winghuber and Judd
+   
+ntype=10
+mytypename=['new','cmp','pro','bot','egu','pap','cmo','wmt','geo','fin']
 
-ntype=9
-mytypename=['new','cmp','pro','bot','egu','pap','cmo','wmt','geo']
+for t=0,ntype-1 do begin
+for v=0,nvar-1 do begin
 
 colwin=80
 ;coljud=100
@@ -4526,10 +4529,10 @@ coljud=170
 colsco=250
 mycol=0
 mycot=210
-
-for t=0,ntype-1 do begin
-for v=0,nvar-1 do begin
-
+if (t eq 9) then begin
+mycot=0
+endif
+   
 device,filename='clim_'+climnamelong(v)+'_'+mytypename(t)+'_time.eps',/encapsulate,/color,set_font='Helvetica',xsize=7,ysize=5,/inches
 
 xmin=-550
@@ -4538,7 +4541,7 @@ xmax=0
 ymin=yminc(v)
 ymax=ymaxc(v)
 
-if ((t eq 2 or t eq 3 or t eq 4 or t eq 5 or t eq 7 or t eq 8) and v eq 0) then begin
+if ((t eq 2 or t eq 3 or t eq 4 or t eq 5 or t eq 7 or t eq 8 or t eq 9) and v eq 0) then begin
 ymin=5
 ymax=40
 endif
@@ -4579,94 +4582,8 @@ axis,yrange=[ymin,ymax],xrange=[xmin,xmax],ystyle=1,xstyle=1,xaxis=0
 endif
 
 
-
-;;;;;;;;;;;;;
-for n=nstart,ndates-1 do begin
-
-x=n-nstart
-xx=ndates-nstart
-;mycol=(x)*250.0/(xx-1)
-;mycol=0
-
-
-if (t eq 1) then begin
-; plot non-pe model points
-for e=0,nexp-1 do begin
-if (e ne pe) then begin
-plots,dates2(n),climav(n,e,v),color=colexp(e),psym=5,symsize=0.5
-endif
-endfor
-endif
-
-if (t eq 6 or t eq 7) then begin
-; plot scotese02 model points
-for e=0,nexp-1 do begin
-if (e eq ps) then begin
-plots,dates2(n),climav(n,e,v),color=colexp(e),psym=8,symsize=0.5
-endif
-endfor
-endif
-
-; plot hadcm3l (pe) points
-plots,dates2(n),climav(n,pe,v),color=mycol,psym=8,symsize=0.5
-
-if (t eq 3 or t eq 4 or t eq 7 or t eq 8) then begin
-; plot tuned points
-plots,dates2(n),climav(n,pt,v),color=mycot,psym=6,symsize=0.5
-endif
-
-if (t eq 1 or t eq 0) then begin
-;xyouts,dates2(n)+5,climav(n,pe,v)+0.1,exproot(n,e)+exptail(n,e),charsize=0.2
-endif
-
-endfor ; end n
-
-; plot non-pe curve
-if (t eq 1) then begin
-for e=0,nexp-1 do begin
-if (e ne pe) then begin
-oplot,dates2(*),climav(*,e,v),thick=3,color=colexp(e)
-endif
-endfor
-endif
-
-; plot scotese02 runs
-if (t eq 6 or t eq 7) then begin
-for e=0,nexp-1 do begin
-if (e eq ps) then begin
-oplot,dates2(*),climav(*,e,v),thick=3,color=colexp(e)
-endif
-endfor
-endif
-
-; plot hadcm3l (pe) curve
-oplot,dates2(*),climav(*,pe,v),thick=3,color=mycol
-
-if (t eq 3 or t eq 4 or t eq 7 or t eq 8) then begin
-; plot tuned curve
-oplot,dates2(*),climav(*,pt,v),thick=3,color=mycot
-endif
-
-
-if (v eq 0 and t eq 0) then begin
-;oplot,dates2(*),temp_all_lin(*),color=200,thick=3
-;oplot,dates2(*),temp_all(*),color=100
-;loadct,0
-tvlct,r_0,g_0,b_0
-oplot,dates2(*),temp_all_tun(*),color=150,thick=3
-;loadct,39
-tvlct,r_39,g_39,b_39
-
-;xyouts,-500,13,'Forcing/feedback model [non-tuned]'
-;oplot,[-510,-530],[13,13],color=200,thick=3
-
-xyouts,-500,10,'Forcing/feedback model'
-;loadct,0
-tvlct,r_0,g_0,b_0
-oplot,[-510,-530],[10,10],color=150,thick=3
-;loadct,39
-tvlct,r_39,g_39,b_39
-endif
+;;;;;;;;;;;
+; Plot proxies first
 
 if (v eq 0 and t eq 2) then begin
 ;plots,dates_scot,temp_scot,psym=8,symsize=0.5,color=colsco
@@ -4700,7 +4617,7 @@ oplot,dates_wing,temp_wing,color=colwin,thick=3
 oplot,dates_judd,temp_judd,color=coljud,thick=3
 endif
 
-if (v eq 0 and (t eq 7 or t eq 8)) then begin
+if (v eq 0 and (t eq 7 or t eq 8 or t eq 9)) then begin
 ; for paper
 oplot,dates2,temp_scot1m_interp,color=colsco,thick=3
 oplot,dates_wing,temp_wing,color=colwin,thick=3
@@ -4708,6 +4625,101 @@ if (t eq 7) then begin
 oplot,dates_judd,temp_judd,color=coljud,thick=3,linestyle=1
 endif
 oplot,dates_judd2,temp_judd2,color=coljud,thick=3
+endif
+
+;;;;;;;;;;;
+; Now plot models
+
+
+for n=nstart,ndates-1 do begin
+
+x=n-nstart
+xx=ndates-nstart
+;mycol=(x)*250.0/(xx-1)
+;mycol=0
+
+
+if (t eq 1) then begin
+; plot non-pe model points
+for e=0,nexp-1 do begin
+if (e ne pe) then begin
+plots,dates2(n),climav(n,e,v),color=colexp(e),psym=5,symsize=0.5
+endif
+endfor
+endif
+
+if (t eq 6 or t eq 7) then begin
+; plot scotese02 model points
+for e=0,nexp-1 do begin
+if (e eq ps) then begin
+plots,dates2(n),climav(n,e,v),color=colexp(e),psym=8,symsize=0.5
+endif
+endfor
+endif
+
+; plot hadcm3l (pe) points
+if (t ne 9) then begin
+plots,dates2(n),climav(n,pe,v),color=mycol,psym=8,symsize=0.5
+endif
+
+if (t eq 3 or t eq 4 or t eq 7 or t eq 8 or t eq 9) then begin
+; plot tuned points
+plots,dates2(n),climav(n,pt,v),color=mycot,psym=8,symsize=0.5
+endif
+
+if (t eq 1 or t eq 0) then begin
+;xyouts,dates2(n)+5,climav(n,pe,v)+0.1,exproot(n,e)+exptail(n,e),charsize=0.2
+endif
+
+endfor ; end n
+
+; plot non-pe curve
+if (t eq 1) then begin
+for e=0,nexp-1 do begin
+if (e ne pe) then begin
+oplot,dates2(*),climav(*,e,v),thick=3,color=colexp(e)
+endif
+endfor
+endif
+
+; plot scotese02 runs
+if (t eq 6 or t eq 7) then begin
+for e=0,nexp-1 do begin
+if (e eq ps) then begin
+oplot,dates2(*),climav(*,e,v),thick=3,color=colexp(e)
+endif
+endfor
+endif
+
+; plot hadcm3l (pe) curve
+if (t ne 9) then begin
+oplot,dates2(*),climav(*,pe,v),thick=3,color=mycol
+endif
+
+if (t eq 3 or t eq 4 or t eq 7 or t eq 8 or t eq 9) then begin
+; plot tuned curve
+oplot,dates2(*),climav(*,pt,v),thick=3,color=mycot
+endif
+
+
+if (v eq 0 and t eq 0) then begin
+;oplot,dates2(*),temp_all_lin(*),color=200,thick=3
+;oplot,dates2(*),temp_all(*),color=100
+;loadct,0
+tvlct,r_0,g_0,b_0
+oplot,dates2(*),temp_all_tun(*),color=150,thick=3
+;loadct,39
+tvlct,r_39,g_39,b_39
+
+;xyouts,-500,13,'Forcing/feedback model [non-tuned]'
+;oplot,[-510,-530],[13,13],color=200,thick=3
+
+xyouts,-500,10,'Forcing/feedback model'
+;loadct,0
+tvlct,r_0,g_0,b_0
+oplot,[-510,-530],[10,10],color=150,thick=3
+;loadct,39
+tvlct,r_39,g_39,b_39
 endif
 
 
@@ -4732,12 +4744,12 @@ plots,-520,11,psym=8,symsize=0.5,color=colexp(pt)
 oplot,[-510,-530],[11,11],thick=3,color=colexp(pt)
 endif
 
-if (v eq 0 and (t eq 2 or t eq 3 or t eq 4 or t eq 5 or t eq 6 or t eq 7 or t eq 8)) then begin
+if (v eq 0 and (t eq 2 or t eq 3 or t eq 4 or t eq 5 or t eq 6 or t eq 7 or t eq 8 or t eq 9)) then begin
 
 
 x1=-300
 y1=8
-if (t eq 5 or t eq 6 or t eq 7 or t eq 8) then begin
+if (t eq 5 or t eq 6 or t eq 7 or t eq 8 or t eq 9) then begin
 x1=-230
 y1=10
 endif
@@ -4746,11 +4758,19 @@ dx2=50
 dy1=1.5
 dy2=0.5
 
+if (t ne 9) then begin
 oplot,[x1,x1+dx1],[y1+dy1,y1+dy1],color=0,thick=3
 ;plots,x1+dx1/2.0,y1,psym=8,symsize=0.5,color=colsco
 xyouts,x1+dx2,y1+dy1-dy2,'HadCM3L ['+exproot(0,pe)+']',color=0
 plots,x1+dx1/2.0,y1+dy1,color=mycol,psym=8,symsize=0.5
 ;plots,-520,12,psym=6,symsize=0.5
+endif
+
+if (t eq 9) then begin
+oplot,[x1,x1+dx1],[y1+dy1,y1+dy1],color=0,thick=3
+xyouts,x1+dx2,y1+dy1-dy2,ensname(pt),color=0
+plots,x1+dx1/2.0,y1+dy1,color=mycot,psym=8,symsize=0.5
+endif
 
 if (t ne 6) then begin
 oplot,[x1,x1+dx1],[y1,y1],color=colsco,thick=3
@@ -4759,9 +4779,9 @@ endif
 
 if (t ne 6) then begin
 if (t ne 5) then begin
-xyouts,x1+dx2,y1-dy2,'Scotese et al (2021) [smoothed]',color=colsco
-endif else begin
 xyouts,x1+dx2,y1-dy2,'Scotese et al (2021)',color=colsco
+endif else begin
+xyouts,x1+dx2,y1-dy2,'Scotese et al (2021) [not smoothed]',color=colsco
 endelse
 endif
 
@@ -4780,7 +4800,7 @@ xyouts,x1+dx2,y1+2*dy1-dy2,'HadCM3L ['+exproot(0,pt)+']',color=mycot
 plots,x1+dx1/2.0,y1+dy1,color=mycot,psym=8,symsize=0.5
 endif
 
-if (t eq 5 or t eq 7 or t eq 8) then begin
+if (t eq 5 or t eq 7 or t eq 8 or t eq 9) then begin
 oplot,[x1,x1+dx1],[y1-dy1,y1-dy1],color=colwin,thick=3
 xyouts,x1+dx2,y1-dy1-dy2,'Wing and Huber (2020)',color=colwin
 oplot,[x1,x1+dx1],[y1-2*dy1,y1-2*dy1],color=coljud,thick=3
@@ -4922,7 +4942,7 @@ device,/close
 endfor 
 
 print,'**FOR PAPER NUM**, r for '+ensname(pt)+' : '+strtrim(correlate(climav(*,pt,0),temp_scot1m_interp),2)
-print,'FOR PAPER, r for '+ensname(pe)+' : '+strtrim(correlate(climav(*,pe,0),temp_scot1m_interp),2)
+print,'r for '+ensname(pe)+' : '+strtrim(correlate(climav(*,pe,0),temp_scot1m_interp),2)
 
 endif ; end scattemp plot
 
@@ -5696,9 +5716,18 @@ endif ; end reg_plots
 
 if (do_polamp_plot eq 1) then begin
 
+
+   
+npae=2
+pae=intarr(npae)
+pae(*)=[pe,pt]
+
+for e=0,npae-1 do begin
 for v=0,nvar-1 do begin
 
-device,filename='polamp_'+climnamelong(v)+'_time.eps',/encapsulate,/color,set_font='Helvetica',xsize=7,ysize=5,/inches
+; **FOR PAPER FIG**
+   
+device,filename='polamp_'+climnamelong(v)+'_'+exproot(0,pae(e))+'_time.eps',/encapsulate,/color,set_font='Helvetica',xsize=7,ysize=5,/inches
 
 xmin=-550
 xmax=0
@@ -5722,7 +5751,7 @@ xx=ndates-nstart
 mycol=(x)*250.0/(xx-1)
 ;mycol=0
 
-plots,dates2(n),polamp(n,pe,v),color=mycol,psym=8,symsize=0.5
+plots,dates2(n),polamp(n,pae(e),v),color=mycol,psym=8,symsize=0.5
 ;xyouts,dates2(n)+5,polamp(n,pe,v)+0.05,exproot(n,1)+exptail(n,1),charsize=0.2
 
 endfor ; end n
@@ -5731,13 +5760,13 @@ for n=nstart,ndates-2 do begin
 x=n-nstart
 xx=ndates-nstart
 mycol=(x)*250.0/(xx-1)
-oplot,[dates2(n),dates2[n+1]],[polamp(n,pe,v),polamp(n+1,pe,v)],thick=3,color=mycol
+oplot,[dates2(n),dates2[n+1]],[polamp(n,pae(e),v),polamp(n+1,pae(e),v)],thick=3,color=mycol
 endfor
 
 
 ;plot,[dates2(0),dates2(nstart-1)],[0,0],linestyle=2
 
-xyouts,-500,yminp(v)+0.8*(ymaxp(v)-yminp(v)),'HadCM3L ['+exproot(0,pe)+']'
+xyouts,-500,yminp(v)+0.8*(ymaxp(v)-yminp(v)),ensname(pae(e))
 plots,-520,yminp(v)+0.8*(ymaxp(v)-yminp(v)),psym=8,symsize=0.5
 
 
@@ -5761,11 +5790,14 @@ endfor
 device,/close
 
 endfor                          ; end v 
+endfor ; end e
 
-
+for e=0,npae-1 do begin
 for v=0,nvar*2 do begin
 
-device,filename='polampxtemp_'+climnamelongx(v)+'_scatter.eps',/encapsulate,/color,set_font='Helvetica'
+; **FOR PAPER FIG**
+   
+device,filename='polampxtemp_'+climnamelongx(v)+'_'+exproot(0,pae(e))+'_scatter.eps',/encapsulate,/color,set_font='Helvetica'
 
 if (v eq 0 or v eq 1) then begin
 xmin=yminc(v)
@@ -5795,7 +5827,7 @@ ymin=min(yminp(0:nvar-1))
 ymax=max(ymaxp(0:nvar-1))
 endif
 
-plot,climav(*,pe,0),polamp(*,pe,0),yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='global mean',psym=2,/nodata,ytitle='meridional gradient [degrees C]',title=climnametitlex(v)+' ['+exproot(0,pe)+']',ystyle=1,xstyle=1
+plot,climav(*,pae(e),0),polamp(*,pae(e),0),yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='global mean',psym=2,/nodata,ytitle='meridional gradient [degrees C]',title=climnametitlex(v)+' ['+ensname(pae(e))+']',ystyle=1,xstyle=1
 
 ;;;;;;;;;;;;;
 for n=nstart,ndates-1 do begin
@@ -5808,34 +5840,21 @@ mycol=(x)*250.0/(xx-1)
 ;climnamelongx(*)=['temp-tempp','sst-sstp','temp-sst','tempp-sstp','all']
 
 if (v eq 0 or v eq 1) then begin
-   plots,climav(n,pe,v),polamp(n,pe,v),color=mycol,psym=8,symsize=1.5
-;xyouts,climav(n,pe,v)+5,polamp(n,pe,v)+0.05,exproot(n,1)+exptail(n,1),charsize=0.2
+   plots,climav(n,pae(e),v),polamp(n,pae(e),v),color=mycol,psym=8,symsize=1.5
+;xyouts,climav(n,pae(e),v)+5,polamp(n,pae(e),v)+0.05,exproot(n,1)+exptail(n,1),charsize=0.2
 endif
 if (v eq 2) then begin
-   plots,climav(n,pe,0),climav(n,pe,1),color=mycol,psym=8,symsize=1.5
+   plots,climav(n,pae(e),0),climav(n,pae(e),1),color=mycol,psym=8,symsize=1.5
 endif
 if (v eq 3) then begin
-   plots,polamp(n,pe,0),polamp(n,pe,1),color=mycol,psym=8,symsize=1.5
+   plots,polamp(n,pae(e),0),polamp(n,pae(e),1),color=mycol,psym=8,symsize=1.5
 endif
 if (v eq 4) then begin
    for vv=0,nvar-1 do begin
-   plots,climav(n,pe,vv),polamp(n,pe,vv),color=mycol,psym=8,symsize=((1-vv)+1.0)/2.0
+   plots,climav(n,pae(e),vv),polamp(n,pae(e),vv),color=mycol,psym=8,symsize=((1-vv)+1.0)/2.0
    endfor
-   oplot,[climav(n,pe,0),climav(n,pe,1)],[polamp(n,pe,0),polamp(n,pe,1)],color=mycol,linestyle=1
+   oplot,[climav(n,pae(e),0),climav(n,pae(e),1)],[polamp(n,pae(e),0),polamp(n,pae(e),1)],color=mycol,linestyle=1
 endif
-
-endfor ; end n
-
-if (v eq 0 or v eq 1) then begin
-print,'FOR PAPER, r for '+climnamelongx(v)+' : '+strtrim(correlate(climav(nstart:ndates-1,pe,v),polamp(nstart:ndates-1,pe,v)),2)
-endif
-if (v eq 2) then begin
-print,'FOR PAPER, r for '+climnamelongx(v)+' : '+strtrim(correlate(climav(nstart:ndates-1,pe,0),climav(nstart:ndates-1,pe,1)),2)
-endif
-if (v eq 3) then begin
-print,'FOR PAPER, r for '+climnamelongx(v)+' : '+strtrim(correlate(polamp(nstart:ndates-1,pe,0),polamp(nstart:ndates-1,pe,1)),2)
-endif
-
 
 
 ddy=0.001*(ymax-ymin)
@@ -5869,11 +5888,28 @@ plots,+sx1,sy-5*fy,color=mycol,psym=8,symsize=1.5
 xyouts,+sx2,sy-5*fy-ddy,color=0,'500 Ma'
 endif
 
-
+endfor ; end n
 
 device,/close
 
+app=''
+if ((pae(e) eq pt) and (v eq 0 or v eq 1 or v eq 2)) then begin
+app='**FOR PAPER NUM** '
+endif
+if (v eq 0 or v eq 1) then begin
+print,app+'r for '+climnamelongx(v)+' '+ensname(pae(e))+' : '+strtrim(correlate(climav(nstart:ndates-1,pae(e),v),polamp(nstart:ndates-1,pae(e),v)),2)
+endif
+if (v eq 2) then begin
+print,app+'r for '+climnamelongx(v)+' '+ensname(pae(e))+' : '+strtrim(correlate(climav(nstart:ndates-1,pae(e),0),climav(nstart:ndates-1,pae(e),1)),2)
+endif
+if (v eq 3) then begin
+print,app+'r for '+climnamelongx(v)+' '+ensname(pae(e))+' : '+strtrim(correlate(polamp(nstart:ndates-1,pae(e),0),polamp(nstart:ndates-1,pae(e),1)),2)
+endif
+
+
+
 endfor ; end v (2*nvar)
+endfor ; end pae
 
 endif ; end if do_polamp_plot
 
@@ -6154,7 +6190,6 @@ if (do_clims eq 1) then begin
 ;print,'** FOR PAPER**  MEAN MODEL TEMP IS: '+strtrim(mean(climav(nstart:ndates-1,pe,0)),2)
 print,'**FOR PAPER NUM**  MODERN MODEL TEMP (PT) IS: '+strtrim(climav(nstart,pt,0),2)
 endif
-
 
 stop
 

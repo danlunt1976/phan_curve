@@ -92,7 +92,12 @@
 
 #for file in scattemp_time_all ; do
 
-for file in forctemps_time_3 ; do
+#####################################
+# FOR PAPER (CHECKED).....
+
+for file in clim_temp_fin_time ; do
+
+#for file in forctemps_time_3 ; do
 
 #convert -flatten ${file}.eps ${file}.png
     
