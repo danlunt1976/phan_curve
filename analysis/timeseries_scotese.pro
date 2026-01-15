@@ -124,9 +124,9 @@ do_ess_plot=0
 do_hoff_plots=0 ; hoffmuller plot
 do_reg_plots=0 ; regional plots
 
-do_ebm=0 ; EBM model
-  do_aprp=0 ; APRP (requires do_ebm)
-  do_hf=0 ; heat fluxes (requires do_ebm)
+do_ebm=1 ; EBM model
+  do_aprp=1 ; APRP (requires do_ebm)
+  do_hf=1 ; heat fluxes (requires do_ebm)
   
 do_seas=0                     ; wmmt, cmmt
 
@@ -2479,7 +2479,7 @@ varnameebm=['temp_mm_srf','longwave_mm_s3_srf','ilr_mm_s3_srf','solar_mm_s3_srf'
 modvar_2d=fltarr(nxmax,nymax,ndates,nexp,nvarebm)
 
 ; for aprp
-aprproot=my_home+'ggdjl/ggdjl/bas/doc/phan_curve/aprp/export/silurian/array-01/wb19586/aprp_bridge/tfke_vs_PI'
+aprproot=my_home+'ggdjl/ggdjl/bas/doc/phan_curve/aprp/export/silurian/array-01/wb19586/aprp_bridge/'
 ;aprproot='/export/silurian/array-01/wb19586/aprp_bridge/tfke_vs_PI'
 nvaraprp=12
 varnameaprp=strarr(nvaraprp)
@@ -2531,7 +2531,9 @@ for e=0,nexp-1 do begin
 for n=nstart,ndates-1 do begin
 if (readfile(n,e) eq 1) then begin
 
-filename=aprproot+'/'+expnamel(n,e)+'_vs_tfkea.aprp.mm.nc'
+;aprproot=my_home+'ggdjl/ggdjl/bas/doc/phan_curve/aprp/export/silurian/array-01/wb19586/aprp_bridge/tfke_vs_PI'
+   
+filename=aprproot+exproot(0,e)+'_vs_PI/'+expnamel(n,e)+'_vs_'+expnamel(0,e)+'.aprp.mm.nc'
 print,filename
 id1=ncdf_open(filename)
 
@@ -3074,9 +3076,15 @@ endfor
 endfor
 
 
+npae=2
+pae=intarr(npae)
+pae(*)=[pe,pt]
+
+for e=0,npae-1 do begin
+
 ; Here is the plot of the contributions to polamp over time:
 
-device,filename='polampcont_time.eps',/encapsulate,/color,set_font='Helvetica',xsize=7,ysize=5,/inches
+device,filename='polampcont_time_'+expnamel(0,pae(e))+'.eps',/encapsulate,/color,set_font='Helvetica',xsize=7,ysize=5,/inches
 
 xmin=-550
 xmax=0
@@ -3091,22 +3099,22 @@ topbar=ymin+(ymax-ymin)*33.0/35.0
 dtopbar=(ymax-ymin)*0.6/35.0
 
 
-plot,dates2,my_tempebmpa(0,*,pe),yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',psym=2,/nodata,ytitle='Contributions to polar amplification [degrees C]',title='Contributions to polar amplification',ystyle=1,xstyle=1
+plot,dates2,my_tempebmpa(0,*,pae(e)),yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',psym=2,/nodata,ytitle='Contributions to polar amplification [degrees C]',title='Contributions to polar amplification',ystyle=1,xstyle=1
 
 ;;;;;;;;;;;;;
 
 for n=nstart,ndates-1 do begin
-plots,dates2(n),my_tempebmpa(0,n,pe),color=0,psym=8,symsize=0.5
+plots,dates2(n),my_tempebmpa(0,n,pae(e)),color=0,psym=8,symsize=0.5
 endfor ; end n
-oplot,dates2,my_tempebmpa(0,*,pe),thick=3,color=my_col(0)
-xyouts,-500,ymin+myy*(ymax-ymin),'HadCM3L ['+exproot(0,pe)+']',charsize=0.5
+oplot,dates2,my_tempebmpa(0,*,pae(e)),thick=3,color=my_col(0)
+xyouts,-500,ymin+myy*(ymax-ymin),'HadCM3L ['+exproot(0,pae(e))+']',charsize=0.5
 plots,-520,ymin+myy*(ymax-ymin),psym=8,symsize=0.5,color=0
 
 ddd=0
 for dd=0,nebm-1 do begin
 if (aprp_do(dd) eq 1) then begin
 
-oplot,dates2,my_tempebmpa(dd,*,pe),thick=3,color=my_col(dd),linestyle=my_linstyle(dd)
+oplot,dates2,my_tempebmpa(dd,*,pae(e)),thick=3,color=my_col(dd),linestyle=my_linstyle(dd)
 
 xyouts,-500,ymin+(myy-mydy*(ddd+1))*(ymax-ymin),my_name(dd),color=my_col(dd),charsize=0.5
 oplot,[-525,-505],[ymin+(myy-mydy*(ddd+1))*(ymax-ymin),ymin+(myy-mydy*(ddd+1))*(ymax-ymin)],color=my_col(dd),linestyle=my_linstyle(dd)
@@ -3136,7 +3144,7 @@ device,/close
 
 ; Here is the plot of the contributions to polamp over time (PERCENT VERSION):
 
-device,filename='polampcont_time_percent.eps',/encapsulate,/color,set_font='Helvetica',xsize=7,ysize=5,/inches
+device,filename='polampcont_time_percent_'+expnamel(0,pae(e))+'.eps',/encapsulate,/color,set_font='Helvetica',xsize=7,ysize=5,/inches
 
 xmin=-550
 xmax=0
@@ -3151,7 +3159,7 @@ topbar=ymin+(ymax-ymin)*33.0/35.0
 dtopbar=(ymax-ymin)*0.6/35.0
 
 
-plot,dates2,my_tempebmpa(0,*,pe),yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',psym=2,/nodata,ytitle='Contributions to polar amplification [%]',title='Contributions to polar amplification',ystyle=1,xstyle=1
+plot,dates2,my_tempebmpa(0,*,pae(e)),yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',psym=2,/nodata,ytitle='Contributions to polar amplification [%]',title='Contributions to polar amplification',ystyle=1,xstyle=1
 
 ;;;;;;;;;;;;;
 
@@ -3162,14 +3170,14 @@ for dd=0,nebm-1 do begin
 
 if (aprp_docum(dd) eq 1) then begin
 
-plotthis=where(abs(my_tempebmpa(1,*,pe)) gt 5.0)
+plotthis=where(abs(my_tempebmpa(1,*,pae(e))) gt 5.0)
 
-oplot,dates2(plotthis),100*my_tempebmpa(dd,plotthis,pe)/my_tempebmpa(1,plotthis,pe),thick=3,color=my_col(dd),linestyle=my_linstyle(dd)
+oplot,dates2(plotthis),100*my_tempebmpa(dd,plotthis,pae(e))/my_tempebmpa(1,plotthis,pae(e)),thick=3,color=my_col(dd),linestyle=my_linstyle(dd)
 
 
 for n=nstart,ndates-1 do begin
-if (abs(my_tempebmpa(1,n,pe)) gt 5.0) then begin
-plots,dates2(n),100*my_tempebmpa(dd,n,pe)/my_tempebmpa(1,n,pe),color=my_col(dd),psym=8,symsize=0.5
+if (abs(my_tempebmpa(1,n,pae(e))) gt 5.0) then begin
+plots,dates2(n),100*my_tempebmpa(dd,n,pae(e))/my_tempebmpa(1,n,pae(e)),color=my_col(dd),psym=8,symsize=0.5
 endif
 endfor ; end n 
 
@@ -3201,7 +3209,7 @@ device,/close
 
 ; Here is the plot of the contributions to GMST over time:
 
-device,filename='gmstcont_time.eps',/encapsulate,/color,set_font='Helvetica',xsize=7,ysize=5,/inches
+device,filename='gmstcont_time_'+expnamel(0,pae(e))+'.eps',/encapsulate,/color,set_font='Helvetica',xsize=7,ysize=5,/inches
 
 xmin=-550
 xmax=0
@@ -3216,22 +3224,22 @@ topbar=ymin+(ymax-ymin)*33.0/35.0
 dtopbar=(ymax-ymin)*0.6/35.0
 
 
-plot,dates2,my_tempebmav(0,*,pe),yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',psym=2,/nodata,ytitle='Contributions to GMST [degrees C]',title='Contributions to GMST',ystyle=1,xstyle=1
+plot,dates2,my_tempebmav(0,*,pae(e)),yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',psym=2,/nodata,ytitle='Contributions to GMST [degrees C]',title='Contributions to GMST',ystyle=1,xstyle=1
 
 ;;;;;;;;;;;;;
 
 for n=nstart,ndates-1 do begin
-plots,dates2(n),my_tempebmav(0,n,pe),color=0,psym=8,symsize=0.5
+plots,dates2(n),my_tempebmav(0,n,pae(e)),color=0,psym=8,symsize=0.5
 endfor ; end n
-oplot,dates2,my_tempebmav(0,*,pe),thick=3,color=my_col(0)
-xyouts,-500,ymin+myy*(ymax-ymin),'HadCM3L ['+exproot(0,pe)+']',charsize=0.5
+oplot,dates2,my_tempebmav(0,*,pae(e)),thick=3,color=my_col(0)
+xyouts,-500,ymin+myy*(ymax-ymin),'HadCM3L ['+exproot(0,pae(e))+']',charsize=0.5
 plots,-520,ymin+myy*(ymax-ymin),psym=8,symsize=0.5,color=0
 
 ddd=0
 for dd=0,nebm-1 do begin
 if (aprp_do(dd) eq 1) then begin
 
-oplot,dates2,my_tempebmav(dd,*,pe),thick=3,color=my_col(dd),linestyle=my_linstyle(dd)
+oplot,dates2,my_tempebmav(dd,*,pae(e)),thick=3,color=my_col(dd),linestyle=my_linstyle(dd)
 
 xyouts,-500,ymin+(myy-mydy*(ddd+1))*(ymax-ymin),my_name(dd),color=my_col(dd),charsize=0.5
 oplot,[-525,-505],[ymin+(myy-mydy*(ddd+1))*(ymax-ymin),ymin+(myy-mydy*(ddd+1))*(ymax-ymin)],color=my_col(dd),linestyle=my_linstyle(dd)
@@ -3265,7 +3273,7 @@ device,/close
 
 ; Here is the plot of the contributions to GMST over time (PERCENT VERSION):
 
-device,filename='gmstcont_time_percent.eps',/encapsulate,/color,set_font='Helvetica',xsize=7,ysize=5,/inches
+device,filename='gmstcont_time_percent_'+expnamel(0,pae(e))+'.eps',/encapsulate,/color,set_font='Helvetica',xsize=7,ysize=5,/inches
 
 xmin=-550
 xmax=0
@@ -3280,7 +3288,7 @@ topbar=ymin+(ymax-ymin)*33.0/35.0
 dtopbar=(ymax-ymin)*0.6/35.0
 
 
-plot,dates2,my_tempebmav(0,*,pe),yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',psym=2,/nodata,ytitle='Contributions to non-solar GMST [%]',title='Contributions to non-solar GMST',ystyle=1,xstyle=1
+plot,dates2,my_tempebmav(0,*,pae(e)),yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',psym=2,/nodata,ytitle='Contributions to non-solar GMST [%]',title='Contributions to non-solar GMST',ystyle=1,xstyle=1
 
 ;;;;;;;;;;;;;
 
@@ -3291,12 +3299,12 @@ ddd=0
 for dd=0,nebm-1 do begin
 if (aprp_docum(dd) eq 1 and dd ne 5) then begin
 
-plotthis=where(abs(my_tempebmav(1,*,pe)-my_tempebmav(5,*,pe)) gt 2.0)
-oplot,dates2(plotthis),100*(my_tempebmav(dd,plotthis,pe))/(my_tempebmav(1,plotthis,pe)-my_tempebmav(5,plotthis,pe)),thick=3,color=my_col(dd),linestyle=my_linstyle(dd)
+plotthis=where(abs(my_tempebmav(1,*,pae(e))-my_tempebmav(5,*,pae(e))) gt 2.0)
+oplot,dates2(plotthis),100*(my_tempebmav(dd,plotthis,pae(e)))/(my_tempebmav(1,plotthis,pae(e))-my_tempebmav(5,plotthis,pae(e))),thick=3,color=my_col(dd),linestyle=my_linstyle(dd)
 
 for n=nstart,ndates-1 do begin
-if (abs(my_tempebmav(1,n,pe)-my_tempebmav(5,n,pe)) gt 2.0) then begin
-plots,dates2(n),100*(my_tempebmav(dd,n,pe))/(my_tempebmav(1,n,pe)-my_tempebmav(5,n,pe)),color=my_col(dd),psym=8,symsize=0.5
+if (abs(my_tempebmav(1,n,pae(e))-my_tempebmav(5,n,pae(e))) gt 2.0) then begin
+plots,dates2(n),100*(my_tempebmav(dd,n,pae(e)))/(my_tempebmav(1,n,pae(e))-my_tempebmav(5,n,pae(e))),color=my_col(dd),psym=8,symsize=0.5
 endif
 endfor ; end n 
 
@@ -3326,6 +3334,8 @@ xyouts,(stageb(n)+stageb(n+1))/2.0,topbar+dtopbar,alignment=0.5,stagen(n),charsi
 endfor
 
 device,/close
+
+endfor ; end pae
 
 endif                           ; end if do_ebm
 
