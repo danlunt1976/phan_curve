@@ -88,10 +88,10 @@ do_greg=0 ; read gregory data
 do_clims=1 ; read in model temperature output
   read_all_clims=0        ; if 0 [0=default] then only read in more recent simulations 
            ;   (e.g. tfke,tfks), for speed
-do_readbounds=1 ; read in mask and ice
-  do_readlsm=1 ; read in lsm
+do_readbounds=0 ; read in mask and ice
+  do_readlsm=0 ; read in lsm
     do_lsm_plot=0               ; plot prescribed land area
-  do_readice=1                  ; read ice
+  do_readice=0                  ; read ice
     do_ice_plot=0 ; plot prescribed ice sheets
 
 do_solar_plot=0 ; plot prescribed solar forcing (from .dat file)
@@ -102,31 +102,31 @@ do_precip=0                     ; read in model precip output (requires do_readl
 do_evap=0 ; read in evap
 do_mfc=0 ; moisture flux convergence
 
-do_temp_plot=1 ; global mean from proxies
+do_temp_plot=0 ; global mean from proxies
 
 do_readsolar=0                  ; read solar forcing and albedo from first simulation
-  do_ff_model=1 ; forcing/feedback model (requires do_clims, do_readbounds, do_readlsm, do_readsolar??x)     
+  do_ff_model=0 ; forcing/feedback model (requires do_clims, do_readbounds, do_readlsm, do_readsolar??x)     
     do_co2_plot=0 ; prescribed co2 (requires do_ff_model)
-    do_co2_inferred=1 ; inferred and constant co2 (requires do_ff_model)
+    do_co2_inferred=0 ; inferred and constant co2 (requires do_ff_model)
 
-    do_forcings_plot=1 ; prescribed forcings in Wm-2 (requires ff_model)
-    do_forctemps_plot=1 ; prescribed forcings in oC (requires ff_model)
+    do_forcings_plot=0 ; prescribed forcings in Wm-2 (requires ff_model)
+    do_forctemps_plot=0 ; prescribed forcings in oC (requires ff_model)
  
-    do_clim_plot=1 ;  plot new vs old, ff, MDC, and resid
+    do_clim_plot=0 ;  plot new vs old, ff, MDC, and resid
                  ;  (requires ff_model) 
 
     do_scatt_all=0 ; all scatter plots 
     
-do_polamp_plot=1 ;  plot polamp
-do_scattemp_plot=1
-do_climsens_plot=0
+do_polamp_plot=0 ;  plot polamp
+do_scattemp_plot=0
+do_climsens_plot=1
 do_ess_plot=0
 do_hoff_plots=0 ; hoffmuller plot
 do_reg_plots=0 ; regional plots
 
-do_ebm=1 ; EBM model
-  do_aprp=1 ; APRP (requires do_ebm)
-  do_hf=1 ; heat fluxes (requires do_ebm)
+do_ebm=0 ; EBM model
+  do_aprp=0 ; APRP (requires do_ebm)
+  do_hf=0 ; heat fluxes (requires do_ebm)
   
 do_seas=0                     ; wmmt, cmmt
 
@@ -2784,9 +2784,9 @@ tvlct,r_39,g_39,b_39
 
 nebm=23
 my_col=intarr(nebm)
-my_col(*)=[0,0,50,150,200,250,250,50,50,50,50,50,50,50,50,50,70,90,110,200,200,50,250]
+my_col(*)=[0,0,50,150,200,250,250,50,50,50,50,50,50,50,50,50,70,90,110,200,200,50,0]
 my_name=strarr(nebm)
-my_name(*)=['temp change (GCM)','temp change (EBM)','albedo','emmisivity','heat transport','solar','temp change (sum ebm)','albedo (surface)','albedo (non-surface)','albedo (rev)','albedo (rev) (surface)','albedo (rev) (non-surface)','albedo (deriv)','albedo (aprp1)','albedo (aprp2)','albedo (APRP)','cloud (APRP)','clear sky (APRP)','surface albedo (APRP)','atmos heat transport','ocean heat transport','temp change (sum aprp)','temp change (sum aprp all terms)']
+my_name(*)=['temp change (GCM)','!9D!3T (EBM)','albedo','emmisivity','heat transport','solar','temp change (sum ebm)','albedo (surface)','albedo (non-surface)','albedo (rev)','albedo (rev) (surface)','albedo (rev) (non-surface)','albedo (deriv)','albedo (aprp1)','albedo (aprp2)','albedo (APRP)','cloud (APRP)','clear sky (APRP)','surface albedo (APRP)','atmos heat transport','ocean heat transport','temp change (sum aprp)','!9D!3T (APRP)']
 my_linstyle=intarr(nebm)
 my_linstyle(*)=[2,0,0,0,0,0,0,1,2,0,1,2,0,0,0,0,1,2,1,1,2,1,1]
 ebm_do=intarr(nebm)
@@ -2795,6 +2795,16 @@ ebm_do([0:8])=1
 aprp_do=intarr(nebm)
 aprp_do(*)=0
 aprp_do([1,3,4,5,15,16,17,18,19,20,22])=1
+
+aprp_co=intarr(nebm)
+nco=6
+aprp_co(*)=0
+aprp_co([1,22])=1
+aprp_co([3])=2
+aprp_co([15,16,17,18])=3
+aprp_co([5])=4
+aprp_co([4,19,20])=5
+
 aprp_docum=intarr(nebm)
 aprp_docum(*)=0
 aprp_docum([3,5,16,17,18,19,20])=1
@@ -3076,20 +3086,23 @@ endfor
 endfor
 
 
-npae=2
+;npae=2
+;pae=intarr(npae)
+;pae(*)=[pe,pt]
+npae=1
 pae=intarr(npae)
-pae(*)=[pe,pt]
+pae(*)=[pt]
 
 for e=0,npae-1 do begin
 
 ; Here is the plot of the contributions to polamp over time:
 
-device,filename='polampcont_time_'+expnamel(0,pae(e))+'.eps',/encapsulate,/color,set_font='Helvetica',xsize=7,ysize=5,/inches
+device,filename='polampcont_time_'+exproot(0,pae(e))+'.eps',/encapsulate,/color,set_font='Helvetica',xsize=7,ysize=5,/inches
 
 xmin=-550
 xmax=0
 
-ymin=-10
+ymin=-15
 ymax=25
 
 mydy=0.025
@@ -3099,29 +3112,30 @@ topbar=ymin+(ymax-ymin)*33.0/35.0
 dtopbar=(ymax-ymin)*0.6/35.0
 
 
-plot,dates2,my_tempebmpa(0,*,pae(e)),yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',psym=2,/nodata,ytitle='Contributions to polar amplification [degrees C]',title='Contributions to polar amplification',ystyle=1,xstyle=1
+plot,dates2,my_tempebmpa(0,*,pae(e)),yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',psym=2,/nodata,ytitle='Contributions to MTG [degrees C]',title='Contributions to meridional temperature gradient',ystyle=1,xstyle=1
 
 ;;;;;;;;;;;;;
 
 for n=nstart,ndates-1 do begin
 plots,dates2(n),my_tempebmpa(0,n,pae(e)),color=0,psym=8,symsize=0.5
 endfor ; end n
-oplot,dates2,my_tempebmpa(0,*,pae(e)),thick=3,color=my_col(0)
-xyouts,-500,ymin+myy*(ymax-ymin),'HadCM3L ['+exproot(0,pae(e))+']',charsize=0.5
+;oplot,dates2,my_tempebmpa(0,*,pae(e)),thick=3,color=my_col(0)
+xyouts,-500,ymin+myy*(ymax-ymin),ensname(pae(e)),charsize=0.5
 plots,-520,ymin+myy*(ymax-ymin),psym=8,symsize=0.5,color=0
 
-ddd=0
+ddd=intarr(nco)
 for dd=0,nebm-1 do begin
 if (aprp_do(dd) eq 1) then begin
 
 oplot,dates2,my_tempebmpa(dd,*,pae(e)),thick=3,color=my_col(dd),linestyle=my_linstyle(dd)
 
-xyouts,-500,ymin+(myy-mydy*(ddd+1))*(ymax-ymin),my_name(dd),color=my_col(dd),charsize=0.5
-oplot,[-525,-505],[ymin+(myy-mydy*(ddd+1))*(ymax-ymin),ymin+(myy-mydy*(ddd+1))*(ymax-ymin)],color=my_col(dd),linestyle=my_linstyle(dd)
+xyouts,-500+100*(aprp_co(dd)-1),ymin+(myy-mydy*(ddd(aprp_co(dd))+1))*(ymax-ymin),my_name(dd),color=my_col(dd),charsize=0.5
+oplot,[-525,-505]+100*(aprp_co(dd)-1),[ymin+(myy-mydy*(ddd(aprp_co(dd))+1))*(ymax-ymin),ymin+(myy-mydy*(ddd(aprp_co(dd))+1))*(ymax-ymin)],thick=3,color=my_col(dd),linestyle=my_linstyle(dd)
 
-ddd=ddd+1
+ddd(aprp_co(dd))=ddd(aprp_co(dd))+1
 endif
 endfor
+
 
 
 tvlct,r_cgmw,g_cgmw,b_cgmw
@@ -3144,7 +3158,7 @@ device,/close
 
 ; Here is the plot of the contributions to polamp over time (PERCENT VERSION):
 
-device,filename='polampcont_time_percent_'+expnamel(0,pae(e))+'.eps',/encapsulate,/color,set_font='Helvetica',xsize=7,ysize=5,/inches
+device,filename='polampcont_time_percent_'+exproot(0,pae(e))+'.eps',/encapsulate,/color,set_font='Helvetica',xsize=7,ysize=5,/inches
 
 xmin=-550
 xmax=0
@@ -3159,13 +3173,13 @@ topbar=ymin+(ymax-ymin)*33.0/35.0
 dtopbar=(ymax-ymin)*0.6/35.0
 
 
-plot,dates2,my_tempebmpa(0,*,pae(e)),yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',psym=2,/nodata,ytitle='Contributions to polar amplification [%]',title='Contributions to polar amplification',ystyle=1,xstyle=1
+plot,dates2,my_tempebmpa(0,*,pae(e)),yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',psym=2,/nodata,ytitle='Contributions to MTG [%]',title='Contributions to meridional temperature gradient',ystyle=1,xstyle=1
 
 ;;;;;;;;;;;;;
 
-oplot,[dates2(0),dates2(ndates-1)],[100,100],thick=3,color=my_col(0)
+;oplot,[dates2(0),dates2(ndates-1)],[100,100],thick=3,color=my_col(0)
 
-ddd=0
+ddd=intarr(nco)
 for dd=0,nebm-1 do begin
 
 if (aprp_docum(dd) eq 1) then begin
@@ -3181,12 +3195,15 @@ plots,dates2(n),100*my_tempebmpa(dd,n,pae(e))/my_tempebmpa(1,n,pae(e)),color=my_
 endif
 endfor ; end n 
 
-xyouts,-500,ymin+(myy-mydy*(ddd+1))*(ymax-ymin),my_name(dd),color=my_col(dd),charsize=0.5
-oplot,[-525,-505],[ymin+(myy-mydy*(ddd+1))*(ymax-ymin),ymin+(myy-mydy*(ddd+1))*(ymax-ymin)],color=my_col(dd),linestyle=my_linstyle(dd)
+xyouts,-500+100*(aprp_co(dd)-1),ymin+(myy-mydy*(ddd(aprp_co(dd))+1))*(ymax-ymin),my_name(dd),color=my_col(dd),charsize=0.5
+oplot,[-525,-505]+100*(aprp_co(dd)-1),[ymin+(myy-mydy*(ddd(aprp_co(dd))+1))*(ymax-ymin),ymin+(myy-mydy*(ddd(aprp_co(dd))+1))*(ymax-ymin)],thick=3,color=my_col(dd),linestyle=my_linstyle(dd)
 
-ddd=ddd+1
+ddd(aprp_co(dd))=ddd(aprp_co(dd))+1
 endif
 endfor
+
+
+
 
 
 tvlct,r_cgmw,g_cgmw,b_cgmw
@@ -3207,15 +3224,30 @@ endfor
 device,/close
 
 
+;;;;;;;
+if (pae(e) eq pt) then begin
+print,ensname(e)
+print,'**FOR PAPER NUM**: average emissisivity for MTG:',mean(100*(my_tempebmpa(3,plotthis,pae(e)))/(my_tempebmpa(1,plotthis,pae(e))),/nan)
+print,'**FOR PAPER NUM**: average surface albedo for MTG:',mean(100*(my_tempebmpa(18,plotthis,pae(e)))/(my_tempebmpa(1,plotthis,pae(e))),/nan)
+print,'**FOR PAPER NUM**: max surface albedo for MTG:',max(100*(my_tempebmpa(18,plotthis,pae(e)))/(my_tempebmpa(1,plotthis,pae(e))),/nan)
+print,'**FOR PAPER NUM**: initial solar',100*(my_tempebmpa(5,ndates-1,pae(e)))/(my_tempebmpa(1,ndates-1,pae(e)))
+print,'**FOR PAPER NUM**: mean clouds',mean(100*(my_tempebmpa(16,plotthis,pae(e)))/(my_tempebmpa(1,plotthis,pae(e))),/nan)
+print,'**FOR PAPER NUM**: mean ocean heat transport',mean(100*(my_tempebmpa(20,plotthis,pae(e)))/(my_tempebmpa(1,plotthis,pae(e))),/nan)
+;print,100*(my_tempebmpa(18,plotthis,pae(e)))/(my_tempebmpa(1,plotthis,pae(e)))
+endif
+;my_name(*)=['temp change (GCM)','!9D!3T (EBM)','albedo','emmisivity','heat transport','solar','temp change (sum ebm)','albedo (surface)','albedo (non-surface)','albedo (rev)','albedo (rev) (surface)','albedo (rev) (non-surface)','albedo (deriv)','albedo (aprp1)','albedo (aprp2)','albedo (APRP)','cloud (APRP)','clear sky (APRP)','surface albedo (APRP)','atmos heat transport','ocean heat transport','temp change (sum aprp)','!9D!3T (APRP)']
+;;;;;;;
+
+
 ; Here is the plot of the contributions to GMST over time:
 
-device,filename='gmstcont_time_'+expnamel(0,pae(e))+'.eps',/encapsulate,/color,set_font='Helvetica',xsize=7,ysize=5,/inches
+device,filename='gmstcont_time_'+exproot(0,pae(e))+'.eps',/encapsulate,/color,set_font='Helvetica',xsize=7,ysize=5,/inches
 
 xmin=-550
 xmax=0
 
-ymin=-5
-ymax=15
+ymin=-7
+ymax=17
 
 mydy=0.025
 myy=0.9
@@ -3224,27 +3256,29 @@ topbar=ymin+(ymax-ymin)*33.0/35.0
 dtopbar=(ymax-ymin)*0.6/35.0
 
 
-plot,dates2,my_tempebmav(0,*,pae(e)),yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',psym=2,/nodata,ytitle='Contributions to GMST [degrees C]',title='Contributions to GMST',ystyle=1,xstyle=1
+plot,dates2,my_tempebmav(0,*,pae(e)),yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',psym=2,/nodata,ytitle='Contributions to GMST [degrees C]',title='Contributions to global mean surface temperature',ystyle=1,xstyle=1
 
 ;;;;;;;;;;;;;
 
 for n=nstart,ndates-1 do begin
 plots,dates2(n),my_tempebmav(0,n,pae(e)),color=0,psym=8,symsize=0.5
 endfor ; end n
-oplot,dates2,my_tempebmav(0,*,pae(e)),thick=3,color=my_col(0)
-xyouts,-500,ymin+myy*(ymax-ymin),'HadCM3L ['+exproot(0,pae(e))+']',charsize=0.5
+;oplot,dates2,my_tempebmav(0,*,pae(e)),thick=3,color=my_col(0)
+xyouts,-500,ymin+myy*(ymax-ymin),ensname(pae(e)),charsize=0.5
 plots,-520,ymin+myy*(ymax-ymin),psym=8,symsize=0.5,color=0
 
-ddd=0
+ddd=intarr(nco)
 for dd=0,nebm-1 do begin
 if (aprp_do(dd) eq 1) then begin
 
 oplot,dates2,my_tempebmav(dd,*,pae(e)),thick=3,color=my_col(dd),linestyle=my_linstyle(dd)
 
-xyouts,-500,ymin+(myy-mydy*(ddd+1))*(ymax-ymin),my_name(dd),color=my_col(dd),charsize=0.5
-oplot,[-525,-505],[ymin+(myy-mydy*(ddd+1))*(ymax-ymin),ymin+(myy-mydy*(ddd+1))*(ymax-ymin)],color=my_col(dd),linestyle=my_linstyle(dd)
 
-ddd=ddd+1
+xyouts,-500+100*(aprp_co(dd)-1),ymin+(myy-mydy*(ddd(aprp_co(dd))+1))*(ymax-ymin),my_name(dd),color=my_col(dd),charsize=0.5
+
+oplot,[-525,-505]+100*(aprp_co(dd)-1),[ymin+(myy-mydy*(ddd(aprp_co(dd))+1))*(ymax-ymin),ymin+(myy-mydy*(ddd(aprp_co(dd))+1))*(ymax-ymin)],thick=3,color=my_col(dd),linestyle=my_linstyle(dd)
+
+ddd(aprp_co(dd))=ddd(aprp_co(dd))+1
 endif
 endfor
 
@@ -3273,13 +3307,13 @@ device,/close
 
 ; Here is the plot of the contributions to GMST over time (PERCENT VERSION):
 
-device,filename='gmstcont_time_percent_'+expnamel(0,pae(e))+'.eps',/encapsulate,/color,set_font='Helvetica',xsize=7,ysize=5,/inches
+device,filename='gmstcont_time_percent_'+exproot(0,pae(e))+'.eps',/encapsulate,/color,set_font='Helvetica',xsize=7,ysize=5,/inches
 
 xmin=-550
 xmax=0
 
 ymin=-50
-ymax=100
+ymax=120
 
 mydy=0.025
 myy=0.9
@@ -3288,18 +3322,18 @@ topbar=ymin+(ymax-ymin)*33.0/35.0
 dtopbar=(ymax-ymin)*0.6/35.0
 
 
-plot,dates2,my_tempebmav(0,*,pae(e)),yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',psym=2,/nodata,ytitle='Contributions to non-solar GMST [%]',title='Contributions to non-solar GMST',ystyle=1,xstyle=1
+plot,dates2,my_tempebmav(0,*,pae(e)),yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',psym=2,/nodata,ytitle='Contributions to non-solar GMST [%]',title='Contributions to non-solar global mean surface temperature',ystyle=1,xstyle=1
 
 ;;;;;;;;;;;;;
 
-oplot,[dates2(0),dates2(ndates-1)],[100,100],thick=3,color=my_col(0)
+;oplot,[dates2(0),dates2(ndates-1)],[100,100],thick=3,color=my_col(0)
 
-ddd=0
+ddd=intarr(nco)
 
 for dd=0,nebm-1 do begin
 if (aprp_docum(dd) eq 1 and dd ne 5) then begin
-
 plotthis=where(abs(my_tempebmav(1,*,pae(e))-my_tempebmav(5,*,pae(e))) gt 2.0)
+
 oplot,dates2(plotthis),100*(my_tempebmav(dd,plotthis,pae(e)))/(my_tempebmav(1,plotthis,pae(e))-my_tempebmav(5,plotthis,pae(e))),thick=3,color=my_col(dd),linestyle=my_linstyle(dd)
 
 for n=nstart,ndates-1 do begin
@@ -3308,10 +3342,10 @@ plots,dates2(n),100*(my_tempebmav(dd,n,pae(e)))/(my_tempebmav(1,n,pae(e))-my_tem
 endif
 endfor ; end n 
 
-xyouts,-500,ymin+(myy-mydy*(ddd+1))*(ymax-ymin),my_name(dd),color=my_col(dd),charsize=0.5
-oplot,[-525,-505],[ymin+(myy-mydy*(ddd+1))*(ymax-ymin),ymin+(myy-mydy*(ddd+1))*(ymax-ymin)],color=my_col(dd),linestyle=my_linstyle(dd)
+xyouts,-500+100*(aprp_co(dd)-1),ymin+(myy-mydy*(ddd(aprp_co(dd))+1))*(ymax-ymin),my_name(dd),color=my_col(dd),charsize=0.5
+oplot,[-525,-505]+100*(aprp_co(dd)-1),[ymin+(myy-mydy*(ddd(aprp_co(dd))+1))*(ymax-ymin),ymin+(myy-mydy*(ddd(aprp_co(dd))+1))*(ymax-ymin)],thick=3,color=my_col(dd),linestyle=my_linstyle(dd)
 
-ddd=ddd+1
+ddd(aprp_co(dd))=ddd(aprp_co(dd))+1
 endif
 endfor
 
@@ -3334,6 +3368,15 @@ xyouts,(stageb(n)+stageb(n+1))/2.0,topbar+dtopbar,alignment=0.5,stagen(n),charsi
 endfor
 
 device,/close
+
+;;;;;;;
+if (pae(e) eq pt) then begin
+print,ensname(e)
+print,'**FOR PAPER NUM**: average emissisivity for GMST:',mean(100*(my_tempebmav(3,plotthis,pae(e)))/(my_tempebmav(1,plotthis,pae(e))-my_tempebmav(5,plotthis,pae(e))))
+;print,100*(my_tempebmav(3,plotthis,pae(e)))/(my_tempebmav(1,plotthis,pae(e))-my_tempebmav(5,plotthis,pae(e)))
+endif
+;my_name(*)=['temp change (GCM)','!9D!3T (EBM)','albedo','emmisivity','heat transport','solar','temp change (sum ebm)','albedo (surface)','albedo (non-surface)','albedo (rev)','albedo (rev) (surface)','albedo (rev) (non-surface)','albedo (deriv)','albedo (aprp1)','albedo (aprp2)','albedo (APRP)','cloud (APRP)','clear sky (APRP)','surface albedo (APRP)','atmos heat transport','ocean heat transport','temp change (sum aprp)','!9D!3T (APRP)']
+;;;;;;;
 
 endfor ; end pae
 
@@ -4969,8 +5012,10 @@ co2forcing=fltarr(ndates)
 climsens=fltarr(ndates)
 
 tempdiff(*)=climav(*,pt,0)-climav(*,pe,0)
-co2diff(*)=co2_inf_1m-co2
-co2forcing(*)=alog(co2_inf_1m/co2)/alog(2.0)
+;co2diff(*)=co2_inf_1m-co2
+;co2forcing(*)=alog(co2_inf_1m/co2)/alog(2.0)
+co2diff(*)=co2tun-co2
+co2forcing(*)=alog(co2tun/co2)/alog(2.0)
 climsens(*)=tempdiff/co2forcing
 
 
@@ -4980,13 +5025,13 @@ xmin=-550
 xmax=0
 
 ymin=0
-ymax=12
+ymax=13
 
 topbar=ymin+(ymax-ymin)*33.0/35.0
 dtopbar=(ymax-ymin)*0.6/35.0
 
 
-plot,dates2,climsens(*),yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',psym=2,/nodata,ytitle='Clim sens [degrees C]',ystyle=1,xstyle=1
+plot,dates2,climsens(*),yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',psym=2,/nodata,ytitle='Climate sensitivity, ECS, [degrees C]',ystyle=1,xstyle=1
 
 
 ; plot non-pe curve
@@ -5008,6 +5053,12 @@ endfor ; end n
 
 
 
+tvlct,r_cgmw,g_cgmw,b_cgmw
+for n=0,nstage-1 do begin
+polyfill,[stageb(n),stageb(n+1),stageb(n+1),stageb(n)],[ymax,ymax,topbar,topbar],color=n
+endfor
+
+tvlct,r_39,g_39,b_39
 
 oplot,[xmin,xmax],[topbar,topbar]
 for n=1,nstage-1 do begin
@@ -5018,7 +5069,28 @@ for n=0,nstage-1 do begin
 xyouts,(stageb(n)+stageb(n+1))/2.0,topbar+dtopbar,alignment=0.5,stagen(n),charsize=0.7
 endfor
 
+
 device,/close
+
+;;;;;
+; Numbers for paper:
+print,'** FOR PAPER**  MEAN CLIM SENS IS: ',mean(climsens)
+
+thist=where(climsens gt 6 and abs(co2forcing) ge 0.25)
+print,'** FOR PAPER**  TEMP WHEN HIGH CLIM SENS: ',climav(thist,pt,0),climav(thist,pe,0)
+
+thist=where(dates2 ge stageb(10) and dates2 lt stageb(9) and abs(co2forcing) ge 0.25)
+print,dates2(thist)
+print,'** FOR PAPER**  CLIM SENS IN CAMBRIAN IS: ',mean(climsens(thist))
+
+thist=where(dates2 ge stageb(2) and dates2 lt -35 and abs(co2forcing) ge 0.25)
+print,dates2(thist)
+print,'** FOR PAPER**  CLIM SENS IN Cretaceous and early Cenozoic is: ',mean(climsens(thist))
+
+;stageb(*)=-1.0*[0,66.0,145.0,201.3,251.902,298.9,358.9,419.2,443.8,485.4,541.0]
+;stagen(*)=['Cenozoic','Cretaceous','Jurassic','Triassic','Permian','Carb.','Devonian','Sil.','Ord.','Cambrian']
+
+
 
 endif ; end climsensplot
 
@@ -5610,14 +5682,6 @@ endfor
 endif ; end preca
 endif ; end if do_hf
 
-contour,mybarv,mybarv(*,0),[0,1],levels=mylevsv,/fill,position=[0.15,0.1,0.95,0.15],/noerase,xstyle=1,xrange=[minv,maxv],ystyle=4,xtickv=mytickv,xticks=myxticks,c_colors=colvect
-if (bb eq 1) then begin
-contour,mybarv,mybarv(*,0),[0,1],levels=[0],/overplot
-;contour,mybarv,mybarv(*,0),[0,1],levels=mylevsv,/overplot,c_linestyle=1
-endif
-xyouts,minv+0.5*(maxv-minv),-1.5,xlab,align=0.5
-
-
 tvlct,r_cgmw,g_cgmw,b_cgmw
 for n=0,nstage-1 do begin
 polyfill,[stageb(n),stageb(n+1),stageb(n+1),stageb(n)],[ymax,ymax,topbar,topbar],color=n
@@ -5634,18 +5698,26 @@ for n=0,nstage-1 do begin
 xyouts,(stageb(n)+stageb(n+1))/2.0,topbar+dtopbar,alignment=0.5,stagen(n),charsize=0.7
 endfor
 
-;oplot,[xmin,xmax],[topbar,topbar]
-;for n=1,nstage-1 do begin
-;oplot,[stageb(n),stageb(n)],[topbar,ymax]
-;endfor
+; this could be much better by defining a variable for the colour table for each
+; figure and sticking to it
+if (bb eq 0) then tvlct,r_39,g_39,b_39
+if (bb eq 1) then tvlct,r_anom,g_anom,b_anom
+if (hoffnames(v) eq 'merid') then tvlct,r_anom,g_anom,b_anom
+if (hoffnames(v) eq 'mixds') then tvlct,r_anom,g_anom,b_anom
 
-;for n=0,nstage-1 do begin
-;xyouts,(stageb(n)+stageb(n+1))/2.0,topbar+dtopbar,alignment=0.5,stagen(n),charsize=0.7
-;endfor
+
+; Do the color bar at the end as this has a new coordinate system
+contour,mybarv,mybarv(*,0),[0,1],levels=mylevsv,/fill,position=[0.15,0.1,0.95,0.15],/noerase,xstyle=1,xrange=[minv,maxv],ystyle=4,xtickv=mytickv,xticks=myxticks,c_colors=colvect
+if (bb eq 1) then begin
+contour,mybarv,mybarv(*,0),[0,1],levels=[0],/overplot
+;contour,mybarv,mybarv(*,0),[0,1],levels=mylevsv,/overplot,c_linestyle=1
+endif
+xyouts,minv+0.5*(maxv-minv),-1.5,xlab,align=0.5
 
 
 
 device,/close
+
 
 endfor ; end bb
 
@@ -5728,9 +5800,12 @@ if (do_polamp_plot eq 1) then begin
 
 
    
-npae=2
+;npae=2
+;pae=intarr(npae)
+;pae(*)=[pe,pt]
+npae=1
 pae=intarr(npae)
-pae(*)=[pe,pt]
+pae(*)=[pt]
 
 for e=0,npae-1 do begin
 for v=0,nvar-1 do begin
