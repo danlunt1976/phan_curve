@@ -51,9 +51,6 @@ pro time
 ; each hemisphere versus maximum overturning in each hemisphere (in
 ; middle of doing this!!!).
 
-; 'FOR PAPER NUM' for numbers in paper
-; 'FOR PAPER FIG' for figures in paper
-  
 ; *****************
 
 ;my_home='/home/bridge/'
@@ -88,24 +85,24 @@ do_greg=0 ; read gregory data
 do_clims=1 ; read in model temperature output
   read_all_clims=0        ; if 0 [0=default] then only read in more recent simulations 
            ;   (e.g. tfke,tfks), for speed
-do_readbounds=0 ; read in mask and ice
-  do_readlsm=0 ; read in lsm
+do_readbounds=1 ; read in mask and ice
+  do_readlsm=1 ; read in lsm
     do_lsm_plot=0               ; plot prescribed land area
-  do_readice=0                  ; read ice
+  do_readice=1                  ; read ice
     do_ice_plot=0 ; plot prescribed ice sheets
 
 do_solar_plot=0 ; plot prescribed solar forcing (from .dat file)
 do_ocean=0                    ; read in ocean mld
 do_merid=0 ; read in ocean streamfunction 
 
-do_precip=0                     ; read in model precip output (requires do_readlsm)
+do_precip=1                     ; read in model precip output (requires do_readlsm)
 do_evap=0 ; read in evap
 do_mfc=0 ; moisture flux convergence
 
 do_temp_plot=0 ; global mean from proxies
 
-do_readsolar=0                  ; read solar forcing and albedo from first simulation
-  do_ff_model=0 ; forcing/feedback model (requires do_clims, do_readbounds, do_readlsm, do_readsolar??x)     
+do_readsolar=1                  ; read solar forcing and albedo from first simulation
+  do_ff_model=1 ; forcing/feedback model (requires do_clims, do_readbounds, do_readlsm, do_readsolar??x)     
     do_co2_plot=0 ; prescribed co2 (requires do_ff_model)
     do_co2_inferred=0 ; inferred and constant co2 (requires do_ff_model)
 
@@ -115,11 +112,11 @@ do_readsolar=0                  ; read solar forcing and albedo from first simul
     do_clim_plot=0 ;  plot new vs old, ff, MDC, and resid
                  ;  (requires ff_model) 
 
-    do_scatt_all=0 ; all scatter plots 
+    do_scatt_all=1 ; all scatter plots 
     
 do_polamp_plot=0 ;  plot polamp
 do_scattemp_plot=0
-do_climsens_plot=1
+do_climsens_plot=0
 do_ess_plot=0
 do_hoff_plots=0 ; hoffmuller plot
 do_reg_plots=0 ; regional plots
@@ -242,7 +239,7 @@ endif else begin
 readfile(*,4)=1 ; just foster runs tfke
 ;readfile(*,4:5)=1 ; tfke and tkfs
 ;readfile(*,9)=1   ; add this back if Valdes (2021) Scotese_02 needed.
-;readfile(*,10)=1   ; add this back if Scotese_noco2 needed.
+readfile(*,10)=1   ; add this back if Scotese_noco2 needed.
 readfile(*,5)=1 ; just tuned runs tfks
 ;;;;;;;; *******************************
 ; missing tfks files
@@ -3393,7 +3390,7 @@ endif                           ; end if do_ebm
 if (do_ff_model eq 1) then begin 
 
 if (do_readbounds ne 1 or do_clims ne 1 or do_readlsm ne 1 or do_readice ne 1) then begin
-   print,'ff_model requires do_readbounds and do_clims'
+   print,'ff_model requires do_readbounds and do_clims and do_readlsm and do_readice'
    stop
 endif
    
@@ -3525,7 +3522,7 @@ print,'tuned vales for paper are: '
 print,'t_solar_tun= ',t_solar_tun
 print,'t_area_tun= ',t_area_tun
 print,'t_ice_tun= ',t_ice_tun
-print,'lambda_tun= ',lambda_tun
+print,'** FOR PAPER NUM** lambda_tun= ',lambda_tun
 print,'sensitivity= ',-1*c_co2/lambda_tun
 
 
@@ -5074,18 +5071,18 @@ device,/close
 
 ;;;;;
 ; Numbers for paper:
-print,'** FOR PAPER**  MEAN CLIM SENS IS: ',mean(climsens)
+print,'** FOR PAPER NUM**  MEAN CLIM SENS IS: ',mean(climsens)
 
 thist=where(climsens gt 6 and abs(co2forcing) ge 0.25)
-print,'** FOR PAPER**  TEMP WHEN HIGH CLIM SENS: ',climav(thist,pt,0),climav(thist,pe,0)
+print,'** FOR PAPER NUM**  TEMP WHEN HIGH CLIM SENS: ',climav(thist,pt,0),climav(thist,pe,0)
 
 thist=where(dates2 ge stageb(10) and dates2 lt stageb(9) and abs(co2forcing) ge 0.25)
 print,dates2(thist)
-print,'** FOR PAPER**  CLIM SENS IN CAMBRIAN IS: ',mean(climsens(thist))
+print,'** FOR PAPER NUM**  CLIM SENS IN CAMBRIAN IS: ',mean(climsens(thist))
 
 thist=where(dates2 ge stageb(2) and dates2 lt -35 and abs(co2forcing) ge 0.25)
 print,dates2(thist)
-print,'** FOR PAPER**  CLIM SENS IN Cretaceous and early Cenozoic is: ',mean(climsens(thist))
+print,'** FOR PAPER NUM**  CLIM SENS IN Cretaceous and early Cenozoic is: ',mean(climsens(thist))
 
 ;stageb(*)=-1.0*[0,66.0,145.0,201.3,251.902,298.9,358.9,419.2,443.8,485.4,541.0]
 ;stagen(*)=['Cenozoic','Cretaceous','Jurassic','Triassic','Permian','Carb.','Devonian','Sil.','Ord.','Cambrian']
@@ -5097,9 +5094,16 @@ endif ; end climsensplot
 
 if (do_scatt_all eq 1) then begin
 
+if (do_ff_model ne 1) then begin
+   print,'scatt_all requires do_ff_model'
+   stop
+endif
+   
 nscatt=3
 scattname=strarr(nscatt)
 scattname(*)=['fco2-gmst','frad-gmst','gmst-prec']
+
+ssize=1.0
 
 for e=0,nexp-1 do begin
 if (readfile(0,e) eq 1) then begin ; strictly only for temp and precip and mask
@@ -5116,7 +5120,7 @@ xmax=15
 ymin=5
 ymax=30
 thisx=f_co2_tun
-thisy=climav(*,pe,0)
+thisy=climav(*,e,0)
 thisxtitle='CO2 forcing [W/m2]'
 thisytitle='GMST [degC]'
 myformat='(F4.2)'
@@ -5128,7 +5132,7 @@ xmax=10
 ymin=5
 ymax=30
 thisx=f_co2_tun+f_solar_tun
-thisy=climav(*,pe,0)
+thisy=climav(*,e,0)
 thisxtitle='CO2 and solar forcing [W/m2]'
 thisytitle='GMST [degC]'
 myformat='(F4.2)'
@@ -5139,26 +5143,102 @@ xmin=5
 xmax=30
 ymin=2.4
 ymax=3.6
-thisx=climav(*,pe,0)
-thisy=precip_gbl(*,pe)
+thisx=climav(*,e,0)
+thisy=precip_gbl(*,e)
 thisxtitle='GMST [degC]'
 thisytitle='precip [mm/day]'
 myformat='(F5.3)'
 endif
 
-
-plot,thisx,thisy,yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle=thisxtitle,ytitle=thisytitle,ystyle=1,xstyle=1,/nodata
-
-plots,thisx,thisy,psym=8,symsize=0.5
+begpan=-266
+endpan=-170
 
 myscattresult=linfit(thisx,thisy,sigma=myscattsigma)
 print,'myscattresult:'
 print,myscattresult
 print,myscattsigma
 
-oplot,[xmin,xmax],[myscattresult(0)+xmin*myscattresult(1),myscattresult(0)+xmax*myscattresult(1)]
+myscattresult2=linfit(thisx(where(dates2 le begpan or dates2 ge endpan)),thisy(where(dates2 le begpan or dates2 ge endpan)),sigma=myscattsigma2)
+if (e eq pt and ss eq 2) then begin
+print,'** FOR PAPER NUM**'
+endif   
+print,'myscattresult2:',myscattresult2(1)
+print,myscattsigma2
+if (e eq pt and ss eq 2) then begin
+print,'** FOR PAPER NUM**'
+endif  
+print,'myscattresult2 (%):',100*myscattresult2(1)/mean(thisy(where(dates2 le begpan or dates2 ge endpan)))
 
-xyouts,xmin+[xmax-xmin]*0.1,ymin+[ymax-ymin]*0.9,'gradient='+strtrim(string(myscattresult(1),format=myformat),2)
+ddy=0.001*(ymax-ymin)
+fy=0.05*(ymax-ymin)
+sy=ymin+0.8*(ymax-ymin)
+sx1=xmin+0.1*(xmax-xmin)
+sx2=xmin+0.13*(xmax-xmin)
+ddx1=0.02*(xmax-xmin)
+ddy1=0.02*(ymax-ymin)
+
+; setup
+plot,thisx,thisy,yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle=thisxtitle,ytitle=thisytitle,ystyle=1,xstyle=1,/nodata
+
+; line best fit
+oplot,[xmin,xmax],[myscattresult(0)+xmin*myscattresult(1),myscattresult(0)+xmax*myscattresult(1)],linestyle=1
+oplot,[xmin,xmax],[myscattresult2(0)+xmin*myscattresult2(1),myscattresult2(0)+xmax*myscattresult2(1)],linestyle=0
+
+
+; display gradient
+xyouts,xmin+(xmax-xmin)*0.1,ymin+(ymax-ymin)*0.9,'gradient (all)='+strtrim(string(myscattresult(1),format=myformat),2)+' mm/day/K',size=0.5
+oplot,[xmin+(xmax-xmin)*0.03,xmin+(xmax-xmin)*0.08],[ymin+(ymax-ymin)*0.9,ymin+(ymax-ymin)*0.9],linestyle=1
+xyouts,xmin+[xmax-xmin]*0.1,ymin+[ymax-ymin]*0.85,'gradient (non-Pangea)='+strtrim(string(myscattresult2(1),format=myformat),2)+' mm/day/K',size=0.5
+oplot,[xmin+(xmax-xmin)*0.03,xmin+(xmax-xmin)*0.08],[ymin+(ymax-ymin)*0.85,ymin+(ymax-ymin)*0.85],linestyle=1
+
+for n=0,ndates-1 do begin
+
+x=n-nstart
+xx=ndates-nstart
+mycol=(x)*250.0/(xx-1)
+;mycol=0
+
+plots,thisx(n),thisy(n),psym=8,symsize=ssize,color=mycol
+if (ss eq 2) then begin
+if (dates2(n) gt begpan and dates2(n) lt endpan) then begin
+plots,thisx(n),thisy(n),psym=8,symsize=ssize*0.5,color=0
+plots,thisx(n),thisy(n),psym=8,symsize=ssize*0.2,color=256
+endif
+endif
+;xyouts,thisx(n)+ddx1,thisy(n)+ddy1,color=mycol,dates2(n),size=0.2
+
+
+
+if (n eq 0) then begin
+plots,+sx1,sy,color=mycol,psym=8,symsize=ssize
+xyouts,+sx2,sy-ddy,color=0,'0 Ma'
+endif
+if (n eq 20) then begin
+plots,+sx1,sy-1*fy,color=mycol,psym=8,symsize=ssize
+xyouts,+sx2,sy-1*fy-ddy,color=0,'100 Ma'
+endif
+if (n eq 40) then begin
+plots,+sx1,sy-2*fy,color=mycol,psym=8,symsize=ssize
+xyouts,+sx2,sy-2*fy-ddy,color=0,'200 Ma'
+endif
+if (n eq 60) then begin
+plots,+sx1,sy-3*fy,color=mycol,psym=8,symsize=ssize
+xyouts,+sx2,sy-3*fy-ddy,color=0,'300 Ma'
+endif
+if (n eq 80) then begin
+plots,+sx1,sy-4*fy,color=mycol,psym=8,symsize=ssize
+xyouts,+sx2,sy-4*fy-ddy,color=0,'400 Ma'
+endif
+if (n eq 100) then begin
+plots,+sx1,sy-5*fy,color=mycol,psym=8,symsize=ssize
+xyouts,+sx2,sy-5*fy-ddy,color=0,'500 Ma'
+endif
+
+endfor
+
+plots,+sx1,sy-6*fy,psym=8,symsize=ssize*0.5,color=0
+plots,+sx1,sy-6*fy,psym=8,symsize=ssize*0.2,color=256
+xyouts,+sx2,sy-6*fy-ddy,color=0,'Pangea'
 
 device,/close
 
@@ -6268,11 +6348,11 @@ endif
 if (do_clims eq 1) then begin
 ;;;;;
 ; Numbers for paper:
-;print,'** FOR PAPER**  HIGHEST MODEL TEMP IS: '+strtrim(max(climav(nstart:ndates-1,pe,0),ind),2)
+;print,'HIGHEST MODEL TEMP IS: '+strtrim(max(climav(nstart:ndates-1,pe,0),ind),2)
 ;print,dates2(ind)
-;print,'** FOR PAPER**  LOWEST MODEL TEMP IS: '+strtrim(min(climav(nstart:ndates-1,pe,0),ind),2)
+;print,'LOWEST MODEL TEMP IS: '+strtrim(min(climav(nstart:ndates-1,pe,0),ind),2)
 ;print,dates2(ind)
-;print,'** FOR PAPER**  MEAN MODEL TEMP IS: '+strtrim(mean(climav(nstart:ndates-1,pe,0)),2)
+;print,'MEAN MODEL TEMP IS: '+strtrim(mean(climav(nstart:ndates-1,pe,0)),2)
 print,'**FOR PAPER NUM**  MODERN MODEL TEMP (PT) IS: '+strtrim(climav(nstart,pt,0),2)
 endif
 

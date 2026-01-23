@@ -95,9 +95,11 @@
 #####################################
 # FOR PAPER (CHECKED).....
 
-for file in climsens_time ; do
+#for file in climsens_time ; do
 #for file in clim_temp_fin_time ; do
 #for file in forctemps_time_3 ; do
+for file in scatt_gmst-prec_tfks ; do
+
 
 #convert -flatten ${file}.eps ${file}.png
     
