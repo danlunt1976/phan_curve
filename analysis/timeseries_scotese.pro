@@ -51,6 +51,16 @@ pro time
 ; each hemisphere versus maximum overturning in each hemisphere (in
 ; middle of doing this!!!).
 
+; divide overturning into basins
+
+; take away blanking out
+
+; maximum depth?
+
+; hoffmuller surface density
+
+; hoffmuller seaice
+  
 ; *****************
 
 ;my_home='/home/bridge/'
@@ -96,8 +106,8 @@ do_ocean=0                    ; read in ocean mld
 do_merid=0 ; read in ocean streamfunction 
 
 do_precip=1                     ; read in model precip output (requires do_readlsm)
-do_evap=0 ; read in evap
-do_mfc=0 ; moisture flux convergence
+do_evap=1 ; read in evap
+do_mfc=1 ; moisture flux convergence
 
 do_temp_plot=0 ; global mean from proxies
 
@@ -118,12 +128,12 @@ do_polamp_plot=0 ;  plot polamp
 do_scattemp_plot=0
 do_climsens_plot=0
 do_ess_plot=0
-do_hoff_plots=0 ; hoffmuller plot
+do_hoff_plots=1 ; hoffmuller plot
 do_reg_plots=0 ; regional plots
 
-do_ebm=0 ; EBM model
+do_ebm=1 ; EBM model
   do_aprp=0 ; APRP (requires do_ebm)
-  do_hf=0 ; heat fluxes (requires do_ebm)
+  do_hf=1 ; heat fluxes (requires do_ebm)
   
 do_seas=0                     ; wmmt, cmmt
 
@@ -236,10 +246,10 @@ if (read_all_clims eq 1) then begin
 readfile(*,*)=1
 readfile(*,6)=0 ; tflm for Shufeng no longer stored
 endif else begin
-readfile(*,4)=1 ; just foster runs tfke
+;readfile(*,4)=1 ; just foster runs tfke
 ;readfile(*,4:5)=1 ; tfke and tkfs
 ;readfile(*,9)=1   ; add this back if Valdes (2021) Scotese_02 needed.
-readfile(*,10)=1   ; add this back if Scotese_noco2 needed.
+;readfile(*,10)=1   ; add this back if Scotese_noco2 needed.
 readfile(*,5)=1 ; just tuned runs tfks
 ;;;;;;;; *******************************
 ; missing tfks files
@@ -254,10 +264,12 @@ if (read_all_clims eq 1) then begin
 readfile_o(*,*)=1
 readfile_o(*,6)=0 ; tflm for Shufeng no longer stored
 endif else begin
-readfile_o(*,4)=1          ; tfke
+;readfile_o(*,4)=1          ; tfke
+readfile_o(*,5)=1          ; tfks
 ;readfile_o(*,4:5)=1          ; tfke and tkfs
-readfile_o(*,9)=1   ; Scotese_02
-readfile_o(*,10)=1 ; Scotese_noco2
+;readfile_o(*,9)=1   ; Scotese_02
+;readfile_o(*,10)=1 ; Scotese_noco2
+
 endelse
 
 
