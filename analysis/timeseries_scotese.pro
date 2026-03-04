@@ -47,14 +47,10 @@ pro time
 
 ; make hoffmuller plots to be area-weighted in y axis
 
-; plot a timeseries and cross-plot of maximum mixed-layer depth in
-; each hemisphere versus maximum overturning in each hemisphere (in
-; middle of doing this!!!).
-
 ; divide overturning into basins
 
-; take away blanking out in overturning
-
+; plot time-specific regressions on cross-plots
+  
 ; hoffmuller surface density (from Tianyi)
 
 ; hoffmuller seaice
@@ -126,7 +122,7 @@ do_polamp_plot=0 ;  plot polamp
 do_scattemp_plot=0
 do_climsens_plot=0
 do_ess_plot=0
-do_hoff_plots=0 ; hoffmuller plot
+do_hoff_plots=1 ; hoffmuller plot
 do_reg_plots=0 ; regional plots
 
 do_ebm=0 ; EBM model
@@ -1814,7 +1810,7 @@ endif else begin
 endelse
 
 endfor ; end j lats
-endif ; end if readfile
+endif  ; end if readfile
 
 endfor                          ; end n
 
@@ -1825,9 +1821,9 @@ endfor
 
 endfor ; end e
 
-nnn=4
+nnn=5
 nnname=strarr(nnn)
-nnname(*)=['mean','max','max2','mean2']
+nnname(*)=['mean','max','max2','mean2','mean3']
 mixed_time_nh=fltarr(ndates,nexp,nnn)
 mixed_time_sh=fltarr(ndates,nexp,nnn)
 
@@ -1836,6 +1832,8 @@ oce=intarr(noc)
 oce(*)=[pe,pt]
 
 
+
+; hoffmuller of mixed layer depth (also plotted later)
 
 for nn=0,nnn-1 do begin
 
@@ -1861,8 +1859,9 @@ tvlct,r_39,g_39,b_39
 
 if (nn eq 0) then begin
 nnmax=150
+nnmin=0
 nndel=2
-nnnlev=nnmax/nndel
+nnnlev=(nnmax-nnmin)/nndel
 nnlevs=[0.001,nndel*findgen(nnnlev)+nndel,1000]
 print,nnlevs
 thisdata=mixed_zonmean(*,*,e)
@@ -1870,8 +1869,9 @@ endif
 
 if (nn eq 1) then begin
 nnmax=400
+nnmin=0
 nndel=10
-nnnlev=nnmax/nndel
+nnnlev=(nnmax-nnmin)/nndel
 nnlevs=[0.001,nndel*findgen(nnnlev)+nndel,1000]
 print,nnlevs
 thisdata=mixed_zonmax(*,*,e)
@@ -1879,8 +1879,9 @@ endif
 
 if (nn eq 2) then begin
 nnmax=400
+nnmin=0
 nndel=10
-nnnlev=nnmax/nndel
+nnnlev=(nnmax-nnmin)/nndel
 nnlevs=[0.001,nndel*findgen(nnnlev)+nndel,1000]
 print,nnlevs
 thisdata=mixed_zonmax2(*,*,e)
@@ -1888,20 +1889,31 @@ endif
 
 if (nn eq 3) then begin
 nnmax=150
+nnmin=0
 nndel=5
-nnnlev=nnmax/nndel
+nnnlev=(nnmax-nnmin)/nndel
 nnlevs=[0.001,nndel*findgen(nnnlev)+nndel,1000]
 print,nnlevs
 thisdata=mixed_zonmean2(*,*,e)
+endif
+
+if (nn eq 4) then begin
+nnmax=150
+nnmin=-150
+nndel=10
+nnnlev=(nnmax-nnmin)/nndel
+nnlevs=[-1000,nndel*findgen(nnnlev+1)+nnmin,1000]
+print,nnlevs
+thisdata=mixed_zonmean3(*,*,e)
 endif
 
 contour,transpose(reverse(thisdata)),dates2,reverse(lats_ocn),/over,/fill,levels=nnlevs
 
 nlevv=nnnlev+2
 maxv=nnmax
-minv=0
+minv=nnmin
 xlab='Mixed layer depth [m]'
-mytickv=[0,nnmax]
+mytickv=[minv,maxv]
 
 a=size(mytickv)
 myxticks=a(1)-1
@@ -1949,10 +1961,19 @@ sorted_indices=reverse(sort(sortvect))
 top_ntv2_values=sortvect[sorted_indices(0:ntv2-1)]
 mixed_time_nh(n,e,nn)=mean(top_ntv2_values)
 
+if (nn ne 4) then begin
 sortvect=thisdata(0:nmxl-1,n)
-sorted_indices=reverse(sort(sortvect))
+sorted_indices=reverse(sort(sortvect)) ; sort (biggest numbers first)
 top_ntv2_values=sortvect[sorted_indices(0:ntv2-1)]
 mixed_time_sh(n,e,nn)=mean(top_ntv2_values)
+endif
+if (nn eq 4) then begin
+sortvect=thisdata(0:nmxl-1,n)
+sorted_indices=sort(sortvect) ; sort (smallest numbers first)
+top_ntv2_values=sortvect[sorted_indices(0:ntv2-1)]
+mixed_time_sh(n,e,nn)=mean(top_ntv2_values)
+endif
+
 
 ;mixed_time_nh(n,e,nn)=mean(thisdata(ny-nmxl:ny-1,n))
 ;mixed_time_sh(n,e,nn)=mean(thisdata(0:nmxl-1,n))
@@ -1961,12 +1982,15 @@ mixed_time_sh(n,e,nn)=mean(top_ntv2_values)
 
 endfor ; end nstart to ndates
 
+
+; timeseries of mixed layer depth
+
 device,filename='mixednhsh_time_'+exproot(0,e)+'_'+nnname(nn)+'.eps',/encapsulate,/color,set_font='Helvetica',xsize=7,ysize=5,/inches
 
 xmin=-550
 xmax=0
 
-ymin=0
+ymin=-1*nnmax*1.5
 ymax=nnmax*1.5
 
 topbar=ymin+(ymax-ymin)*33.0/35.0
@@ -2019,11 +2043,16 @@ nym=72
 nzm=21
 
 merid=fltarr(nym,nzm,ndates,nexp)
-merid_lat=fltarr(nym,ndates,nexp)
+merid_lat=fltarr(nym,ndates,nexp) ; blanked out
+meria_lat=fltarr(nym,ndates,nexp) ; not blanked out
 merid_lat_tmean=fltarr(nym,ndates,nexp)
+meria_lat_tmean=fltarr(nym,ndates,nexp)
 
 merid_time_nh=fltarr(ndates,nexp)
 merid_time_sh=fltarr(ndates,nexp)
+meria_time_nh=fltarr(ndates,nexp)
+meria_time_sh=fltarr(ndates,nexp)
+
 
 for e=0,nexp-1 do begin
 for n=nstart,ndates-1 do begin
@@ -2050,20 +2079,18 @@ endif
 endfor
 endfor
 
-; NOTE FOR NEXT TIME:
-; Now need to mask out data if have zonally continous ocean
+; Need to mask out data if have zonally continous ocean
 ; [or not do this maybe, Helen says we should not mask out the
 ;   global streamfunction....]
 merlev=12
 ; take the maximum absolute level at and below level 12 = 800 metres.
 for j=0,nym-1 do begin
-; old version:
-;merid_lat(j,n,e)=max(abs(merid(j,merlev:nzm-1,n,e)))
 
 ; this version to mantain the sign:
 mymax=max(abs(merid(j,merlev:nzm-1,n,e)),myindex)
 mymaxsign=float(merid(j,merlev+myindex,n,e) gt 0) - float(merid(j,merlev+myindex,n,e) lt 0)
 merid_lat(j,n,e)=mymaxsign*mymax
+meria_lat(j,n,e)=mymaxsign*mymax
 
 ; now blank out non-continous
 if ( (min(maskso(*,j,n) eq 1)) or (min(maskso(*,j+1,n) eq 1)) ) then begin
@@ -2079,15 +2106,31 @@ endfor ; end ndates
 
 for j=0,nym-1 do begin
    merid_lat_tmean(j,*,e)=mean(merid_lat(j,*,e),/nan)
+   meria_lat_tmean(j,*,e)=mean(meria_lat(j,*,e),/nan)
 endfor
 
 endfor                          ; end exp
 
 
+; plot hoffmuller-style (also plotted later)
+
+nnn=2
+nnname=strarr(nnn)
+nnname(*)=['blk','all']
+
 for e=0,nexp-1 do begin
 if (readfile_o(0,e) eq 1) then begin
+for nn=0,1 do begin
 
-device,filename='merid_time_'+exproot(0,e)+'.eps',/encapsulate,/color,set_font='Helvetica',xsize=7,ysize=5,/inches
+if (nn eq 0) then begin
+thisdata=merid_lat(*,*,e)
+endif
+
+if (nn eq 1) then begin
+thisdata=meria_lat(*,*,e)
+endif
+ 
+device,filename='merid_time_'+exproot(0,e)+'_'+nnname(nn)+'.eps',/encapsulate,/color,set_font='Helvetica',xsize=7,ysize=5,/inches
 
 xmin=-550
 xmax=0
@@ -2110,7 +2153,6 @@ nndel=1.0
 nnnlev=nnmax/nndel
 nnlevs=[-1000,reverse(-1*(nndel*findgen(nnnlev)+nndel)),nndel*findgen(nnnlev)+nndel,1000]
 print,nnlevs
-thisdata=merid_lat(*,*,e)
 
 contour,transpose(reverse(thisdata)),dates2,reverse(lats_merid),/over,/cell_fill,levels=nnlevs
 
@@ -2150,15 +2192,16 @@ endfor
 
 device,/close
 
+endfor ; end nn
 endif ; end readfile
 endfor ; end nexp
 
 
+; Now make the timeseries
 for e=0,nexp-1 do begin
 if (readfile_o(0,e) eq 1) then begin
 
 ;;;;;;;
-; THIS IS THE BIT I AM IN THE MIDDLE OF EDITING
 ;nmxl=12 ; up to (not including) 60 degrees N/S
 nmxl=35 ; up to (including) 0 degrees N/S
 
@@ -2169,15 +2212,25 @@ thisdata=merid_lat(*,*,e)
 
 for n=nstart,ndates-1 do begin
 
-sortvect=thisdata(nym-nmxl:nym-1,n)
-sorted_indices=reverse(sort(sortvect))
-top_ntv2_values=sortvect[sorted_indices(0:ntv2-1)]
-merid_time_nh(n,e)=mean(top_ntv2_values,/nan)
+; sort: (small:big)(NaNs)
+   
+; Northern Hemisphere...
+; want highest-ntv2 values, ignoring NaNs   
+sortvect=thisdata(nym-nmxl:nym-1,n) ; northern hemisphere
+sortvect=sortvect(where(finite(sortvect))) ; remove Nans
+sortvect=sortvect*(sortvect ge 0) ; make zero where -ve
+sorted_indices=reverse(sort(sortvect)) ; sort (biggest numbers first)
+top_ntv2_values=sortvect[sorted_indices(0:ntv2-1)] ; take top-ntv2
+merid_time_nh(n,e)=mean(top_ntv2_values);,/nan) ; mean
 
-sortvect=thisdata(0:nmxl-1,n)
-sorted_indices=reverse(sort(sortvect))
-top_ntv2_values=sortvect[sorted_indices(0:ntv2-1)]
-merid_time_sh(n,e)=mean(top_ntv2_values,/nan)
+; Southern Hemisphere...
+; want lowest-ntv2 values, ignoring NaNs   
+sortvect=thisdata(0:nmxl-1,n) ; southern hemisphere
+sortvect=sortvect(where(finite(sortvect))) ; remove Nans
+sortvect=sortvect*(sortvect le 0) ; make zero where +ve
+sorted_indices=sort(sortvect) ; sort (smallest numbers first)
+bot_ntv2_values=sortvect[sorted_indices(0:ntv2-1)] ; take bottom-ntv2
+merid_time_sh(n,e)=mean(bot_ntv2_values);,/nan) ; mean
 
 endfor ; end nstart to ndates
 
@@ -2192,7 +2245,7 @@ ymax=50
 topbar=ymin+(ymax-ymin)*33.0/35.0
 dtopbar=(ymax-ymin)*0.6/35.0
 
-plot,dates2,merid_time_nh(*,e),yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',ytitle='mixed layer depth',ystyle=1,xstyle=1,color=0,/nodata,YTICKFORMAT='(F6.0)'
+plot,dates2,merid_time_nh(*,e),yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',ytitle='Hemispheric ocean overturning index [Sv]',ystyle=1,xstyle=1,color=0,/nodata,YTICKFORMAT='(F6.0)'
 oplot,dates2,merid_time_nh(*,e),color=70,thick=5
 plots,dates2,merid_time_sh(*,e),color=180,thick=5
 
@@ -2230,7 +2283,93 @@ endfor ; end exp
 
 endif ; end do_merid
 
-stop
+
+if (do_merid and do_ocean) then begin
+
+nh=2
+hname=strarr(nh)
+hlname=strarr(nh)
+hname(*)=['nh','sh']
+hlname(*)=['Northern Hemisphere','Southern Hemisphere']
+
+for e=0,nexp-1 do begin
+if (readfile_o(0,e) eq 1) then begin
+for h=0,nh-1 do begin
+
+device,filename='mixedxmerid_'+hname(h)+'_'+exproot(0,e)+'_scatter.eps',/encapsulate,/color,set_font='Helvetica'
+
+if (h eq 0) then begin
+xmin=0
+xmax=200
+ymin=0
+ymax=35
+thisxdata=mixed_time_nh(*,e,4)
+thisydata=merid_time_nh(*,e)
+endif
+
+if (h eq 1) then begin
+xmin=-200
+xmax=0
+ymin=-35
+ymax=0
+thisxdata=mixed_time_sh(*,e,4)
+thisydata=merid_time_sh(*,e)
+endif
+
+plot,thisxdata,thisydata,yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Hemispheric mixed layer depth [m]',psym=2,/nodata,ytitle='Hemispheric ocean overturning [Sv]',title=hlname(h),ystyle=1,xstyle=1
+
+;;;;;;;;;;;;;
+for n=nstart,ndates-1 do begin
+
+x=n-nstart
+xx=ndates-nstart
+mycol=(x)*250.0/(xx-1)
+;mycol=0
+
+plots,thisxdata(n),thisydata(n),color=mycol,psym=8,symsize=1.5
+
+ddy=0.001*(ymax-ymin)
+fy=0.05*(ymax-ymin)
+sy=ymin+0.9*(ymax-ymin)
+sx1=xmin+0.1*(xmax-xmin)
+sx2=xmin+0.13*(xmax-xmin)
+
+if (n eq 0) then begin
+plots,+sx1,sy,color=mycol,psym=8,symsize=1.5
+xyouts,+sx2,sy-ddy,color=0,'0 Ma'
+endif
+if (n eq 20) then begin
+plots,+sx1,sy-1*fy,color=mycol,psym=8,symsize=1.5
+xyouts,+sx2,sy-1*fy-ddy,color=0,'100 Ma'
+endif
+if (n eq 40) then begin
+plots,+sx1,sy-2*fy,color=mycol,psym=8,symsize=1.5
+xyouts,+sx2,sy-2*fy-ddy,color=0,'200 Ma'
+endif
+if (n eq 60) then begin
+plots,+sx1,sy-3*fy,color=mycol,psym=8,symsize=1.5
+xyouts,+sx2,sy-3*fy-ddy,color=0,'300 Ma'
+endif
+if (n eq 80) then begin
+plots,+sx1,sy-4*fy,color=mycol,psym=8,symsize=1.5
+xyouts,+sx2,sy-4*fy-ddy,color=0,'400 Ma'
+endif
+if (n eq 100) then begin
+plots,+sx1,sy-5*fy,color=mycol,psym=8,symsize=1.5
+xyouts,+sx2,sy-5*fy-ddy,color=0,'500 Ma'
+endif
+
+endfor ; end n
+
+device,/close
+
+endfor ; end hemispheres
+endif  ; end readfile
+endfor ; end e
+   
+endif
+
+
 
 if (do_seas eq 1) then begin
 
