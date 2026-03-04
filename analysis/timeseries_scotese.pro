@@ -53,11 +53,9 @@ pro time
 
 ; divide overturning into basins
 
-; take away blanking out
+; take away blanking out in overturning
 
-; maximum depth?
-
-; hoffmuller surface density
+; hoffmuller surface density (from Tianyi)
 
 ; hoffmuller seaice
   
@@ -92,27 +90,27 @@ do_greg=0 ; read gregory data
   do_greg_plot=0 ; , mke gregory plots (requires do_greg and do_clims)
 
 ;means
-do_clims=1 ; read in model temperature output
+do_clims=0 ; read in model temperature output
   read_all_clims=0        ; if 0 [0=default] then only read in more recent simulations 
            ;   (e.g. tfke,tfks), for speed
 do_readbounds=1 ; read in mask and ice
   do_readlsm=1 ; read in lsm
     do_lsm_plot=0               ; plot prescribed land area
-  do_readice=1                  ; read ice
+  do_readice=0                  ; read ice
     do_ice_plot=0 ; plot prescribed ice sheets
 
 do_solar_plot=0 ; plot prescribed solar forcing (from .dat file)
-do_ocean=0                    ; read in ocean mld
-do_merid=0 ; read in ocean streamfunction 
+do_ocean=1                    ; read in ocean mld
+do_merid=1 ; read in ocean streamfunction (requires do_readlsm)
 
-do_precip=1                     ; read in model precip output (requires do_readlsm)
-do_evap=1 ; read in evap
-do_mfc=1 ; moisture flux convergence
+do_precip=0                     ; read in model precip output (requires do_readlsm)
+do_evap=0 ; read in evap
+do_mfc=0 ; moisture flux convergence
 
 do_temp_plot=0 ; global mean from proxies
 
-do_readsolar=1                  ; read solar forcing and albedo from first simulation
-  do_ff_model=1 ; forcing/feedback model (requires do_clims, do_readbounds, do_readlsm, do_readsolar??x)     
+do_readsolar=0                  ; read solar forcing and albedo from first simulation
+  do_ff_model=0 ; forcing/feedback model (requires do_clims, do_readbounds, do_readlsm, do_readsolar??x)     
     do_co2_plot=0 ; prescribed co2 (requires do_ff_model)
     do_co2_inferred=0 ; inferred and constant co2 (requires do_ff_model)
 
@@ -122,18 +120,18 @@ do_readsolar=1                  ; read solar forcing and albedo from first simul
     do_clim_plot=0 ;  plot new vs old, ff, MDC, and resid
                  ;  (requires ff_model) 
 
-    do_scatt_all=1 ; all scatter plots 
+    do_scatt_all=0 ; all scatter plots 
     
 do_polamp_plot=0 ;  plot polamp
 do_scattemp_plot=0
 do_climsens_plot=0
 do_ess_plot=0
-do_hoff_plots=1 ; hoffmuller plot
+do_hoff_plots=0 ; hoffmuller plot
 do_reg_plots=0 ; regional plots
 
-do_ebm=1 ; EBM model
+do_ebm=0 ; EBM model
   do_aprp=0 ; APRP (requires do_ebm)
-  do_hf=1 ; heat fluxes (requires do_ebm)
+  do_hf=0 ; heat fluxes (requires do_ebm)
   
 do_seas=0                     ; wmmt, cmmt
 
@@ -1751,7 +1749,8 @@ endif ; end do_evap
 
 
 if (do_ocean eq 1) then begin
-
+done_latso=0
+   
 ; the zonmean just looks like the ocean, because mld is zero over land!
 
 mixed=fltarr(nxmax,nymax,ndates,nexp)
@@ -1779,11 +1778,12 @@ print,readtype(n,e),n,data_filename
 id1=ncdf_open(data_filename)
 ncdf_varget,id1,'mixLyrDpth_mm_uo',dummy
 ;print,'i am here',e,n
-if (e eq 4 and n eq nstart) then begin
+if (done_latso eq 0) then begin
 ;print,'and here'
 ;stop
 ncdf_varget,id1,'latitude',lats_ocn
 ncdf_varget,id1,'longitude',lons_ocn
+done_latso=1
 endif
 ncdf_close,id1
 mixed(0:nxmax-1,0:nymax-1,n,e)=dummy
@@ -2022,6 +2022,8 @@ merid=fltarr(nym,nzm,ndates,nexp)
 merid_lat=fltarr(nym,ndates,nexp)
 merid_lat_tmean=fltarr(nym,ndates,nexp)
 
+merid_time_nh=fltarr(ndates,nexp)
+merid_time_sh=fltarr(ndates,nexp)
 
 for e=0,nexp-1 do begin
 for n=nstart,ndates-1 do begin
@@ -2050,6 +2052,8 @@ endfor
 
 ; NOTE FOR NEXT TIME:
 ; Now need to mask out data if have zonally continous ocean
+; [or not do this maybe, Helen says we should not mask out the
+;   global streamfunction....]
 merlev=12
 ; take the maximum absolute level at and below level 12 = 800 metres.
 for j=0,nym-1 do begin
@@ -2150,48 +2154,47 @@ endif ; end readfile
 endfor ; end nexp
 
 
+for e=0,nexp-1 do begin
+if (readfile_o(0,e) eq 1) then begin
+
 ;;;;;;;
-; THIS IS THE BIT I AM IN THE MIDDLE OF EDITING - JUST COPY-PASTE FROM
-;                                                 ABOVE SO FAR
+; THIS IS THE BIT I AM IN THE MIDDLE OF EDITING
 ;nmxl=12 ; up to (not including) 60 degrees N/S
-nmxl=17 ; up to (including) 50 degrees N/S
+nmxl=35 ; up to (including) 0 degrees N/S
+
+ntv2=5
+; ntv2=1 ; for max
+
+thisdata=merid_lat(*,*,e)
 
 for n=nstart,ndates-1 do begin
 
-sortvect=thisdata(ny-nmxl:ny-1,n)
+sortvect=thisdata(nym-nmxl:nym-1,n)
 sorted_indices=reverse(sort(sortvect))
 top_ntv2_values=sortvect[sorted_indices(0:ntv2-1)]
-merid_time_nh(n,e)=mean(top_ntv2_values)
+merid_time_nh(n,e)=mean(top_ntv2_values,/nan)
 
 sortvect=thisdata(0:nmxl-1,n)
 sorted_indices=reverse(sort(sortvect))
 top_ntv2_values=sortvect[sorted_indices(0:ntv2-1)]
-mixed_time_sh(n,e,nn)=mean(top_ntv2_values)
-
-;mixed_time_nh(n,e,nn)=mean(thisdata(ny-nmxl:ny-1,n))
-;mixed_time_sh(n,e,nn)=mean(thisdata(0:nmxl-1,n))
-;mixed_time_nh(n,e,nn)=max(thisdata(ny-nmxl:ny-1,n))
-;mixed_time_sh(n,e,nn)=max(thisdata(0:nmxl-1,n))
+merid_time_sh(n,e)=mean(top_ntv2_values,/nan)
 
 endfor ; end nstart to ndates
 
-
-
-
-device,filename='mixednhsh_time_'+exproot(0,e)+'_'+nnname(nn)+'.eps',/encapsulate,/color,set_font='Helvetica',xsize=7,ysize=5,/inches
+device,filename='meridnhsh_time_'+exproot(0,e)+'.eps',/encapsulate,/color,set_font='Helvetica',xsize=7,ysize=5,/inches
 
 xmin=-550
 xmax=0
 
-ymin=0
-ymax=nnmax*1.5
+ymin=-50
+ymax=50
 
 topbar=ymin+(ymax-ymin)*33.0/35.0
 dtopbar=(ymax-ymin)*0.6/35.0
 
-plot,dates2,mixed_time_nh(*,e,nn),yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',ytitle='mixed layer depth',ystyle=1,xstyle=1,color=0,/nodata,YTICKFORMAT='(F6.0)'
-oplot,dates2,mixed_time_nh(*,e,nn),color=70,thick=5
-plots,dates2,mixed_time_sh(*,e,nn),color=180,thick=5
+plot,dates2,merid_time_nh(*,e),yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',ytitle='mixed layer depth',ystyle=1,xstyle=1,color=0,/nodata,YTICKFORMAT='(F6.0)'
+oplot,dates2,merid_time_nh(*,e),color=70,thick=5
+plots,dates2,merid_time_sh(*,e),color=180,thick=5
 
 
 tvlct,r_cgmw,g_cgmw,b_cgmw
@@ -2221,10 +2224,13 @@ xyouts,-100+corr1,myy-dy2-dy1,'Southern Hemisphere', charsize=0.7
 
 device,/close
 
+endif ; end reeadfile_o
+
+endfor ; end exp 
 
 endif ; end do_merid
 
-;stop
+stop
 
 if (do_seas eq 1) then begin
 
