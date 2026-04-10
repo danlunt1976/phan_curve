@@ -72,6 +72,9 @@ tvlct,r_39,g_39,b_39,/get
 Aaa = FINDGEN(17) * (!PI*2/16.)  
 USERSYM, COS(Aaa), SIN(Aaa), /FILL 
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; begin plot options
+
 ; timeseries
 do_times=0 ; read/write timeseries files
   read_all_times=0   ; if 0 [1=default] then only read in more recent
@@ -86,18 +89,18 @@ do_greg=0 ; read gregory data
   do_greg_plot=0 ; , mke gregory plots (requires do_greg and do_clims)
 
 ;means
-do_clims=0 ; read in model temperature output
+do_clims=1 ; read in model temperature output
   read_all_clims=0        ; if 0 [0=default] then only read in more recent simulations 
            ;   (e.g. tfke,tfks), for speed
 do_readbounds=1 ; read in mask and ice
   do_readlsm=1 ; read in lsm
     do_lsm_plot=0               ; plot prescribed land area
-  do_readice=0                  ; read ice
+  do_readice=1                  ; read ice
     do_ice_plot=0 ; plot prescribed ice sheets
 
 do_solar_plot=0 ; plot prescribed solar forcing (from .dat file)
-do_ocean=1                    ; read in ocean mld
-do_merid=1 ; read in ocean streamfunction (requires do_readlsm)
+do_ocean=0                    ; read in ocean mld
+do_merid=0 ; read in ocean streamfunction (requires do_readlsm)
 
 do_precip=0                     ; read in model precip output (requires do_readlsm)
 do_evap=0 ; read in evap
@@ -105,15 +108,15 @@ do_mfc=0 ; moisture flux convergence
 
 do_temp_plot=0 ; global mean from proxies
 
-do_readsolar=0                  ; read solar forcing and albedo from first simulation
-  do_ff_model=0 ; forcing/feedback model (requires do_clims, do_readbounds, do_readlsm, do_readsolar??x)     
+do_readsolar=1                  ; read solar forcing and albedo from first simulation
+  do_ff_model=1 ; forcing/feedback model (requires do_clims, do_readbounds, do_readlsm, do_readice, do_readsolar??x)     
     do_co2_plot=0 ; prescribed co2 (requires do_ff_model)
     do_co2_inferred=0 ; inferred and constant co2 (requires do_ff_model)
 
     do_forcings_plot=0 ; prescribed forcings in Wm-2 (requires ff_model)
     do_forctemps_plot=0 ; prescribed forcings in oC (requires ff_model)
  
-    do_clim_plot=0 ;  plot new vs old, ff, MDC, and resid
+    do_clim_plot=1 ;  plot new vs old, ff, MDC, and resid
                  ;  (requires ff_model) 
 
     do_scatt_all=0 ; all scatter plots 
@@ -122,7 +125,7 @@ do_polamp_plot=0 ;  plot polamp
 do_scattemp_plot=0
 do_climsens_plot=0
 do_ess_plot=0
-do_hoff_plots=1 ; hoffmuller plot
+do_hoff_plots=0 ; hoffmuller plot
 do_reg_plots=0 ; regional plots
 
 do_ebm=0 ; EBM model
@@ -136,7 +139,10 @@ do_textfile2=0 ; textfile of proxies for Chris
 do_textfile3=0 ; textfile of fluxes for Emily
 do_textfile4=0 ; textfile of forcings for Emily
 
-check_names=0 ; check names
+check_names=0                   ; check names
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; end plot options
+
 
 ;;;;
 ; for geological stages
@@ -185,14 +191,14 @@ b_anom(ncol-1)=colmax
 ;;;;
 ; Total number of time snapshots
 ndates=109
-nexp=11
+nexp=12
 tmax=4000
 nstart=0
 ;;;;
 
 ;;;;
 ensname=strarr(nexp)
-ensname(*)=['','','','','ENS!Dvar-FCO2!N','ENS!Dvar!N','','','','','']
+ensname(*)=['','','','','ENS!Dvar-FCO2!N','ENS!Dvar!N','','','','','constCO2old','constCO2new']
 ;;;;
 
 ;;;;
@@ -241,10 +247,11 @@ readfile(*,*)=1
 readfile(*,6)=0 ; tflm for Shufeng no longer stored
 endif else begin
 ;readfile(*,4)=1 ; just foster runs tfke
-;readfile(*,4:5)=1 ; tfke and tkfs
+readfile(*,4:5)=1 ; tfke and tkfs
 ;readfile(*,9)=1   ; add this back if Valdes (2021) Scotese_02 needed.
-;readfile(*,10)=1   ; add this back if Scotese_noco2 needed.
-readfile(*,5)=1 ; just tuned runs tfks
+readfile(*,10)=1   ; add this back if Scotese_noco2 needed.
+;readfile(*,5)=1              ; just tuned runs tfks
+readfile(*,11)=1 ; just constant CO2 and solar (Scotese_noco2 new)   
 ;;;;;;;; *******************************
 ; missing tfks files
 ;tfks_missing=[21,49,51]-1
@@ -263,7 +270,7 @@ readfile_o(*,5)=1          ; tfks
 ;readfile_o(*,4:5)=1          ; tfke and tkfs
 ;readfile_o(*,9)=1   ; Scotese_02
 ;readfile_o(*,10)=1 ; Scotese_noco2
-
+readfile_o(*,11)=1 ; Scotese_noco2 new
 endelse
 
 
@@ -275,11 +282,12 @@ readtype(*,2)=1
 readtype(*,3)=1
 readtype(*,4)=1
 readtype(*,5)=1
-readtype(*,6)=0
+readtype(*,6)=1 ; was 0
 readtype(*,7)=1
 readtype(*,8)=1
 readtype(*,9)=1
 readtype(*,10)=1
+readtype(*,11)=0
 ;;;;;;;; *******************************
 ;readtype([20,48,50],5)=0
 ;;;;;;;; *******************************
@@ -295,12 +303,12 @@ locdata([16,39,50,59,66,68],2)=1 ; jaq,jAn,jAy,Jah,Jao,Jaq ; CHECK THIS!!!
 locdata(*,3)=0
 locdata(*,4)=0
 locdata(*,5)=0
-locdata(*,6)=1
+locdata(*,6)=0 ; was 1
 locdata(*,7)=0
 locdata(*,8)=0
 locdata(*,9)=0
 locdata(*,10)=0
-
+locdata(*,11)=1
 
 ; *CHANGE WITH NEXP CHANGE*
 co2file=strarr(nexp)
@@ -315,7 +323,7 @@ co2file(7)='co2_all_02'
 co2file(8)='co2_all_02'
 co2file(9)='co2_all_xx'
 co2file(10)='co2_all_xx'
-
+co2file(11)='co2_all_xx'
 
 ; *CHANGE WITH NEXP CHANGE*
 colexp=intarr(nexp)
@@ -329,7 +337,8 @@ colexp(6)=220
 colexp(7)=130
 colexp(8)=80
 colexp(9)=180
-colexp(10)=220
+colexp(10)=80
+colexp(11)=150
 
 
 ndepth=3
@@ -428,6 +437,13 @@ exproot(52:77,10)=['teXx']
 exproot(78:103,10)=['teXX']
 exproot(104:108,10)=['tExx']
 
+; New Scotese_noco2a
+exproot(0:25,11)=['xqej']
+exproot(26:51,11)=['xqeJ']
+exproot(52:77,11)=['xqEj']
+exproot(78:103,11)=['xqEJ']
+exproot(104:108,11)=['xQej']
+
 ; *CHANGE WITH NEXP CHANGE*
 for e=1,nexp-1 do begin
 exptail(*,e)=exptail(*,0)
@@ -446,6 +462,7 @@ exptail2(*,9)=''
 exptail2([0,6,7,8,11,12,13,14,20,21,24,25,31,32,34,35,36,37,38,39,40,41,42,43,44,45,46,47],9)='1'
 exptail2([9,10,17,18,19,22,23,26,27,28,29,30,33,48],9)='2'
 exptail2(*,10)=''
+exptail2(*,11)=''
 
 nexp_g=2
 ppt=intarr(nexp_g)
@@ -457,6 +474,10 @@ pe=ppt(0)
 pt=ppt(1)
 ; ps = Scotese02 simulations
 ps=9
+; pb = original constant CO2
+; pc = new constant co2
+pb=10
+pc=11
 
 
 ; *CHANGE WITH NEXP CHANGE*
@@ -472,15 +493,16 @@ varname(*,7)='temp_ym_dpth'
 varname(*,8)='temp_ym_dpth'
 varname(*,9)='temp_ym_dpth'
 varname(*,10)='temp_ym_dpth'
+varname(*,11)='temp_ym_dpth'
 
 
 ; *CHANGE WITH NEXP CHANGE*
 nyear=intarr(nexp)
-nyear(*)=[2000,1050,3000,-1,3000,3000,110,2000,2000,-1,-1]
+nyear(*)=[2000,1050,3000,-1,3000,3000,110,2000,2000,-1,-1,-1]
 torder=intarr(nexp)
-torder(*)=[2,3,4,-1,5,6,7,0,1,-1,-1]
+torder(*)=[2,3,4,-1,5,6,7,0,1,-1,-1,-1]
 check_cont=intarr(nexp)
-check_cont(*)=[1,1,1,-1,1,1,1,0,1,-1,-1]
+check_cont(*)=[1,1,1,-1,1,1,1,0,1,-1,-1,-1]
 xmint=0
 xmaxt=21000
 times=indgen(xmaxt)
@@ -489,12 +511,12 @@ explab=5 ; final simulation that will be labelled
 ; *CHANGE WITH NEXP CHANGE*
 ; plot_times: do we want to plot the timeseries?
 plot_tims=intarr(nexp)
-plot_tims(*)=[1,1,1,0,1,1,0,1,1,0,0]
+plot_tims(*)=[1,1,1,0,1,1,0,1,1,0,0,0]
 
 ; *CHANGE WITH NEXP CHANGE*
 ; navy = how many years for averaging means
 navy=intarr(nexp)
-navy(*)=[20,20,20,20,20,20,20,20,20,20,20]
+navy(*)=[20,20,20,20,20,20,20,20,20,20,20,20]
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;No more NEXP edits needed beyond here ;;;;;;;;;;;;
@@ -1357,8 +1379,10 @@ endfor
 climtag=strarr(nvar)
 climtag(*)=['a.pd','o.pf']
 climname=strarr(nvar)
-climname(*)=['temp_mm_1_5m','temp_mm_uo']
-
+;climname(*)=['temp_mm_1_5m','temp_mm_uo']
+; change back to uo? xqej does not have uo, just dpth
+climname(*)=['temp_mm_1_5m','temp_mm_dpth'] 
+                                            
 climnamelong=strarr(nvar)
 climnamelong(*)=['temp','sst']
 climnamelongx=strarr(nvar*2+1)
@@ -1521,7 +1545,7 @@ for n=nstart,ndates-1 do begin
 
 for f=0,nflr-1 do begin
 ; read in fluxes
-filename=root(n,0)+'/'+expnamel(n,0)+'/climate/'+expnamel(n,0)+'a.pdclann.nc'
+filename=root(n,pt)+'/'+expnamel(n,pt)+'/climate/'+expnamel(n,pt)+'a.pdclann.nc'
 print,'Reading: '+filename
 id1=ncdf_open(filename)
 ncdf_varget,id1,flname(f),dummy
@@ -4723,9 +4747,10 @@ if (do_clim_plot eq 1) then begin
 ; Judd (new)
 ; geo is tfke, tfks, and ScoteseSmoothed and Winghuber and Judd (new)
 ; fin is **FOR PAPER FIG** tfks and ScoteseSmoothed and Winghuber and Judd
+; noc is for no co2 change (tfke, tfks, no2co2*2)
    
-ntype=10
-mytypename=['new','cmp','pro','bot','egu','pap','cmo','wmt','geo','fin']
+ntype=11
+mytypename=['new','cmp','pro','bot','egu','pap','cmo','wmt','geo','fin','noc']
 
 for t=0,ntype-1 do begin
 for v=0,nvar-1 do begin
@@ -4748,15 +4773,17 @@ xmax=0
 ymin=yminc(v)
 ymax=ymaxc(v)
 
-if ((t eq 2 or t eq 3 or t eq 4 or t eq 5 or t eq 7 or t eq 8 or t eq 9) and v eq 0) then begin
+;;;;
+; set y axis limits
+if ((t eq 2 or t eq 3 or t eq 4 or t eq 5 or t eq 7 or t eq 8 or t eq 9 or t eq 10) and v eq 0) then begin
 ymin=5
 ymax=40
 endif
-
 if ((t eq 0) and v eq 0) then begin
 ymin=9
 ymax=27
 endif
+;;;;
 
 topbar=ymin+(ymax-ymin)*33.0/35.0
 dtopbar=(ymax-ymin)*0.6/35.0
@@ -4764,6 +4791,9 @@ dtopbar=(ymax-ymin)*0.6/35.0
 
 plot,dates2,climav(*,0,v),yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',psym=2,/nodata,ytitle=climnametitle(v)+' [degrees C]',ystyle=1,xstyle=1
 
+
+;;;;
+; over plot shading for when model is within proxy ranges
 if (t eq 5 or t eq 7 or t eq 8) then begin
 br=240
 co=255
@@ -4787,6 +4817,9 @@ axis,yrange=[ymin,ymax],xrange=[xmin,xmax],ystyle=1,xstyle=1,yaxis=0
 axis,yrange=[ymin,ymax],xrange=[xmin,xmax],ystyle=1,xstyle=1,yaxis=1
 axis,yrange=[ymin,ymax],xrange=[xmin,xmax],ystyle=1,xstyle=1,xaxis=0
 endif
+
+; end overplot shading
+;;;;
 
 
 ;;;;;;;;;;;
@@ -4865,11 +4898,11 @@ endfor
 endif
 
 ; plot hadcm3l (pe) points
-if (t ne 9) then begin
+if (t ne 9 or t eq 10) then begin
 plots,dates2(n),climav(n,pe,v),color=mycol,psym=8,symsize=0.5
 endif
 
-if (t eq 3 or t eq 4 or t eq 7 or t eq 8 or t eq 9) then begin
+if (t eq 3 or t eq 4 or t eq 7 or t eq 8 or t eq 9 or t eq 10) then begin
 ; plot tuned points
 plots,dates2(n),climav(n,pt,v),color=mycot,psym=8,symsize=0.5
 endif
@@ -4899,9 +4932,22 @@ endfor
 endif
 
 ; plot hadcm3l (pe) curve
-if (t ne 9) then begin
+if (t ne 9 or t eq 10) then begin
 oplot,dates2(*),climav(*,pe,v),thick=3,color=mycol
 endif
+
+; plot hadcm3l (pt) curve
+if (t eq 10) then begin
+oplot,dates2(*),climav(*,pt,v),thick=3,color=mycot
+endif
+
+; plot const co2 lines
+if (t eq 10) then begin
+   oplot,dates2(*),climav(*,pc,v),color=colexp(pc)
+   oplot,dates2(*),climav(*,pb,v),color=colexp(pb)
+endif
+
+
 
 if (t eq 3 or t eq 4 or t eq 7 or t eq 8 or t eq 9) then begin
 ; plot tuned curve
@@ -5045,9 +5091,23 @@ endfor
 device,/close
 
 
+if (t eq 10) then begin
+   print,'variances'
+   print,climname(v)
+   print,ensname(pc)
+   print,stdev(climav(*,pc,v))
+   print,ensname(pb)
+   print,stdev(climav(*,pb,v))
+   print,ensname(pe)
+   print,stdev(climav(*,pe,v))
+   print,ensname(pt)
+   print,stdev(climav(*,pt,v))
+endif
+
 endfor
 endfor
 
+stop
 
 ; plot the residual
 
@@ -5096,6 +5156,7 @@ endfor
 
 
 device,/close
+
 
 endif ; end do_clim_plot
 
