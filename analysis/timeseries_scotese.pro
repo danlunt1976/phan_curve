@@ -89,13 +89,13 @@ do_greg=0 ; read gregory data
   do_greg_plot=0 ; , mke gregory plots (requires do_greg and do_clims)
 
 ;means
-do_clims=1 ; read in model temperature output
+do_clims=0 ; read in model temperature output
   read_all_clims=0        ; if 0 [0=default] then only read in more recent simulations 
            ;   (e.g. tfke,tfks), for speed
-do_readbounds=1 ; read in mask and ice
-  do_readlsm=1 ; read in lsm
+do_readbounds=0 ; read in mask and ice
+  do_readlsm=0 ; read in lsm
     do_lsm_plot=0               ; plot prescribed land area
-  do_readice=1                  ; read ice
+  do_readice=0                  ; read ice
     do_ice_plot=0 ; plot prescribed ice sheets
 
 do_solar_plot=0 ; plot prescribed solar forcing (from .dat file)
@@ -106,17 +106,19 @@ do_precip=0                     ; read in model precip output (requires do_readl
 do_evap=0 ; read in evap
 do_mfc=0 ; moisture flux convergence
 
+do_density=1 ; density
+
 do_temp_plot=0 ; global mean from proxies
 
-do_readsolar=1                  ; read solar forcing and albedo from first simulation
-  do_ff_model=1 ; forcing/feedback model (requires do_clims, do_readbounds, do_readlsm, do_readice, do_readsolar??x)     
+do_readsolar=0                  ; read solar forcing and albedo from first simulation
+  do_ff_model=0 ; forcing/feedback model (requires do_clims, do_readbounds, do_readlsm, do_readice, do_readsolar??x)     
     do_co2_plot=0 ; prescribed co2 (requires do_ff_model)
     do_co2_inferred=0 ; inferred and constant co2 (requires do_ff_model)
 
     do_forcings_plot=0 ; prescribed forcings in Wm-2 (requires ff_model)
     do_forctemps_plot=0 ; prescribed forcings in oC (requires ff_model)
  
-    do_clim_plot=1 ;  plot new vs old, ff, MDC, and resid
+    do_clim_plot=0 ;  plot new vs old, ff, MDC, and resid
                  ;  (requires ff_model) 
 
     do_scatt_all=0 ; all scatter plots 
@@ -125,7 +127,7 @@ do_polamp_plot=0 ;  plot polamp
 do_scattemp_plot=0
 do_climsens_plot=0
 do_ess_plot=0
-do_hoff_plots=0 ; hoffmuller plot
+do_hoff_plots=1 ; hoffmuller plot
 do_reg_plots=0 ; regional plots
 
 do_ebm=0 ; EBM model
@@ -249,9 +251,9 @@ endif else begin
 ;readfile(*,4)=1 ; just foster runs tfke
 readfile(*,4:5)=1 ; tfke and tkfs
 ;readfile(*,9)=1   ; add this back if Valdes (2021) Scotese_02 needed.
-readfile(*,10)=1   ; add this back if Scotese_noco2 needed.
+;readfile(*,10)=1   ; add this back if Scotese_noco2 needed.
 ;readfile(*,5)=1              ; just tuned runs tfks
-readfile(*,11)=1 ; just constant CO2 and solar (Scotese_noco2 new)   
+;readfile(*,11)=1 ; just constant CO2 and solar (Scotese_noco2 new)   
 ;;;;;;;; *******************************
 ; missing tfks files
 ;tfks_missing=[21,49,51]-1
@@ -2639,6 +2641,69 @@ endfor ; end exp
 endif ; end mfc
 
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;
+; MOISTURE FLUX CONVERGENCE
+
+
+
+if (do_density eq 1) then begin
+
+done_latsd=0
+   
+nvarden=3
+varnameden=strarr(nvarden)
+varnameden[*]=['density','temperature','salinity']
+
+modvar_den=fltarr(nxmax,nymax,ndates,nexp,nvarden)
+modvar_den_zonmean=fltarr(nymax,ndates,nexp,nvarden)
+modvar_den_zonmean_tmean=fltarr(nymax,ndates,nexp,nvarden)
+
+denroot=my_home+'ggdjl/ggdjl/bas/doc/phan_curve/density'
+  
+for e=0,nexp-1 do begin
+
+if (readfile(0,e) eq 1) then begin
+
+filename=denroot+'/surface_density_'+exproot(0,e)+'.nc'
+print,filename
+id1=ncdf_open(filename)
+
+if (done_latsd eq 0) then begin
+ncdf_varget,id1,'latitude',lats_den
+ncdf_varget,id1,'longitude',lons_den
+done_latsd=1
+endif
+
+for v=0,nvarden-1 do begin
+
+thisvarname=varnameden(v)
+ncdf_varget,id1,thisvarname,dummy
+;dummy[where(dummy gt 1e10)]=0.0
+
+
+for n=nstart,ndates-1 do begin
+for j=0,ny-1 do begin
+for i=0,nx-1 do begin
+modvar_den(i,j,n,e,v)=dummy(i,j,n)
+endfor
+modvar_den_zonmean(j,n,e,v)=mean(modvar_den(*,j,n,e,v),/nan)
+endfor
+endfor
+
+for j=0,ny-1 do begin
+modvar_den_zonmean_tmean(j,*,e,v)=mean(modvar_den_zonmean(j,*,e,v),/nan)
+endfor
+
+endfor ; end v
+
+ncdf_close,id1
+
+endif ; end readfile
+endfor ; end exp
+
+
+
+endif ; end density
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -5476,7 +5541,7 @@ tvlct,r_39,g_39,b_39
 for e=0,nexp-1 do begin
 if (readfile(0,e) eq 1) then begin ; strictly only for temp and precip and mask
 
-   nhoff=20
+   nhoff=21
    hoffnames=strarr(nhoff)
    hoffnames(*)='x'
    if (do_clims eq 1) then hoffnames(0)='temp'
@@ -5499,6 +5564,8 @@ if (readfile(0,e) eq 1) then begin ; strictly only for temp and precip and mask
    if (do_readlsm eq 1) then hoffnames(17)='maskan'
    if (do_merid eq 1) then hoffnames(18)='merid'
    if (do_ocean eq 1) then hoffnames(19)='mixds'
+   if (do_density eq 1) then hoffnames(20)='dens'
+
    
 for v=0,nhoff-1 do begin
 if (hoffnames(v) ne 'x') then begin
@@ -5931,6 +5998,26 @@ mytickv=[-50,0,50]
 endif
 endif
 
+if (hoffnames(v) eq 'dens') then begin
+mylats=reverse(lats_den)
+if (bb eq 0) then begin
+nlevv=9
+maxv=1028
+minv=1020
+myvar=reverse(modvar_den_zonmean(*,*,e))
+xlab='Surface density [kg/m3]'
+mytickv=[1020,1022,1024,1026,1028]
+tvlct,r_anom,g_anom,b_anom
+endif
+if (bb eq 1) then begin
+nlevv=12
+maxv=5.5
+minv=-5.5
+myvar=reverse(modvar_den_zonmean(*,*,e)-modvar_den_zonmean_tmean(*,*,e))
+xlab='Surface density anomaly [kg/m3]'
+mytickv=[-5,0,5]
+endif
+endif
 
 
 
