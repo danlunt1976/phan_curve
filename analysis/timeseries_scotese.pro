@@ -49,11 +49,12 @@ pro time
 
 ; divide overturning into basins
 
-; plot time-specific regressions on cross-plots
+; plot time-specific regression lines on cross-plots (e.g. precip in Pangea)
   
-; hoffmuller surface density (from Tianyi)
-
 ; hoffmuller seaice
+; hoffmuller p-e
+; theory: width of ocean basin determines relative salinity?
+
   
 ; *****************
 
@@ -92,8 +93,8 @@ do_greg=0 ; read gregory data
 do_clims=0 ; read in model temperature output
   read_all_clims=0        ; if 0 [0=default] then only read in more recent simulations 
            ;   (e.g. tfke,tfks), for speed
-do_readbounds=0 ; read in mask and ice
-  do_readlsm=0 ; read in lsm
+do_readbounds=1 ; read in mask and ice
+  do_readlsm=1 ; read in lsm
     do_lsm_plot=0               ; plot prescribed land area
   do_readice=0                  ; read ice
     do_ice_plot=0 ; plot prescribed ice sheets
@@ -102,8 +103,8 @@ do_solar_plot=0 ; plot prescribed solar forcing (from .dat file)
 do_ocean=0                    ; read in ocean mld
 do_merid=0 ; read in ocean streamfunction (requires do_readlsm)
 
-do_precip=0                     ; read in model precip output (requires do_readlsm)
-do_evap=0 ; read in evap
+do_precip=1                     ; read in model precip output (requires do_readlsm)
+do_evap=1 ; read in evap
 do_mfc=0 ; moisture flux convergence
 
 do_density=1 ; density
@@ -5541,7 +5542,7 @@ tvlct,r_39,g_39,b_39
 for e=0,nexp-1 do begin
 if (readfile(0,e) eq 1) then begin ; strictly only for temp and precip and mask
 
-   nhoff=21
+   nhoff=22
    hoffnames=strarr(nhoff)
    hoffnames(*)='x'
    if (do_clims eq 1) then hoffnames(0)='temp'
@@ -5551,7 +5552,7 @@ if (readfile(0,e) eq 1) then begin ; strictly only for temp and precip and mask
    if (do_precip eq 1) then hoffnames(4)='mprec'
    if (do_readlsm eq 1 and do_precip eq 1) then hoffnames(5)='cont'
    if (do_evap eq 1) then hoffnames(6)='evap'
-   if (do_evap eq 1) then hoffnames(7)='pme'
+   if (do_precip eq 1 and do_evap eq 1) then hoffnames(7)='pme'
    if (do_mfc eq 1) then hoffnames(8)='mfcm'
    if (do_mfc eq 1) then hoffnames(9)='mfce'
    if (do_hf eq 1) then hoffnames(10)='htra'
@@ -5565,7 +5566,7 @@ if (readfile(0,e) eq 1) then begin ; strictly only for temp and precip and mask
    if (do_merid eq 1) then hoffnames(18)='merid'
    if (do_ocean eq 1) then hoffnames(19)='mixds'
    if (do_density eq 1) then hoffnames(20)='dens'
-
+   if (do_density eq 1) then hoffnames(21)='sali'
    
 for v=0,nhoff-1 do begin
 if (hoffnames(v) ne 'x') then begin
@@ -6004,7 +6005,7 @@ if (bb eq 0) then begin
 nlevv=9
 maxv=1028
 minv=1020
-myvar=reverse(modvar_den_zonmean(*,*,e))
+myvar=reverse(modvar_den_zonmean(*,*,e,0))
 xlab='Surface density [kg/m3]'
 mytickv=[1020,1022,1024,1026,1028]
 tvlct,r_anom,g_anom,b_anom
@@ -6013,12 +6014,32 @@ if (bb eq 1) then begin
 nlevv=12
 maxv=5.5
 minv=-5.5
-myvar=reverse(modvar_den_zonmean(*,*,e)-modvar_den_zonmean_tmean(*,*,e))
+myvar=reverse(modvar_den_zonmean(*,*,e,0)-modvar_den_zonmean_tmean(*,*,e,0))
 xlab='Surface density anomaly [kg/m3]'
 mytickv=[-5,0,5]
 endif
 endif
 
+if (hoffnames(v) eq 'sali') then begin
+mylats=reverse(lats_den)
+if (bb eq 0) then begin
+nlevv=19
+maxv=38
+minv=29
+myvar=reverse(modvar_den_zonmean(*,*,e,2))
+xlab='Surface salinity [psu]'
+mytickv=[29,31,33,35,37]
+tvlct,r_anom,g_anom,b_anom
+endif
+if (bb eq 1) then begin
+nlevv=12
+maxv=5.5
+minv=-5.5
+myvar=reverse(modvar_den_zonmean(*,*,e,2)-modvar_den_zonmean_tmean(*,*,e,2))
+xlab='Surface salinity anomaly [psu]'
+mytickv=[-5,0,5]
+endif
+endif
 
 
 a=size(mytickv)
