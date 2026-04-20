@@ -1,6 +1,6 @@
 #!/bin/ksh
 
-indir_root=/home/bridge/ggdjl/ummodel
+indir_root=/home/ggdjl/ummodel
 
 ### for tfke etc. stash:
 #biomenum=6
@@ -17,20 +17,34 @@ indir_root=/home/bridge/ggdjl/ummodel
 ###
 
 ### for tflm etc. stash:
-biomenum=6
-climatenum=182
+#biomenum=6
+#climatenum=182
 #monthlynum=73
-monthlynum=75
-sednum=3
-merid_atmnum=18
-merid_ocnnum=1
+#monthlynum=75
+#sednum=3
+#merid_atmnum=18
+#merid_ocnnum=1
 #ocean_datanum=24
-ocean_datanum=6
+#ocean_datanum=6
 #standard_new_plotsnum=1053
-standard_new_plotsnum=1139
+#standard_new_plotsnum=1139
 #stormsnum=25
-stormsnum=37
-wetlandnum=13
+#stormsnum=37
+#wetlandnum=13
+#check_access=0
+###
+
+### for xqej etc. stash:
+biomenum=6
+climatenum=110
+monthlynum=59
+sednum=2
+merid_atmnum=0
+merid_ocnnum=1
+ocean_datanum=6
+standard_new_plotsnum=682
+stormsnum=0
+wetlandnum=14
 check_access=0
 ###
 
@@ -41,18 +55,19 @@ check_access=0
 #for exproot in tfkE tfKe ; do
 #for exproot in tfkS ; do
 #for exproot in tflm ; do
-for exproot in xqGV ; do
+for exproot in xqej xqeJ xqEj xqEJ xQej ; do
 
 #my_loop={a..z}
 #my_loop={f..z}
-   my_loop={a..z}
+#   my_loop={a..z}
 #   my_loop={a..z}
 #   my_loop={a..b}
 #my_loop='w y'
 #my_loop={a..z}
 #my_loop='x y z'
-
-   if [[ "$exproot" = "tFgw" || "$exproot" = "tFja" || "$exproot" = "tFke" || "$exproot" = "tFks" ]] ; then
+my_loop={a..z}
+    
+   if [[ "$exproot" = "tFgw" || "$exproot" = "tFja" || "$exproot" = "tFke" || "$exproot" = "tFks" || "$exproot" = "xQej" ]] ; then
       my_loop={a..e}
    fi
 
