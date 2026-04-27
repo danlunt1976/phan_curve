@@ -65,7 +65,6 @@
 
 #for file in clim_temp_geo_time ; do
 
-
 #for file in ../Figure_polampsat ; do
 
 #for file in mixed_time_tfke_mean2 ; do
@@ -92,13 +91,17 @@
 
 #for file in scattemp_time_all ; do
 
+#for file in temp_scotese_time_04 ; do
+
+for file in scatt_frad-gmst_tfke scatt_gmst-prec_tfks ; do
+    
 #####################################
 # FOR PAPER (CHECKED).....
 
 #for file in climsens_time ; do
 #for file in clim_temp_fin_time ; do
 #for file in forctemps_time_3 ; do
-for file in scatt_gmst-prec_tfks ; do
+#for file in scatt_gmst-prec_tfks ; do
 
 
 #convert -flatten ${file}.eps ${file}.png

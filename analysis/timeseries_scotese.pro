@@ -90,13 +90,13 @@ do_greg=0 ; read gregory data
   do_greg_plot=0 ; , mke gregory plots (requires do_greg and do_clims)
 
 ;means
-do_clims=0 ; read in model temperature output
+do_clims=1 ; read in model temperature output
   read_all_clims=0        ; if 0 [0=default] then only read in more recent simulations 
            ;   (e.g. tfke,tfks), for speed
 do_readbounds=1 ; read in mask and ice
   do_readlsm=1 ; read in lsm
     do_lsm_plot=0               ; plot prescribed land area
-  do_readice=0                  ; read ice
+  do_readice=1                  ; read ice
     do_ice_plot=0 ; plot prescribed ice sheets
 
 do_solar_plot=0 ; plot prescribed solar forcing (from .dat file)
@@ -109,20 +109,20 @@ do_mfc=0 ; moisture flux convergence
 
 do_density=1 ; density
 
-do_temp_plot=0 ; global mean from proxies
+do_temp_plot=1 ; global mean from proxies
 
-do_readsolar=0                  ; read solar forcing and albedo from first simulation
-  do_ff_model=0 ; forcing/feedback model (requires do_clims, do_readbounds, do_readlsm, do_readice, do_readsolar??x)     
+do_readsolar=1                  ; read solar forcing and albedo from first simulation
+  do_ff_model=1 ; forcing/feedback model (requires do_clims, do_readbounds, do_readlsm, do_readice, do_readsolar??x)     
     do_co2_plot=0 ; prescribed co2 (requires do_ff_model)
     do_co2_inferred=0 ; inferred and constant co2 (requires do_ff_model)
 
     do_forcings_plot=0 ; prescribed forcings in Wm-2 (requires ff_model)
     do_forctemps_plot=0 ; prescribed forcings in oC (requires ff_model)
  
-    do_clim_plot=0 ;  plot new vs old, ff, MDC, and resid
+    do_clim_plot=1 ;  plot new vs old, ff, MDC, and resid
                  ;  (requires ff_model) 
 
-    do_scatt_all=0 ; all scatter plots 
+    do_scatt_all=1 ; all scatter plots 
     
 do_polamp_plot=0 ;  plot polamp
 do_scattemp_plot=0
@@ -667,6 +667,11 @@ nfl=3
 nflr=2
 flname=strarr(nflr)
 flname(*)=['downSol_mm_TOA','upSol_mm_s3_TOA']
+
+; colours for proxies
+colwin=80
+coljud=170
+colsco=250
 
 
 if (check_names eq 1) then begin
@@ -4243,7 +4248,7 @@ plot,dates2,co2,yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle='Myrs BP',ytitle='G
 
 ; Plot Wing and Huber in blue
 ;plots,dates_wing,temp_wing,psym=8,symsize=0.5,color=80
-oplot,dates_wing,temp_wing,color=80,thick=3
+oplot,dates_wing,temp_wing,color=colwin,thick=3
 
 
 if (p eq 0 or p eq 1) then begin
@@ -4259,13 +4264,13 @@ endif
 
 if (p eq 2 or p eq 3) then begin
 ; Plot final Scotese 1m in red
-oplot,dates_scot1m,temp_scot1m,color=250,thick=3
+oplot,dates_scot1m,temp_scot1m,color=colsco,thick=3
 ;plots,dates2,temp_scot1m_interp,psym=6,symsize=0.5,color=250
 endif
 
 if (p eq 3) then begin
-; Plot Judd in orange
-oplot,dates_judd,temp_judd,color=200,thick=3
+; Plot Judd in green
+oplot,dates_judd,temp_judd,color=coljud,thick=3
 ;oplot,dates2,temp_judd_interp,color=225,thick=3,linestyle=1
 endif 
 
@@ -4297,8 +4302,8 @@ oplot,[x1,x1+dx1],[y1,y1],color=120,thick=3
 xyouts,x1+dx2,y1-dy2,'Scotese et al (2021) [A]',color=120
 endif
 
-oplot,[x1,x1+dx1],[y1-dy1,y1-dy1],color=80,thick=3
-xyouts,x1+dx2,y1-dy1-dy2,'Wing and Huber (2020)',color=80
+oplot,[x1,x1+dx1],[y1-dy1,y1-dy1],color=colwin,thick=3
+xyouts,x1+dx2,y1-dy1-dy2,'Wing and Huber (2020)',color=colwin
 
 if (p eq 1) then begin
 oplot,[x1,x1+dx1],[y1+dy1,y1+dy1],color=180,thick=3
@@ -4306,13 +4311,13 @@ xyouts,x1+dx2,y1+dy1-dy2,'Scotese et al (2021) [B]',color=180
 endif
 
 if (p eq 2 or p eq 3) then begin
-oplot,[x1,x1+dx1],[y1,y1],color=250,thick=3
-xyouts,x1+dx2,y1-dy2,'Scotese et al (2021) [smoothed]',color=250
+oplot,[x1,x1+dx1],[y1,y1],color=colsco,thick=3
+xyouts,x1+dx2,y1-dy2,'Scotese et al (2021) [smoothed]',color=colsco
 endif
 
 if (p eq 3) then begin
-oplot,[x1,x1+dx1],[y1+dy1,y1+dy1],color=200,thick=3
-xyouts,x1+dx2,y1+dy1-dy2,'Judd et al (in 2024)',color=200
+oplot,[x1,x1+dx1],[y1+dy1,y1+dy1],color=coljud,thick=3
+xyouts,x1+dx2,y1+dy1-dy2,'Judd et al (in 2024)',color=coljud
 endif
 
 
@@ -4809,8 +4814,7 @@ if (do_clim_plot eq 1) then begin
 ; egu is tfke and tfks and ScoteseSmoothed
 ; pap is tfke and ScoteseSmoothed and Winghuber and Judd
 ; cmo is tfke and Scotese02
-; wmt is tfke, tfks, Scotese02, and ScoteseSmoothed and Winghuber and
-; Judd (new)
+; wmt is tfke, tfks, Scotese02, and ScoteseSmoothed and Winghuber and Judd (new)
 ; geo is tfke, tfks, and ScoteseSmoothed and Winghuber and Judd (new)
 ; fin is **FOR PAPER FIG** tfks and ScoteseSmoothed and Winghuber and Judd
 ; noc is for no co2 change (tfke, tfks, no2co2*2)
@@ -4821,10 +4825,6 @@ mytypename=['new','cmp','pro','bot','egu','pap','cmo','wmt','geo','fin','noc']
 for t=0,ntype-1 do begin
 for v=0,nvar-1 do begin
 
-colwin=80
-;coljud=100
-coljud=170
-colsco=250
 mycol=0
 mycot=210
 if (t eq 9) then begin
@@ -5116,7 +5116,7 @@ if (t eq 3 or t eq 4 or t eq 7 or t eq 8) then begin
 oplot,[x1,x1+dx1],[y1+2*dy1,y1+2*dy1],color=mycot,thick=3
 ;plots,x1+dx1/2.0,y1,psym=8,symsize=0.5,color=colsco
 xyouts,x1+dx2,y1+2*dy1-dy2,'HadCM3L ['+exproot(0,pt)+']',color=mycot
-plots,x1+dx1/2.0,y1+dy1,color=mycot,psym=8,symsize=0.5
+plots,x1+dx1/2.0,y1+2*dy1,color=mycot,psym=8,symsize=0.5
 endif
 
 if (t eq 5 or t eq 7 or t eq 8 or t eq 9) then begin
@@ -5173,7 +5173,6 @@ endif
 endfor
 endfor
 
-stop
 
 ; plot the residual
 
@@ -5465,15 +5464,18 @@ ddy1=0.02*(ymax-ymin)
 plot,thisx,thisy,yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle=thisxtitle,ytitle=thisytitle,ystyle=1,xstyle=1,/nodata
 
 ; line best fit
-oplot,[xmin,xmax],[myscattresult(0)+xmin*myscattresult(1),myscattresult(0)+xmax*myscattresult(1)],linestyle=1
-oplot,[xmin,xmax],[myscattresult2(0)+xmin*myscattresult2(1),myscattresult2(0)+xmax*myscattresult2(1)],linestyle=0
-
+oplot,[xmin,xmax],[myscattresult(0)+xmin*myscattresult(1),myscattresult(0)+xmax*myscattresult(1)],linestyle=0
+if (ss eq 2) then begin
+oplot,[xmin,xmax],[myscattresult2(0)+xmin*myscattresult2(1),myscattresult2(0)+xmax*myscattresult2(1)],linestyle=1
+endif
 
 ; display gradient
 xyouts,xmin+(xmax-xmin)*0.1,ymin+(ymax-ymin)*0.9,'gradient (all)='+strtrim(string(myscattresult(1),format=myformat),2)+' mm/day/K',size=0.5
-oplot,[xmin+(xmax-xmin)*0.03,xmin+(xmax-xmin)*0.08],[ymin+(ymax-ymin)*0.9,ymin+(ymax-ymin)*0.9],linestyle=1
+oplot,[xmin+(xmax-xmin)*0.03,xmin+(xmax-xmin)*0.08],[ymin+(ymax-ymin)*0.9,ymin+(ymax-ymin)*0.9],linestyle=0
+if (ss eq 2) then begin
 xyouts,xmin+[xmax-xmin]*0.1,ymin+[ymax-ymin]*0.85,'gradient (non-Pangea)='+strtrim(string(myscattresult2(1),format=myformat),2)+' mm/day/K',size=0.5
 oplot,[xmin+(xmax-xmin)*0.03,xmin+(xmax-xmin)*0.08],[ymin+(ymax-ymin)*0.85,ymin+(ymax-ymin)*0.85],linestyle=1
+endif
 
 for n=0,ndates-1 do begin
 
@@ -5520,9 +5522,11 @@ endif
 
 endfor
 
+if (ss eq 2) then begin
 plots,+sx1,sy-6*fy,psym=8,symsize=ssize*0.5,color=0
 plots,+sx1,sy-6*fy,psym=8,symsize=ssize*0.2,color=256
 xyouts,+sx2,sy-6*fy-ddy,color=0,'Pangea'
+endif
 
 device,/close
 
