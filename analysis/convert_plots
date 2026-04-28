@@ -93,8 +93,16 @@
 
 #for file in temp_scotese_time_04 ; do
 
-for file in scatt_frad-gmst_tfke scatt_gmst-prec_tfks ; do
-    
+#for file in scatt_frad-gmst_tfke scatt_gmst-prec_tfks ; do
+
+#for file in grads_time_mixd_xqej_anom ; do
+
+#for file in grads_time_dens_tfke_anom ; do
+
+#for file in grads_time_sali_tfke_anom ; do
+
+for file in grads_time_salfx_tfke_anom ; do
+
 #####################################
 # FOR PAPER (CHECKED).....
 

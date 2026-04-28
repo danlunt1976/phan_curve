@@ -49,10 +49,10 @@ pro time
 
 ; divide overturning into basins
 
-; plot time-specific regression lines on cross-plots (e.g. precip in Pangea)
+; change mixed layer depth to use Nan
   
 ; hoffmuller seaice
-; hoffmuller p-e
+; hoffmuller p-e over ocean
 ; theory: width of ocean basin determines relative salinity?
 
   
@@ -90,17 +90,17 @@ do_greg=0 ; read gregory data
   do_greg_plot=0 ; , mke gregory plots (requires do_greg and do_clims)
 
 ;means
-do_clims=1 ; read in model temperature output
+do_clims=0 ; read in model temperature output
   read_all_clims=0        ; if 0 [0=default] then only read in more recent simulations 
            ;   (e.g. tfke,tfks), for speed
 do_readbounds=1 ; read in mask and ice
   do_readlsm=1 ; read in lsm
     do_lsm_plot=0               ; plot prescribed land area
-  do_readice=1                  ; read ice
+  do_readice=0                  ; read ice
     do_ice_plot=0 ; plot prescribed ice sheets
 
 do_solar_plot=0 ; plot prescribed solar forcing (from .dat file)
-do_ocean=0                    ; read in ocean mld
+do_ocean=1                    ; read in ocean mld
 do_merid=0 ; read in ocean streamfunction (requires do_readlsm)
 
 do_precip=1                     ; read in model precip output (requires do_readlsm)
@@ -109,20 +109,20 @@ do_mfc=0 ; moisture flux convergence
 
 do_density=1 ; density
 
-do_temp_plot=1 ; global mean from proxies
+do_temp_plot=0 ; global mean from proxies
 
-do_readsolar=1                  ; read solar forcing and albedo from first simulation
-  do_ff_model=1 ; forcing/feedback model (requires do_clims, do_readbounds, do_readlsm, do_readice, do_readsolar??x)     
+do_readsolar=0                  ; read solar forcing and albedo from first simulation
+  do_ff_model=0 ; forcing/feedback model (requires do_clims, do_readbounds, do_readlsm, do_readice, do_readsolar??x)     
     do_co2_plot=0 ; prescribed co2 (requires do_ff_model)
     do_co2_inferred=0 ; inferred and constant co2 (requires do_ff_model)
 
     do_forcings_plot=0 ; prescribed forcings in Wm-2 (requires ff_model)
     do_forctemps_plot=0 ; prescribed forcings in oC (requires ff_model)
  
-    do_clim_plot=1 ;  plot new vs old, ff, MDC, and resid
+    do_clim_plot=0 ;  plot new vs old, ff, MDC, and resid
                  ;  (requires ff_model) 
 
-    do_scatt_all=1 ; all scatter plots 
+    do_scatt_all=0 ; all scatter plots 
     
 do_polamp_plot=0 ;  plot polamp
 do_scattemp_plot=0
@@ -269,11 +269,11 @@ readfile_o(*,*)=1
 readfile_o(*,6)=0 ; tflm for Shufeng no longer stored
 endif else begin
 ;readfile_o(*,4)=1          ; tfke
-readfile_o(*,5)=1          ; tfks
-;readfile_o(*,4:5)=1          ; tfke and tkfs
+;readfile_o(*,5)=1          ; tfks
+readfile_o(*,4:5)=1          ; tfke and tkfs
 ;readfile_o(*,9)=1   ; Scotese_02
 ;readfile_o(*,10)=1 ; Scotese_noco2
-readfile_o(*,11)=1 ; Scotese_noco2 new
+;readfile_o(*,11)=1 ; Scotese_noco2 new
 endelse
 
 
@@ -1790,6 +1790,10 @@ mixed_zonmean2_tmean=fltarr(nymax,ndates,nexp)
 mixed_zonmean3=fltarr(nymax,ndates,nexp)
 mixed_zonmean3_tmean=fltarr(nymax,ndates,nexp)
 
+salfx=fltarr(nxmax,nymax,ndates,nexp)
+salfx_zonmean=fltarr(nymax,ndates,nexp)
+salfx_zonmean_tmean=fltarr(nymax,ndates,nexp)
+
 for e=0,nexp-1 do begin
 for n=nstart,ndates-1 do begin
 
@@ -1805,6 +1809,11 @@ endif
 print,readtype(n,e),n,data_filename
 id1=ncdf_open(data_filename)
 ncdf_varget,id1,'mixLyrDpth_mm_uo',dummy
+mixed(0:nxmax-1,0:nymax-1,n,e)=dummy
+ncdf_varget,id1,'srfSalFlux_mm_uo',dummy
+dummy[where(dummy gt 1e10)]=!VALUES.F_NAN
+salfx(0:nxmax-1,0:nymax-1,n,e)=-1*dummy
+
 ;print,'i am here',e,n
 if (done_latso eq 0) then begin
 ;print,'and here'
@@ -1814,13 +1823,12 @@ ncdf_varget,id1,'longitude',lons_ocn
 done_latso=1
 endif
 ncdf_close,id1
-mixed(0:nxmax-1,0:nymax-1,n,e)=dummy
+
 
 ntv=5
 for j=0,nymax-1 do begin
 
 mixed_zonmean(j,n,e)=mean(mixed(*,j,n,e))
-
 mixed_zonmax(j,n,e)=max(mixed(*,j,n,e))
 
 sorted_indices=reverse(sort(mixed(*,j,n,e)))
@@ -1841,6 +1849,9 @@ endif else begin
    mixed_zonmean3(j,n,e)=0.0
 endelse
 
+salfx_zonmean(j,n,e)=mean(salfx(*,j,n,e),/nan)
+
+
 endfor ; end j lats
 endif  ; end if readfile
 
@@ -1849,6 +1860,7 @@ endfor                          ; end n
 for j=0,ny-1 do begin
    mixed_zonmean2_tmean(j,*,e)=mean(mixed_zonmean2(j,*,e),/nan)
    mixed_zonmean3_tmean(j,*,e)=mean(mixed_zonmean3(j,*,e),/nan)
+   salfx_zonmean_tmean(j,*,e)=mean(salfx_zonmean(j,*,e),/nan)
 endfor
 
 endfor ; end e
@@ -5544,9 +5556,9 @@ tvlct,r_39,g_39,b_39
 ; Temp grads Hoffmuller plot
 
 for e=0,nexp-1 do begin
-if (readfile(0,e) eq 1) then begin ; strictly only for temp and precip and mask
+if (readfile(0,e) eq 1 or readfile_o(0,e) eq 1) then begin
 
-   nhoff=22
+   nhoff=23
    hoffnames=strarr(nhoff)
    hoffnames(*)='x'
    if (do_clims eq 1) then hoffnames(0)='temp'
@@ -5571,6 +5583,7 @@ if (readfile(0,e) eq 1) then begin ; strictly only for temp and precip and mask
    if (do_ocean eq 1) then hoffnames(19)='mixds'
    if (do_density eq 1) then hoffnames(20)='dens'
    if (do_density eq 1) then hoffnames(21)='sali'
+   if (do_ocean eq 1) then hoffnames(22)='salfx'
    
 for v=0,nhoff-1 do begin
 if (hoffnames(v) ne 'x') then begin
@@ -6042,6 +6055,26 @@ minv=-5.5
 myvar=reverse(modvar_den_zonmean(*,*,e,2)-modvar_den_zonmean_tmean(*,*,e,2))
 xlab='Surface salinity anomaly [psu]'
 mytickv=[-5,0,5]
+endif
+endif
+
+if (hoffnames(v) eq 'salfx') then begin
+mylats=reverse(lats_ocn)
+if (bb eq 0) then begin
+nlevv=12
+maxv=1
+minv=-1
+myvar=reverse(salfx_zonmean(*,*,e))
+xlab='Surface water flux [m G s-1]'
+mytickv=[-1,0,1]
+endif
+if (bb eq 1) then begin
+nlevv=12
+maxv=1
+minv=-1
+myvar=reverse(salfx_zonmean(*,*,e)-salfx_zonmean_tmean(*,*,e))
+xlab='Salinity flux anomaly[m G s-1]'
+mytickv=[-1,0,1]
 endif
 endif
 
