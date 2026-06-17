@@ -37,6 +37,7 @@ pro time
 ;   do_climsens_plot
 ;   do_scatt_all
 ;   do_hoff_plots
+;     do_hoff_scatt
 ;   do_reg_plots
 ;   do_polamp_plot
 ;   do_ess_plot
@@ -47,14 +48,9 @@ pro time
 
 ; make hoffmuller plots to be area-weighted in y axis
 
-; divide overturning into basins
-
 ; change mixed layer depth to use Nan
-  
-; hoffmuller seaice
-; hoffmuller p-e over ocean
-; theory: width of ocean basin determines relative salinity?
 
+; correlation coefficients of hoffmuller plots.
   
 ; *****************
 
@@ -129,7 +125,8 @@ do_scattemp_plot=0
 do_climsens_plot=0
 do_ess_plot=0
 do_hoff_plots=1 ; hoffmuller plot
-do_reg_plots=0 ; regional plots
+  do_hoff_scatt=1 ; hoffmuller scatter plot
+do_reg_plots=0                  ; regional plots
 
 do_ebm=0 ; EBM model
   do_aprp=0 ; APRP (requires do_ebm)
@@ -5557,7 +5554,7 @@ tvlct,r_39,g_39,b_39
 
 for e=0,nexp-1 do begin
 if (readfile(0,e) eq 1 or readfile_o(0,e) eq 1) then begin
-
+   
    nhoff=23
    hoffnames=strarr(nhoff)
    hoffnames(*)='x'
@@ -5584,7 +5581,30 @@ if (readfile(0,e) eq 1 or readfile_o(0,e) eq 1) then begin
    if (do_density eq 1) then hoffnames(20)='dens'
    if (do_density eq 1) then hoffnames(21)='sali'
    if (do_ocean eq 1) then hoffnames(22)='salfx'
+
    
+if (do_hoff_scatt eq 1) then begin
+nhoffscatt=2
+hoffscattvarx=fltarr(ny,ndates,nhoffscatt)
+hoffscattvary=fltarr(ny,ndates,nhoffscatt)
+hoffscattlabx=strarr(nhoffscatt)
+hoffscattmaxx=fltarr(nhoffscatt)
+hoffscattminx=fltarr(nhoffscatt)
+hoffscattlaby=strarr(nhoffscatt)
+hoffscattmaxy=fltarr(nhoffscatt)
+hoffscattminy=fltarr(nhoffscatt)
+hoffscattnx=intarr(nhoffscatt)
+hoffscattny=intarr(nhoffscatt)
+hoffscattnx(*)=[17,22]
+hoffscattny(*)=[14,19]
+hoffscattname=strarr(nhoffscatt)
+for h=0,nhoffscatt-1 do begin
+hoffscattname(h)=hoffnames(hoffscattnx(h))+'-'+hoffnames(hoffscattny(h))
+endfor
+print,hoffscattname
+endif
+
+
 for v=0,nhoff-1 do begin
 if (hoffnames(v) ne 'x') then begin
    
@@ -6078,6 +6098,27 @@ mytickv=[-1,0,1]
 endif
 endif
 
+if (do_hoff_scatt eq 1) then begin
+for h=0,nhoffscatt-1 do begin
+  if (v eq hoffscattnx(h)) then begin
+    if ( (bb eq 0 and hoffscattnx(h) lt 0) or (bb eq 1 and hoffscattnx(h) gt 0)) then begin 
+      hoffscattvarx(*,*,h)=myvar
+      hoffscattlabx(h)=xlab
+      hoffscattmaxx(h)=maxv
+      hoffscattminx(h)=minv
+   endif
+  endif  
+  if (v eq hoffscattny(h)) then begin
+    if ( (bb eq 0 and hoffscattny(h) lt 0) or (bb eq 1 and hoffscattny(h) gt 0)) then begin         
+      hoffscattvary(*,*,h)=myvar
+      hoffscattlaby(h)=xlab
+      hoffscattmaxy(h)=maxv
+      hoffscattminy(h)=minv      
+    endif
+  endif
+endfor
+endif
+
 
 a=size(mytickv)
 myxticks=a(1)-1
@@ -6162,16 +6203,135 @@ xyouts,minv+0.5*(maxv-minv),-1.5,xlab,align=0.5
 device,/close
 
 
-endfor ; end bb
+endfor                          ; end bb
 
-endif ; end if hoffnames
-endfor ; end v
-
-endif ; end if readfile
-endfor ; end e
+endif                           ; end if hoffnames
+endfor                          ; end v
 
 tvlct,r_39,g_39,b_39
+
+if (do_hoff_scatt eq 1) then begin
+
+ssize=1.0
+
+for ss=0,nhoffscatt-1 do begin
+
+print,'plotting: ',hoffscattname(ss)
+   
+device,filename='hoffscatt_'+hoffscattname(ss)+'_'+exproot(0,e)+'.eps',/encapsulate,/color,set_font='Helvetica',xsize=14,ysize=12
+
+xmin=hoffscattminx(ss)
+xmax=hoffscattmaxx(ss)
+ymin=hoffscattminy(ss)
+ymax=hoffscattmaxy(ss)
+
+thisx=hoffscattvarx(*,*,ss)
+thisy=hoffscattvary(*,*,ss)
+thisxtitle=hoffscattlabx(ss)
+thisytitle=hoffscattlaby(ss)
+myformat='(F4.2)'
+
+begpan=-266
+endpan=-170
+
+myscattresult=linfit(thisx,thisy,sigma=myscattsigma)
+print,'myscattresult:'
+print,myscattresult
+print,myscattsigma
+
+myscattresult2=linfit(thisx(where(dates2 le begpan or dates2 ge endpan)),thisy(where(dates2 le begpan or dates2 ge endpan)),sigma=myscattsigma2)
+print,'myscattresult2:',myscattresult2(1)
+print,myscattsigma2
+print,'myscattresult2 (%):',100*myscattresult2(1)/mean(thisy(where(dates2 le begpan or dates2 ge endpan)))
+
+ddy=0.001*(ymax-ymin)
+fy=0.05*(ymax-ymin)
+sy=ymin+0.8*(ymax-ymin)
+sx1=xmin+0.1*(xmax-xmin)
+sx2=xmin+0.13*(xmax-xmin)
+ddx1=0.02*(xmax-xmin)
+ddy1=0.02*(ymax-ymin)
+
+; setup
+plot,thisx,thisy,yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle=thisxtitle,ytitle=thisytitle,ystyle=1,xstyle=1,/nodata
+
+; line best fit
+oplot,[xmin,xmax],[myscattresult(0)+xmin*myscattresult(1),myscattresult(0)+xmax*myscattresult(1)],linestyle=0
+if (ss eq -1) then begin
+oplot,[xmin,xmax],[myscattresult2(0)+xmin*myscattresult2(1),myscattresult2(0)+xmax*myscattresult2(1)],linestyle=1
+endif
+
+; display gradient
+xyouts,xmin+(xmax-xmin)*0.1,ymin+(ymax-ymin)*0.9,'gradient (all)='+strtrim(string(myscattresult(1),format=myformat),2)+' mm/day/K',size=0.5
+oplot,[xmin+(xmax-xmin)*0.03,xmin+(xmax-xmin)*0.08],[ymin+(ymax-ymin)*0.9,ymin+(ymax-ymin)*0.9],linestyle=0
+if (ss eq -1) then begin
+xyouts,xmin+[xmax-xmin]*0.1,ymin+[ymax-ymin]*0.85,'gradient (non-Pangea)='+strtrim(string(myscattresult2(1),format=myformat),2)+' mm/day/K',size=0.5
+oplot,[xmin+(xmax-xmin)*0.03,xmin+(xmax-xmin)*0.08],[ymin+(ymax-ymin)*0.85,ymin+(ymax-ymin)*0.85],linestyle=1
+endif
+
+for n=0,ndates-1 do begin
+
+x=n-nstart
+xx=ndates-nstart
+mycol=(x)*250.0/(xx-1)
+;mycol=0
+
+plots,thisx(n),thisy(n),psym=8,symsize=ssize,color=mycol
+if (ss eq -1) then begin
+if (dates2(n) gt begpan and dates2(n) lt endpan) then begin
+plots,thisx(n),thisy(n),psym=8,symsize=ssize*0.5,color=0
+plots,thisx(n),thisy(n),psym=8,symsize=ssize*0.2,color=256
+endif
+endif
+;xyouts,thisx(n)+ddx1,thisy(n)+ddy1,color=mycol,dates2(n),size=0.2
+
+
+
+if (n eq 0) then begin
+plots,+sx1,sy,color=mycol,psym=8,symsize=ssize
+xyouts,+sx2,sy-ddy,color=0,'0 Ma'
+endif
+if (n eq 20) then begin
+plots,+sx1,sy-1*fy,color=mycol,psym=8,symsize=ssize
+xyouts,+sx2,sy-1*fy-ddy,color=0,'100 Ma'
+endif
+if (n eq 40) then begin
+plots,+sx1,sy-2*fy,color=mycol,psym=8,symsize=ssize
+xyouts,+sx2,sy-2*fy-ddy,color=0,'200 Ma'
+endif
+if (n eq 60) then begin
+plots,+sx1,sy-3*fy,color=mycol,psym=8,symsize=ssize
+xyouts,+sx2,sy-3*fy-ddy,color=0,'300 Ma'
+endif
+if (n eq 80) then begin
+plots,+sx1,sy-4*fy,color=mycol,psym=8,symsize=ssize
+xyouts,+sx2,sy-4*fy-ddy,color=0,'400 Ma'
+endif
+if (n eq 100) then begin
+plots,+sx1,sy-5*fy,color=mycol,psym=8,symsize=ssize
+xyouts,+sx2,sy-5*fy-ddy,color=0,'500 Ma'
+endif
+
+endfor
+
+if (ss eq -1) then begin
+plots,+sx1,sy-6*fy,psym=8,symsize=ssize*0.5,color=0
+plots,+sx1,sy-6*fy,psym=8,symsize=ssize*0.2,color=256
+xyouts,+sx2,sy-6*fy-ddy,color=0,'Pangea'
+endif
+
+device,/close
+
+endfor                          ; end nscatt
+
+endif                           ; end do_hoff_scatt
+
+endif                           ; end if readfile
+endfor                          ; end nexp
+
+
 endif ; end do_hoffplot
+
 
 
 if (do_reg_plots eq 1) then begin
