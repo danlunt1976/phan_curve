@@ -50,7 +50,7 @@ pro time
 
 ; change mixed layer depth to use Nan
 
-; correlation coefficients of hoffmuller plots.
+; correlation coefficients of hoffmuller plots - lower resolution.
   
 ; *****************
 
@@ -5584,7 +5584,7 @@ if (readfile(0,e) eq 1 or readfile_o(0,e) eq 1) then begin
 
    
 if (do_hoff_scatt eq 1) then begin
-nhoffscatt=2
+nhoffscatt=3
 hoffscattvarx=fltarr(ny,ndates,nhoffscatt)
 hoffscattvary=fltarr(ny,ndates,nhoffscatt)
 hoffscattlabx=strarr(nhoffscatt)
@@ -5595,8 +5595,8 @@ hoffscattmaxy=fltarr(nhoffscatt)
 hoffscattminy=fltarr(nhoffscatt)
 hoffscattnx=intarr(nhoffscatt)
 hoffscattny=intarr(nhoffscatt)
-hoffscattnx(*)=[17,22]
-hoffscattny(*)=[14,19]
+hoffscattnx(*)=[17,22,16]
+hoffscattny(*)=[14,3,17]
 hoffscattname=strarr(nhoffscatt)
 for h=0,nhoffscatt-1 do begin
 hoffscattname(h)=hoffnames(hoffscattnx(h))+'-'+hoffnames(hoffscattny(h))
@@ -6212,7 +6212,7 @@ tvlct,r_39,g_39,b_39
 
 if (do_hoff_scatt eq 1) then begin
 
-ssize=1.0
+ssize=0.2
 
 for ss=0,nhoffscatt-1 do begin
 
@@ -6225,24 +6225,28 @@ xmax=hoffscattmaxx(ss)
 ymin=hoffscattminy(ss)
 ymax=hoffscattmaxy(ss)
 
+thisxref=reform(hoffscattvarx(*,*,ss),ny*ndates)
+thisyref=reform(hoffscattvary(*,*,ss),ny*ndates)
 thisx=hoffscattvarx(*,*,ss)
 thisy=hoffscattvary(*,*,ss)
 thisxtitle=hoffscattlabx(ss)
 thisytitle=hoffscattlaby(ss)
-myformat='(F4.2)'
+myformat='(F5.2)'
 
 begpan=-266
 endpan=-170
 
-myscattresult=linfit(thisx,thisy,sigma=myscattsigma)
+myscattresult=linfit( thisxref(where(finite(thisyref*thisxref))),thisyref(where(finite(thisyref*thisxref))),sigma=myscattsigma)
 print,'myscattresult:'
 print,myscattresult
 print,myscattsigma
+mycorrelate=correlate(thisxref(where(finite(thisyref*thisxref))),thisyref(where(finite(thisyref*thisxref))))
+print,mycorrelate
 
-myscattresult2=linfit(thisx(where(dates2 le begpan or dates2 ge endpan)),thisy(where(dates2 le begpan or dates2 ge endpan)),sigma=myscattsigma2)
-print,'myscattresult2:',myscattresult2(1)
-print,myscattsigma2
-print,'myscattresult2 (%):',100*myscattresult2(1)/mean(thisy(where(dates2 le begpan or dates2 ge endpan)))
+;myscattresult2=linfit(thisx(where(dates2 le begpan or dates2 ge endpan)),thisy(where(dates2 le begpan or dates2 ge endpan)),sigma=myscattsigma2)
+;print,'myscattresult2:',myscattresult2(1)
+;print,myscattsigma2
+;print,'myscattresult2 (%):',100*myscattresult2(1)/mean(thisy(where(dates2 le begpan or dates2 ge endpan)))
 
 ddy=0.001*(ymax-ymin)
 fy=0.05*(ymax-ymin)
@@ -6253,7 +6257,7 @@ ddx1=0.02*(xmax-xmin)
 ddy1=0.02*(ymax-ymin)
 
 ; setup
-plot,thisx,thisy,yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle=thisxtitle,ytitle=thisytitle,ystyle=1,xstyle=1,/nodata
+plot,thisxref,thisyref,yrange=[ymin,ymax],xrange=[xmin,xmax],xtitle=thisxtitle,ytitle=thisytitle,ystyle=1,xstyle=1,/nodata
 
 ; line best fit
 oplot,[xmin,xmax],[myscattresult(0)+xmin*myscattresult(1),myscattresult(0)+xmax*myscattresult(1)],linestyle=0
@@ -6262,56 +6266,60 @@ oplot,[xmin,xmax],[myscattresult2(0)+xmin*myscattresult2(1),myscattresult2(0)+xm
 endif
 
 ; display gradient
-xyouts,xmin+(xmax-xmin)*0.1,ymin+(ymax-ymin)*0.9,'gradient (all)='+strtrim(string(myscattresult(1),format=myformat),2)+' mm/day/K',size=0.5
-oplot,[xmin+(xmax-xmin)*0.03,xmin+(xmax-xmin)*0.08],[ymin+(ymax-ymin)*0.9,ymin+(ymax-ymin)*0.9],linestyle=0
+;xyouts,xmin+(xmax-xmin)*0.1,ymin+(ymax-ymin)*0.9,'gradient (all)='+strtrim(string(myscattresult(1),format=myformat),2)+' mm/day/K',size=0.5
+;oplot,[xmin+(xmax-xmin)*0.03,xmin+(xmax-xmin)*0.08],[ymin+(ymax-ymin)*0.9,ymin+(ymax-ymin)*0.9],linestyle=0
+; display correlation
+xyouts,xmin+(xmax-xmin)*0.1,ymin+(ymax-ymin)*0.9,'r='+strtrim(string(mycorrelate,format=myformat),2),size=0.5
 if (ss eq -1) then begin
 xyouts,xmin+[xmax-xmin]*0.1,ymin+[ymax-ymin]*0.85,'gradient (non-Pangea)='+strtrim(string(myscattresult2(1),format=myformat),2)+' mm/day/K',size=0.5
 oplot,[xmin+(xmax-xmin)*0.03,xmin+(xmax-xmin)*0.08],[ymin+(ymax-ymin)*0.85,ymin+(ymax-ymin)*0.85],linestyle=1
 endif
 
 for n=0,ndates-1 do begin
-
+for yy=0,ny-1 do begin
+   
 x=n-nstart
 xx=ndates-nstart
 mycol=(x)*250.0/(xx-1)
 ;mycol=0
 
-plots,thisx(n),thisy(n),psym=8,symsize=ssize,color=mycol
+plots,thisx(yy,n),thisy(yy,n),psym=8,symsize=ssize,color=mycol
 if (ss eq -1) then begin
 if (dates2(n) gt begpan and dates2(n) lt endpan) then begin
-plots,thisx(n),thisy(n),psym=8,symsize=ssize*0.5,color=0
-plots,thisx(n),thisy(n),psym=8,symsize=ssize*0.2,color=256
+plots,thisx(yy,n),thisy(yy,n),psym=8,symsize=ssize*0.5,color=0
+plots,thisx(yy,n),thisy(yy,n),psym=8,symsize=ssize*0.2,color=256
 endif
 endif
 ;xyouts,thisx(n)+ddx1,thisy(n)+ddy1,color=mycol,dates2(n),size=0.2
 
 
 
-if (n eq 0) then begin
+if (n eq 0 and yy eq 0) then begin
 plots,+sx1,sy,color=mycol,psym=8,symsize=ssize
 xyouts,+sx2,sy-ddy,color=0,'0 Ma'
 endif
-if (n eq 20) then begin
+if (n eq 20 and yy eq 0) then begin
 plots,+sx1,sy-1*fy,color=mycol,psym=8,symsize=ssize
 xyouts,+sx2,sy-1*fy-ddy,color=0,'100 Ma'
 endif
-if (n eq 40) then begin
+if (n eq 40 and yy eq 0) then begin
 plots,+sx1,sy-2*fy,color=mycol,psym=8,symsize=ssize
 xyouts,+sx2,sy-2*fy-ddy,color=0,'200 Ma'
 endif
-if (n eq 60) then begin
+if (n eq 60 and yy eq 0) then begin
 plots,+sx1,sy-3*fy,color=mycol,psym=8,symsize=ssize
 xyouts,+sx2,sy-3*fy-ddy,color=0,'300 Ma'
 endif
-if (n eq 80) then begin
+if (n eq 80 and yy eq 0) then begin
 plots,+sx1,sy-4*fy,color=mycol,psym=8,symsize=ssize
 xyouts,+sx2,sy-4*fy-ddy,color=0,'400 Ma'
 endif
-if (n eq 100) then begin
+if (n eq 100 and yy eq 0) then begin
 plots,+sx1,sy-5*fy,color=mycol,psym=8,symsize=ssize
 xyouts,+sx2,sy-5*fy-ddy,color=0,'500 Ma'
 endif
 
+endfor
 endfor
 
 if (ss eq -1) then begin
